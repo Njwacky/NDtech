@@ -71,29 +71,11 @@ WSGI_APPLICATION = 'confige.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
-# Use SQLite in development, PostgreSQL in production
-if DEBUG:
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': BASE_DIR / 'db.sqlite3',
-        }
-    }
-else:
-    # Production database (PostgreSQL)
-    DATABASE_URL = config('DATABASE_URL', default=None)
-    if DATABASE_URL:
-        DATABASES = {
-            'default': dj_database_url.parse(DATABASE_URL)
-        }
-    else:
-        # Fallback to SQLite if no DATABASE_URL provided
-        DATABASES = {
-            'default': {
-                'ENGINE': 'django.db.backends.sqlite3',
-                'NAME': BASE_DIR / 'db.sqlite3',
-            }
-        }
+# Always use PostgreSQL
+DATABASE_URL = config('DATABASE_URL', default='postgresql://postgres:Python2001@localhost:8001/postgres')
+DATABASES = {
+    'default': dj_database_url.parse(DATABASE_URL)
+}
 
 # Password validation
 # https://docs.djangoproject.com/en/5.2/ref/settings/#auth-password-validators

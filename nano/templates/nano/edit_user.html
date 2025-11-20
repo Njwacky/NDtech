@@ -53,6 +53,8 @@
             <h3><i class="fas fa-lock"></i> Change Password (Optional)</h3>
             <p class="password-note">Leave blank if you don't want to change the password</p>
             
+            {% if request.user.id == user.id %}
+            <!-- User editing their own account - requires current password -->
             <div class="form-group">
                 <label for="current_password">
                     <i class="fas fa-key"></i> Current Password
@@ -61,8 +63,17 @@
                        id="current_password" 
                        name="current_password" 
                        placeholder="Enter current password to verify">
-                <small class="form-text">Required to change password</small>
+                <small class="form-text">Required to change your own password</small>
             </div>
+            {% else %}
+            <!-- Admin editing another user - no current password needed -->
+            <div class="admin-password-note">
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle"></i>
+                    <strong>Admin Privilege:</strong> As an admin, you can change this user's password without knowing their current password.
+                </div>
+            </div>
+            {% endif %}
 
             <div class="form-group">
                 <label for="new_password">

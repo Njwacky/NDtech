@@ -627,10 +627,18 @@ def edit_user(request, user_id):
         password_change_attempt = new_password or confirm_password
 
         if password_change_attempt:
-            if not current_password:
-                errors['current_password'] = 'Current password is required to change password'
-            elif not user.check_password(current_password):
-                errors['current_password'] = 'Current password is incorrect'
+            # Admin users can change other users' passwords without current password
+            # But users changing their own password need current password
+            is_admin_changing_other_user = (
+                request.user.is_superuser or 
+                (hasattr(request.user, 'userprofile') and request.user.userprofile.role == 'admin')
+            ) and request.user.id != user.id
+
+            if not is_admin_changing_other_user:
+                if not current_password:
+                    errors['current_password'] = 'Current password is required to change password'
+                elif not user.check_password(current_password):
+                    errors['current_password'] = 'Current password is incorrect'
 
             if not new_password:
                 errors['new_password'] = 'New password is required'
