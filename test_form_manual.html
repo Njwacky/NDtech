@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Edit User Form</title>
+</head>
+<body>
+    <h1>Test Edit User Form</h1>
+    <p>This page simulates the edit user form to test password validation.</p>
+    
+    <form id="testForm" method="post" action="/manage_users/edit/1/">
+        <input type="hidden" name="csrfmiddlewaretoken" value="test-token">
+        
+        <div>
+            <label>Username:</label>
+            <input type="text" name="username" value="testuser" required>
+        </div>
+        
+        <div>
+            <label>Email:</label>
+            <input type="email" name="email" value="test@example.com" required>
+        </div>
+        
+        <div>
+            <label>Role:</label>
+            <select name="role" required>
+                <option value="cashier">Cashier</option>
+                <option value="manager">Manager</option>
+                <option value="admin">Admin</option>
+            </select>
+        </div>
+        
+        <div>
+            <h3>Password Section</h3>
+            <p>Leave blank if you don't want to change the password</p>
+            
+            <div>
+                <label>Current Password:</label>
+                <input type="password" id="current_password" name="current_password" placeholder="Enter current password to verify">
+            </div>
+            
+            <div>
+                <label>New Password:</label>
+                <input type="password" id="new_password" name="new_password" placeholder="Enter new password (min 6 characters)">
+            </div>
+            
+            <div>
+                <label>Confirm New Password:</label>
+                <input type="password" id="confirm_password" name="confirm_password" placeholder="Confirm new password">
+            </div>
+        </div>
+        
+        <button type="submit">Update User</button>
+    </form>
+    
+    <script>
+        // Copy the exact JavaScript from edit_user.js
+        document.addEventListener('DOMContentLoaded', function() {
+            const currentPasswordInput = document.getElementById('current_password');
+            const newPasswordInput = document.getElementById('new_password');
+            const confirmPasswordInput = document.getElementById('confirm_password');
+            const form = document.querySelector('form');
+
+            // Function to show validation message
+            function showValidation(input, message, isValid) {
+                // Remove existing validation message
+                const existingMessage = input.parentNode.querySelector('.validation-message');
+                if (existingMessage) {
+                    existingMessage.remove();
+                }
+
+                if (message) {
+                    const validationDiv = document.createElement('div');
+                    validationDiv.className = `validation-message ${isValid ? 'valid' : 'invalid'}`;
+                    validationDiv.textContent = message;
+                    validationDiv.style.fontSize = '0.875rem';
+                    validationDiv.style.marginTop = '0.25rem';
+                    
+                    if (isValid) {
+                        validationDiv.style.color = '#28a745';
+                    } else {
+                        validationDiv.style.color = '#dc3545';
+                    }
+                    
+                    input.parentNode.appendChild(validationDiv);
+                }
+            }
+
+            // Form submission validation
+            form.addEventListener('submit', function(e) {
+                const currentPassword = currentPasswordInput.value;
+                const newPassword = newPasswordInput.value;
+                const confirmPassword = confirmPasswordInput.value;
+                
+                // Debug logging
+                console.log('=== Form Submission Debug ===');
+                console.log('Current password:', `"${currentPassword}"`);
+                console.log('New password:', `"${newPassword}"`);
+                console.log('Confirm password:', `"${confirmPassword}"`);
+                
+                // Check if any password field is filled
+                const passwordChangeAttempt = currentPassword || newPassword || confirmPassword;
+                console.log('Password change attempt:', passwordChangeAttempt);
+                
+                if (passwordChangeAttempt) {
+                    console.log('Password change detected, validating...');
+                    
+                    // Validate current password is provided
+                    if (!currentPassword) {
+                        console.log('Current password is missing');
+                        e.preventDefault();
+                        showValidation(currentPasswordInput, 'Current password is required to change password', false);
+                        currentPasswordInput.focus();
+                        return;
+                    }
+                    
+                    // Validate new password
+                    if (!newPassword) {
+                        console.log('New password is missing');
+                        e.preventDefault();
+                        showValidation(newPasswordInput, 'New password is required', false);
+                        newPasswordInput.focus();
+                        return;
+                    }
+                    
+                    if (newPassword.length < 6) {
+                        console.log('New password too short');
+                        e.preventDefault();
+                        showValidation(newPasswordInput, 'Password must be at least 6 characters', false);
+                        newPasswordInput.focus();
+                        return;
+                    }
+                    
+                    // Validate password match
+                    if (newPassword !== confirmPassword) {
+                        console.log('Passwords do not match');
+                        e.preventDefault();
+                        showValidation(confirmPasswordInput, 'Passwords do not match', false);
+                        confirmPasswordInput.focus();
+                        return;
+                    }
+                    
+                    console.log('Password validation passed');
+                } else {
+                    console.log('No password change attempt, skipping password validation');
+                }
+                
+                console.log('Form will submit');
+                
+                // Prevent actual submission for testing
+                e.preventDefault();
+                alert('Form validation complete. Check console for details.');
+            });
+        });
+    </script>
+</body>
+</html>

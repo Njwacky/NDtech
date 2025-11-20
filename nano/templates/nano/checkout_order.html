@@ -1,0 +1,255 @@
+{% extends 'nano/base.html' %}
+
+{% block title %}
+{% if order %}Checkout Order #{{ order.id }}{% else %}New Order Checkout{% endif %}
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-12">
+            <h2>
+                {% if order %}
+                    Checkout Order #{{ order.id }}
+                {% else %}
+                    New Order Checkout
+                {% endif %}
+            </h2>
+        </div>
+    </div>
+
+    {% if order %}
+    <div class="row mt-4">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5>Order Details</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <strong>Customer Name:</strong> {{ order.customer_name }}
+                        </div>
+                        <div class="col-md-6">
+                            <strong>Email:</strong> {{ order.customer_email|default:"Not provided" }}
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <strong>Phone:</strong> {{ order.customer_phone|default:"Not provided" }}
+                        </div>
+                        <div class="col-md-6">
+                            <strong>Order Date:</strong> {{ order.created_at|date:"Y-m-d H:i" }}
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-12">
+                            <strong>Total Amount:</strong> R{{ order.total_amount|floatformat:2 }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h5>Order Items</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Product</th>
+                                    <th>Quantity</th>
+                                    <th>Price</th>
+                                    <th>Total</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in order.items %}
+                                <tr>
+                                    <td>{{ item.name }}</td>
+                                    <td>{{ item.quantity }}</td>
+                                    <td>R{{ item.price|floatformat:2 }}</td>
+                                    <td>R{{ item.total|floatformat:2 }}</td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="4" class="text-center">No items in this order</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5>Checkout Actions</h5>
+                </div>
+                <div class="card-body">
+                    <form method="post" action="{% url 'checkout_order' order.id %}">
+                        {% csrf_token %}
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-success">
+                                <i class="fas fa-check"></i> Complete Order
+                            </button>
+                            <a href="{% url 'order_details' order.id %}" class="btn btn-secondary">
+                                <i class="fas fa-eye"></i> View Details
+                            </a>
+                            <a href="{% url 'pending_orders' %}" class="btn btn-outline-secondary">
+                                <i class="fas fa-arrow-left"></i> Back to Orders
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <div class="card mt-3">
+                <div class="card-header">
+                    <h6>Order Summary</h6>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Subtotal:</span>
+                        <strong>R{{ order.total_amount|floatformat:2 }}</strong>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Tax (15%):</span>
+                        <strong>R{{ order.total_amount|multiply:0.15|floatformat:2 }}</strong>
+                    </div>
+                    <hr>
+                    <div class="d-flex justify-content-between">
+                        <span><strong>Total:</strong></span>
+                        <strong>R{{ order.total_amount|multiply:1.15|floatformat:2 }}</strong>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5>Create New Order</h5>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="customer_name" class="form-label">Customer Name *</label>
+                                <input type="text" class="form-control" id="customer_name" name="customer_name" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="customer_email" class="form-label">Email</label>
+                                <input type="email" class="form-control" id="customer_email" name="customer_email">
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="customer_phone" class="form-label">Phone</label>
+                                <input type="tel" class="form-control" id="customer_phone" name="customer_phone">
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Order Items</label>
+                            <div class="alert alert-info">
+                                <i class="fas fa-info-circle"></i> 
+                                Order items should be added from the main POS dashboard before proceeding to checkout.
+                            </div>
+                        </div>
+
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <a href="{% url 'home' %}" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left"></i> Back to POS
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-shopping-cart"></i> Create Order
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.card {
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    border: none;
+    border-radius: 8px;
+}
+
+.card-header {
+    background-color: #f8f9fa;
+    border-bottom: 1px solid #dee2e6;
+    border-radius: 8px 8px 0 0 !important;
+}
+
+.table th {
+    background-color: #f8f9fa;
+    border-top: none;
+}
+
+.btn {
+    border-radius: 6px;
+}
+
+.btn-success {
+    background-color: #28a745;
+    border-color: #28a745;
+}
+
+.btn-success:hover {
+    background-color: #218838;
+    border-color: #1e7e34;
+}
+
+.alert-info {
+    background-color: #d1ecf1;
+    border-color: #bee5eb;
+    color: #0c5460;
+}
+
+.d-grid gap-2 .btn {
+    margin-bottom: 0.5rem;
+}
+
+@media (max-width: 768px) {
+    .container {
+        padding: 0 15px;
+    }
+    
+    .card {
+        margin-bottom: 1rem;
+    }
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Add confirmation before completing order
+    const completeForm = document.querySelector('form[action*="checkout_order"]');
+    if (completeForm) {
+        completeForm.addEventListener('submit', function(e) {
+            const confirmed = confirm('Are you sure you want to complete this order? This will update inventory levels.');
+            if (!confirmed) {
+                e.preventDefault();
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

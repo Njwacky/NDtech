@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Notification System Test</title>
+    <link rel="stylesheet" href="nano/static/nano/styles.css">
+    <link rel="stylesheet" href="nano/static/nano/notifications.css">
+    <link rel="stylesheet" href="nano/static/nano/hamburger.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        .test-container {
+            padding: 20px;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .test-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+        }
+        .test-result {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+        }
+        .test-pass {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .test-fail {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .test-info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+    </style>
+</head>
+<body>
+    <!-- Simulate the navigation structure from base.html -->
+    <header class="navbar">
+        <div class="nav-brand">
+            <h1><i class="fas fa-cash-register"></i> NDtech - Test</h1>
+        </div>
+        <nav class="nav-menu">
+            <a href="#" class="nav-link">
+                <i class="fas fa-home"></i> Dashboard
+            </a>
+            <a href="#" class="nav-link">
+                <i class="fas fa-box"></i> Add Stock
+            </a>
+            <!-- Test with authenticated user notification bell -->
+            <a href="#" class="nav-link notification-bell" id="notificationBell">
+                <i class="fas fa-bell"></i>
+                <span class="notification-badge" id="notificationBadge" style="display: none;">0</span>
+            </a>
+            <a href="#" class="nav-link logout">
+                <i class="fas fa-sign-out-alt"></i> Logout
+            </a>
+        </nav>
+        <button class="hamburger-toggle" aria-label="Toggle mobile menu">
+            <i class="fas fa-bars icon"></i>
+        </button>
+    </header>
+
+    <!-- Mobile Navigation -->
+    <nav class="mobile-nav" id="mobile-nav">
+        <div class="mobile-nav-header">
+            <div class="mobile-nav-brand">
+                <i class="fas fa-cash-register"></i> NDtech
+            </div>
+            <button class="mobile-nav-close" aria-label="Close mobile menu">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="mobile-nav-menu">
+            <a href="#" class="mobile-nav-link">
+                <i class="fas fa-home"></i> Dashboard
+            </a>
+            <a href="#" class="mobile-nav-link notification-bell" id="mobileNotificationBell">
+                <i class="fas fa-bell"></i>
+                <span class="notification-badge" id="mobileNotificationBadge" style="display: none;">0</span>
+            </a>
+        </div>
+    </nav>
+
+    <!-- Notification Dropdown -->
+    <div class="notification-dropdown" id="notificationDropdown">
+        <div class="notification-header">
+            <h3>Notifications</h3>
+            <button class="mark-all-read" id="markAllRead">Mark all as read</button>
+        </div>
+        <div class="notification-list" id="notificationList">
+            <div class="notification-empty">
+                <i class="fas fa-bell-slash"></i>
+                <p>No notifications</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <div class="content-wrapper">
+            <div class="test-container">
+                <h1>Notification System Test</h1>
+                
+                <div class="test-section">
+                    <h2>Test 1: Notification Bell Visibility</h2>
+                    <p>Testing if the notification bell is visible in the navigation...</p>
+                    <div id="test1-result"></div>
+                </div>
+
+                <div class="test-section">
+                    <h2>Test 2: Notification Dropdown Functionality</h2>
+                    <p>Click the notification bell to test dropdown functionality...</p>
+                    <div id="test2-result"></div>
+                </div>
+
+                <div class="test-section">
+                    <h2>Test 3: Mobile Notification Bell</h2>
+                    <p>Testing mobile notification bell visibility and functionality...</p>
+                    <div id="test3-result"></div>
+                </div>
+
+                <div class="test-section">
+                    <h2>Test 4: JavaScript Initialization</h2>
+                    <p>Testing if the notification system JavaScript initializes properly...</p>
+                    <div id="test4-result"></div>
+                </div>
+
+                <div class="test-section">
+                    <h2>Test 5: Event Listeners</h2>
+                    <p>Testing if event listeners are properly attached...</p>
+                    <div id="test5-result"></div>
+                </div>
+
+                <div class="test-section">
+                    <h2>Manual Controls</h2>
+                    <button onclick="runAllTests()">Run All Tests</button>
+                    <button onclick="testDropdown()">Test Dropdown</button>
+                    <button onclick="testMobileMenu()">Test Mobile Menu</button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- CSRF token for testing -->
+    <input type="hidden" name="csrfmiddlewaretoken" value="test-token">
+
+    <!-- Scripts -->
+    <script src="nano/static/nano/hamburger.js"></script>
+    <script src="nano/static/nano/notifications.js"></script>
+
+    <script>
+        // Test functions
+        function showTestResult(testId, result, message) {
+            const element = document.getElementById(testId);
+            const className = result ? 'test-pass' : 'test-fail';
+            element.innerHTML = `<div class="test-result ${className}">${message}</div>`;
+        }
+
+        function showTestInfo(testId, message) {
+            const element = document.getElementById(testId);
+            element.innerHTML = `<div class="test-result test-info">${message}</div>`;
+        }
+
+        function runAllTests() {
+            console.log('Running all notification system tests...');
+            
+            // Test 1: Notification Bell Visibility
+            const desktopBell = document.getElementById('notificationBell');
+            const mobileBell = document.getElementById('mobileNotificationBell');
+            
+            if (desktopBell && mobileBell) {
+                showTestResult('test1-result', true, '✅ Both desktop and mobile notification bells are visible');
+            } else {
+                showTestResult('test1-result', false, '❌ Notification bells not found');
+            }
+
+            // Test 2: Notification Dropdown
+            const dropdown = document.getElementById('notificationDropdown');
+            if (dropdown) {
+                showTestResult('test2-result', true, '✅ Notification dropdown element found');
+            } else {
+                showTestResult('test2-result', false, '❌ Notification dropdown not found');
+            }
+
+            // Test 3: Mobile Notification Bell
+            if (mobileBell) {
+                showTestResult('test3-result', true, '✅ Mobile notification bell is visible');
+            } else {
+                showTestResult('test3-result', false, '❌ Mobile notification bell not found');
+            }
+
+            // Test 4: JavaScript Initialization
+            setTimeout(() => {
+                if (window.notificationSystem) {
+                    showTestResult('test4-result', true, '✅ Notification system JavaScript initialized successfully');
+                } else {
+                    showTestInfo('test4-result', '⚠️ Notification system not yet initialized (may still be loading...)');
+                }
+            }, 100);
+
+            // Test 5: Event Listeners
+            setTimeout(() => {
+                if (desktopBell && desktopBell.onclick || desktopBell.hasAttribute('data-has-listener')) {
+                    showTestResult('test5-result', true, '✅ Event listeners appear to be attached');
+                } else {
+                    showTestInfo('test5-result', '⚠️ Cannot verify event listeners (try clicking the notification bell)');
+                }
+            }, 200);
+        }
+
+        function testDropdown() {
+            const bell = document.getElementById('notificationBell');
+            const dropdown = document.getElementById('notificationDropdown');
+            
+            if (bell && dropdown) {
+                bell.click();
+                if (dropdown.classList.contains('show')) {
+                    showTestResult('test2-result', true, '✅ Dropdown opens successfully');
+                } else {
+                    showTestResult('test2-result', false, '❌ Dropdown did not open');
+                }
+            }
+        }
+
+        function testMobileMenu() {
+            const mobileNav = document.getElementById('mobile-nav');
+            const hamburger = document.querySelector('.hamburger-toggle');
+            
+            if (mobileNav && hamburger) {
+                hamburger.click();
+                if (mobileNav.classList.contains('active')) {
+                    showTestResult('test3-result', true, '✅ Mobile menu opens successfully');
+                } else {
+                    showTestResult('test3-result', false, '❌ Mobile menu did not open');
+                }
+            }
+        }
+
+        // Run tests automatically when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            setTimeout(runAllTests, 500);
+        });
+
+        // Monitor notification system initialization
+        setTimeout(() => {
+            if (window.notificationSystem) {
+                console.log('✅ Notification system successfully initialized');
+                console.log('Notification system methods:', Object.getOwnPropertyNames(Object.getPrototypeOf(window.notificationSystem)));
+            } else {
+                console.warn('⚠️ Notification system not initialized');
+            }
+        }, 1000);
+    </script>
+</body>
+</html>

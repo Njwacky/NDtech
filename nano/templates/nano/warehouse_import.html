@@ -1,0 +1,68 @@
+{% extends 'nano/base.html' %}
+{% load static %}
+
+{% block title %}Import Warehouse Prices{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'nano/warehouse.css' %}">
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'nano/warehouse.js' %}"></script>
+{% endblock %}
+
+{% block content %}
+<div class="warehouse-container">
+    <div class="warehouse-import-card">
+        <div class="warehouse-import-header">
+            <h4>
+                <i class="fas fa-upload"></i> Import Warehouse Prices
+            </h4>
+        </div>
+        <div class="warehouse-import-body">
+            <form method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+                
+                <div class="warehouse-form-group">
+                    <label for="warehouse_name" class="warehouse-form-label">Warehouse Name</label>
+                    <input type="text" class="warehouse-form-control" id="warehouse_name" name="warehouse_name" required>
+                    <div class="warehouse-form-text">Enter the name of the warehouse these prices are from</div>
+                </div>
+                
+                <div class="warehouse-form-group">
+                    <label for="file" class="warehouse-form-label">Select File</label>
+                    <input type="file" class="warehouse-form-control" id="file" name="file" accept=".csv,.xlsx,.xls" required>
+                    <div class="warehouse-form-text">Supported formats: CSV, Excel (.xlsx, .xls)</div>
+                </div>
+                
+                <div class="warehouse-alert warehouse-alert-info">
+                    <h6><i class="fas fa-info-circle"></i> Required Columns:</h6>
+                    <ul class="mb-0">
+                        <li><strong>product_name</strong> - Name of the product</li>
+                        <li><strong>price</strong> - Price of the product</li>
+                    </ul>
+                </div>
+                
+                <div class="warehouse-alert warehouse-alert-secondary">
+                    <h6><i class="fas fa-list"></i> Optional Columns:</h6>
+                    <ul class="mb-0">
+                        <li><strong>barcode</strong> - Product barcode</li>
+                        <li><strong>category</strong> - Product category</li>
+                        <li><strong>stock_quantity</strong> - Available stock</li>
+                        <li><strong>unit_size</strong> - Unit size (e.g., "500ml", "1kg")</li>
+                    </ul>
+                </div>
+                
+                <div class="warehouse-actions">
+                    <a href="{% url 'warehouse_prices' %}" class="warehouse-btn warehouse-btn-secondary">
+                        <i class="fas fa-arrow-left"></i> Back to Prices
+                    </a>
+                    <button type="submit" class="warehouse-btn warehouse-btn-primary">
+                        <i class="fas fa-upload"></i> Import Prices
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

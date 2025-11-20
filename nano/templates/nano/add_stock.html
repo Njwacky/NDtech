@@ -1,0 +1,325 @@
+{% extends 'nano/base.html' %}
+
+{% load static %}
+{% block title %}Stock Management - NDtech{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'nano/add_stock.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="page-wrapper">
+    <header>
+        <h1 class="page-title">Stock Management</h1>
+        <p class="page-subtitle">Manage your inventory efficiently</p>
+    </header>
+
+    <main class="form-container">
+            <!-- Toggle Buttons -->
+            <div class="toggle-container">
+                <div class="toggle-buttons">
+                    <button type="button" class="toggle-btn active" onclick="toggleMode('add_stock')">
+                        <i class="fas fa-boxes"></i> Add Stock
+                    </button>
+                    {% if is_manager %}
+                    <button type="button" class="toggle-btn" onclick="toggleMode('add_product')">
+                        <i class="fas fa-plus-circle"></i> Add Product
+                    </button>
+                    <button type="button" class="toggle-btn" onclick="toggleMode('manage_items')">
+                        <i class="fas fa-trash"></i> Manage Items
+                    </button>
+                    {% endif %}
+                    {% if user.is_superuser or user.userprofile.role == 'admin' or user.userprofile.role == 'manager' %}
+                    <a href="{% url 'manage_sales' %}" class="toggle-btn" style="text-decoration: none; color: inherit;">
+                        <i class="fas fa-tags"></i> Manage Sales
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Add Stock Section -->
+            <div id="add_stock_section" class="form-section active">
+                <div class="form-header">
+                    <h2><i class="fas fa-boxes"></i> Add Stock to Existing Product</h2>
+                    <p>Select a product and specify the quantity to add</p>
+                </div>
+
+                {% if messages %}
+                    {% for message in messages %}
+                        <div class="message {{ message.tags }}">
+                            {% if message.tags == 'success' %}<i class="fas fa-check-circle"></i>{% else %}<i class="fas fa-exclamation-circle"></i>{% endif %}
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                {% endif %}
+
+                <form action="{% url 'add_stock' %}" method="post" id="addStockForm">
+                    {% csrf_token %}
+                    <input type="hidden" name="mode" value="add_stock">
+                    
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="product_id">
+                                Select Product <span class="required">*</span>
+                            </label>
+                            <div class="product-selection-container">
+                                <select id="product_id" name="product_id" class="form-control" required onchange="updateCurrentStock()">
+                                    <option value="">Choose a product...</option>
+                                    {% for product in products %}
+                                    <option value="{{ product.id }}" data-stock="{{ product.stock }}" data-barcode="{{ product.barcode|default:'' }}">
+                                        {{ product.name }} (Current: {{ product.stock }} units)
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                                <div class="barcode-scanner-container">
+                                    <button type="button" class="btn btn-scan" onclick="toggleBarcodeScanner()">
+                                        <i class="fas fa-barcode"></i> Scan Barcode
+                                    </button>
+                                    <div id="barcode-scanner" class="barcode-scanner" style="display: none;">
+                                        <input type="text" 
+                                               id="barcode-input" 
+                                               class="form-control" 
+                                               placeholder="Scan barcode or enter manually..."
+                                               onkeyup="handleBarcodeInput(event)"
+                                               oninput="handleBarcodeInput(event)"
+                                               pattern="[0-9]*"
+                                               inputmode="numeric"
+                                               autocomplete="off"
+                                               autocorrect="off"
+                                               autocapitalize="off"
+                                               spellcheck="false">
+                                        <div class="scanner-status" id="scanner-status">
+                                            <i class="fas fa-camera"></i> Ready to scan
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div id="current_stock" class="current-stock"></div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="quantity">
+                                Quantity to Add <span class="required">*</span>
+                            </label>
+                            <input type="number" 
+                                   id="quantity" 
+                                   name="quantity" 
+                                   class="form-control" 
+                                   min="1" 
+                                   required 
+                                   placeholder="Enter quantity">
+                        </div>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-plus"></i> Add Stock
+                        </button>
+                        <a href="{% url 'home' %}" class="btn btn-secondary">
+                            <i class="fas fa-home"></i> Back to Home
+                        </a>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Add Product Section (Managers Only) -->
+            {% if is_manager %}
+            <div id="add_product_section" class="form-section">
+                <div class="manager-only">
+                    <i class="fas fa-crown"></i> Manager Only - Add New Product to Inventory
+                </div>
+                
+                <div class="form-header">
+                    <h2><i class="fas fa-plus-circle"></i> Add New Product</h2>
+                    <p>Fill in the details below to add a new product to your inventory</p>
+                </div>
+
+                <form action="{% url 'add_stock' %}" method="post" id="addProductForm">
+                    {% csrf_token %}
+                    <input type="hidden" name="mode" value="add_product">
+                    
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="name">
+                                Product Name <span class="required">*</span>
+                            </label>
+                            <input type="text" 
+                                   id="name" 
+                                   name="name" 
+                                   class="form-control" 
+                                   required 
+                                   placeholder="e.g., Coca Cola 500ml">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="price">
+                                Price (R) <span class="required">*</span>
+                            </label>
+                            <input type="number" 
+                                   id="price" 
+                                   name="price" 
+                                   class="form-control" 
+                                   step="0.01" 
+                                   required 
+                                   placeholder="0.00">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="category">
+                                Category <span class="required">*</span>
+                            </label>
+                            <select id="category" name="category" class="form-control" required onchange="updateCategoryExample()">
+                                <option value="">Select a category...</option>
+                                {% for value, display, example in category_examples_list %}
+                                <option value="{{ value }}" data-example="{{ example }}">{{ display }}</option>
+                                {% endfor %}
+                            </select>
+                            <div id="category_example" class="category-example"></div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="stock">
+                                Initial Stock
+                            </label>
+                            <input type="number" 
+                                   id="stock" 
+                                   name="stock" 
+                                   class="form-control" 
+                                   min="0" 
+                                   placeholder="0">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="barcode">
+                                Barcode
+                            </label>
+                            <div class="barcode-input-container">
+                                <input type="text" 
+                                       id="barcode" 
+                                       name="barcode" 
+                                       class="form-control" 
+                                       placeholder="Enter barcode (optional)">
+                                <button type="button" class="btn btn-scan-small" onclick="focusBarcodeInput()">
+                                    <i class="fas fa-barcode"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="expiry_date">
+                                Expiry Date
+                            </label>
+                            <input type="date" 
+                                   id="expiry_date" 
+                                   name="expiry_date" 
+                                   class="form-control">
+                        </div>
+
+                        <div class="form-group" style="grid-column: 1 / -1;">
+                            <label for="description">
+                                Description
+                            </label>
+                            <textarea id="description" 
+                                      name="description" 
+                                      class="form-control" 
+                                      rows="3"
+                                      placeholder="Enter product description, features, or any additional information..."></textarea>
+                        </div>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-plus"></i> Add Product
+                        </button>
+                        <a href="{% url 'home' %}" class="btn btn-secondary">
+                            <i class="fas fa-home"></i> Back to Home
+                        </a>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Manage Items Section (Managers Only) -->
+            <div id="manage_items_section" class="form-section">
+                <div class="manager-only">
+                    <i class="fas fa-crown"></i> Manager Only - Manage Inventory Items
+                </div>
+                
+                <div class="form-header">
+                    <h2><i class="fas fa-trash"></i> Manage Items</h2>
+                    <p>Delete products from your inventory</p>
+                </div>
+
+                <div class="items-list">
+                    <div class="list-header">
+                        <h3>Current Inventory</h3>
+                        <div class="search-box">
+                            <input type="text" id="itemSearch" placeholder="Search products..." onkeyup="filterItems()">
+                        </div>
+                    </div>
+                    
+                    <div class="items-grid" id="itemsGrid">
+                        {% for product in products %}
+                        <div class="item-card" data-product-id="{{ product.id }}" data-product-name="{{ product.name|lower }}" data-product-category="{{ product.category }}">
+                            <div class="item-info">
+                                <h4 class="item-name">{{ product.name }}</h4>
+                                <p class="item-details">
+                                    <span class="category-tag">{{ product.get_category_display }}</span>
+                                    <span class="price">R{{ product.price }}</span>
+                                    <span class="stock {% if product.stock < 20 %}low-stock{% endif %}">
+                                        Stock: {{ product.stock }}
+                                    </span>
+                                </p>
+                                {% if product.description %}
+                                <p class="item-description">{{ product.description|truncatewords:10 }}</p>
+                                {% endif %}
+                                {% if product.expiry_date %}
+                                <p class="expiry-date {% if product.is_expired %}expired{% endif %}">
+                                    Expires: {{ product.expiry_date }}
+                                </p>
+                                {% endif %}
+                            </div>
+                            <div class="item-actions">
+                                <button type="button" class="btn-delete" onclick="confirmDelete({{ product.id }}, '{{ product.name }}')">
+                                    <i class="fas fa-trash"></i> Delete
+                                </button>
+                            </div>
+                        </div>
+                        {% empty %}
+                        <div class="no-items">
+                            <i class="fas fa-box-open"></i>
+                            <p>No products found in inventory</p>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+    </main>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div id="deleteModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3><i class="fas fa-exclamation-triangle"></i> Confirm Delete</h3>
+        </div>
+        <div class="modal-body">
+            <p>Are you sure you want to delete <strong id="deleteProductName"></strong>?</p>
+            <p>This action cannot be undone.</p>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn-confirm-delete" onclick="deleteProduct()">
+                <i class="fas fa-trash"></i> Delete
+            </button>
+            <button type="button" class="btn-cancel" onclick="closeDeleteModal()">
+                <i class="fas fa-times"></i> Cancel
+            </button>
+        </div>
+    </div>
+    <input type="hidden" id="deleteProductId">
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'nano/add_stock.js' %}"></script>
+{% endblock %}

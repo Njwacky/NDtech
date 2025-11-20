@@ -1,0 +1,31 @@
+{% extends 'nano/base.html' %}
+{% load static %}
+
+{% block title %}Sign In - NDtech{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'nano/auth.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="auth-container">
+    <h1>Sign In</h1>
+    <form action="{% url 'sign_in' %}" method="post">
+        {% csrf_token %}
+        {% if messages %}
+            {% for message in messages %}
+                <div class="message {{ message.tags }}">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+        <label for="username">Username:</label>
+        <input type="text" id="username" name="username" required><br><br>
+        <label for="password">Password:</label>
+        <input type="password" id="password" name="password" required><br><br>
+        <button type="submit">Sign In</button>
+    </form>
+    <div class="auth-links">
+        <p><a href="{% url 'forgot_password' %}">Forgot Password?</a></p>
+        <p>Don't have an account? <a href="{% url 'register' %}">Register</a></p>
+    </div>
+</div>
+{% endblock %}

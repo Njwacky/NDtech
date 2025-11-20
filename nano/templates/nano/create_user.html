@@ -1,0 +1,61 @@
+{% extends 'nano/base.html' %}
+{% load static %}
+
+{% block title %}Create User - NDtech{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'nano/auth.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="auth-container">
+    <h1>Create New User</h1>
+    <form action="{% url 'create_user' %}" method="post">
+        {% csrf_token %}
+        {% if messages %}
+            {% for message in messages %}
+                <div class="message {{ message.tags }}">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+        
+        <label for="username">Username:</label>
+        <input type="text" id="username" name="username" required><br><br>
+        
+        <label for="email">Email:</label>
+        <input type="email" id="email" name="email" required><br><br>
+        
+        <label for="password">Password:</label>
+        <input type="password" id="password" name="password" required><br><br>
+        
+        <label for="confirm_password">Confirm Password:</label>
+        <input type="password" id="confirm_password" name="confirm_password" required><br><br>
+        
+        <label for="role">Role:</label>
+        <select id="role" name="role" required>
+            <option value="">Select Role</option>
+            {% if request.user.is_superuser %}
+            <option value="superuser">Superuser</option>
+            {% endif %}
+            <option value="admin">Admin</option>
+            <option value="manager">Manager</option>
+            <option value="cashier">Cashier</option>
+        </select><br><br>
+        
+        <div class="role-descriptions">
+            <h3>Role Permissions:</h3>
+            <ul>
+                {% if request.user.is_superuser %}
+                <li><strong>Superuser:</strong> Full system access, can create other superusers</li>
+                {% endif %}
+                <li><strong>Admin:</strong> Can manage users, products, sales, and view reports</li>
+                <li><strong>Manager:</strong> Can manage products and sales, view reports</li>
+                <li><strong>Cashier:</strong> Can process sales and manage orders</li>
+            </ul>
+        </div>
+        
+        <button type="submit">Create User</button>
+    </form>
+    
+    <p><a href="{% url 'manage_users' %}">Back to User Management</a></p>
+</div>
+{% endblock %}

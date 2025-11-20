@@ -1,0 +1,489 @@
+{% extends 'nano/base.html' %}
+{% load static %}
+
+{% block title %}Manage Sales - NDtech{% endblock %}
+
+{% block extra_css %}
+<style>
+.sales-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem;
+}
+
+.sales-header {
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+.sales-header h1 {
+    color: #4a5568;
+    margin-bottom: 0.5rem;
+}
+
+.sales-header p {
+    color: #718096;
+}
+
+.products-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.product-card {
+    background: white;
+    border-radius: 1rem;
+    padding: 1.5rem;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    border: 2px solid #e2e8f0;
+    transition: all 0.3s ease;
+}
+
+.product-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+}
+
+.product-info h3 {
+    color: #2d3748;
+    margin-bottom: 0.5rem;
+    font-size: 1.2rem;
+}
+
+.product-price {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.regular-price {
+    color: #718096;
+    font-size: 1rem;
+    text-decoration: line-through;
+}
+
+.current-price {
+    color: #667eea;
+    font-size: 1.25rem;
+    font-weight: 700;
+}
+
+.product-category {
+    color: #718096;
+    font-size: 0.875rem;
+    background: rgba(102, 126, 234, 0.1);
+    padding: 0.25rem 0.75rem;
+    border-radius: 1rem;
+    display: inline-block;
+    margin-bottom: 0.5rem;
+}
+
+.stock-info {
+    color: #718096;
+    font-size: 0.875rem;
+    margin-bottom: 1rem;
+}
+
+.stock-info.low-stock {
+    color: #e53e3e;
+    font-weight: 600;
+}
+
+.sale-status {
+    padding: 0.5rem;
+    border-radius: 0.5rem;
+    margin-bottom: 1rem;
+    text-align: center;
+    font-weight: 600;
+}
+
+.sale-status.active {
+    background: linear-gradient(135deg, #48bb78, #38a169);
+    color: white;
+}
+
+.sale-status.inactive {
+    background: #f7fafc;
+    color: #718096;
+    border: 1px solid #e2e8f0;
+}
+
+.sale-status.scheduled {
+    background: linear-gradient(135deg, #ed8936, #dd6b20);
+    color: white;
+}
+
+.sale-status.expired {
+    background: #fed7d7;
+    color: #c53030;
+}
+
+.sale-form {
+    background: #f8f9fa;
+    padding: 1rem;
+    border-radius: 0.5rem;
+    margin-top: 1rem;
+}
+
+.form-group {
+    margin-bottom: 1rem;
+}
+
+.form-group label {
+    display: block;
+    font-weight: 600;
+    color: #4a5568;
+    margin-bottom: 0.5rem;
+}
+
+.form-group input {
+    width: 100%;
+    padding: 0.75rem;
+    border: 2px solid #e2e8f0;
+    border-radius: 0.5rem;
+    font-size: 1rem;
+    transition: border-color 0.3s ease;
+}
+
+.form-group input:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.form-actions {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 1rem;
+}
+
+.btn {
+    padding: 0.75rem 1.5rem;
+    border: none;
+    border-radius: 0.5rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    flex: 1;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #667eea, #5a67d8);
+    color: white;
+}
+
+.btn-primary:hover {
+    background: linear-gradient(135deg, #5a67d8, #4c51bf);
+    transform: translateY(-1px);
+}
+
+.btn-danger {
+    background: linear-gradient(135deg, #e53e3e, #c53030);
+    color: white;
+}
+
+.btn-danger:hover {
+    background: linear-gradient(135deg, #c53030, #9b2c2c);
+    transform: translateY(-1px);
+}
+
+.btn-secondary {
+    background: #e2e8f0;
+    color: #4a5568;
+}
+
+.btn-secondary:hover {
+    background: #cbd5e0;
+    transform: translateY(-1px);
+}
+
+.btn-success {
+    background: linear-gradient(135deg, #28a745, #20c997);
+    color: white;
+}
+
+.btn-success:hover {
+    background: linear-gradient(135deg, #218838, #16a347);
+    transform: translateY(-1px);
+}
+
+.btn-warning {
+    background: linear-gradient(135deg, #ffc107, #ff6b00);
+    color: #212529;
+}
+
+.btn-warning:hover {
+    background: linear-gradient(135deg, #e0a800, #d63300);
+    transform: translateY(-1px);
+}
+
+.btn-info {
+    background: linear-gradient(135deg, #17a2b8, #138496);
+    color: white;
+}
+
+.btn-info:hover {
+    background: linear-gradient(135deg, #138496, #0f4c81);
+    transform: translateY(-1px);
+}
+
+.quick-sale-buttons {
+    background: #f8f9fa;
+    padding: 1rem;
+    border-radius: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+.quick-sale-buttons h3 {
+    color: #4a5568;
+    margin-bottom: 0.5rem;
+    text-align: center;
+}
+
+.quick-buttons-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 0.5rem;
+}
+
+.quick-sale-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    border-radius: 0.5rem;
+    font-size: 0.9rem;
+    transition: all 0.3s ease;
+}
+
+.quick-sale-btn i {
+    font-size: 1rem;
+}
+
+.discount-info {
+    background: linear-gradient(135deg, #fef5e7, #fdebd0);
+    border: 1px solid #f9e79f;
+    border-radius: 0.5rem;
+    padding: 0.75rem;
+    margin-bottom: 1rem;
+    text-align: center;
+    color: #7d6608;
+    font-weight: 600;
+}
+
+@media (max-width: 768px) {
+    .sales-container {
+        padding: 1rem;
+    }
+    
+    .products-grid {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+    
+    .form-actions {
+        flex-direction: column;
+    }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="sales-container">
+    <div class="sales-header">
+        <h1><i class="fas fa-tags"></i> Manage Sales</h1>
+        <p>Set up and manage product sales and discounts</p>
+    </div>
+
+    <div class="products-grid">
+        {% for product in products %}
+        <div class="product-card">
+            <div class="product-info">
+                <h3>{{ product.name }}</h3>
+                <div class="product-category">{{ product.get_category_display }}</div>
+                <div class="stock-info {% if product.stock < 20 %}low-stock{% endif %}">
+                    <i class="fas fa-box"></i> Stock: {{ product.stock }} units
+                    {% if product.stock < 20 %}
+                    (Low Stock)
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="product-price">
+                <span class="regular-price">R{{ product.price }}</span>
+                {% if product.is_currently_on_sale %}
+                <span class="current-price">R{{ product.sale_price }}</span>
+                {% endif %}
+            </div>
+
+            {% if product.is_currently_on_sale %}
+                <div class="discount-info">
+                    <i class="fas fa-percentage"></i> 
+                    Save R{{ product.get_discount_amount }} ({{ product.get_discount_percentage }}% off)
+                </div>
+            {% endif %}
+
+            {% if product.is_currently_on_sale %}
+                <div class="sale-status active">
+                    <i class="fas fa-check-circle"></i> On Sale Now
+                </div>
+            {% elif product.is_on_sale %}
+                <div class="sale-status scheduled">
+                    <i class="fas fa-clock"></i> Sale Scheduled
+                </div>
+            {% else %}
+                <div class="sale-status inactive">
+                    <i class="fas fa-tag"></i> Regular Price
+                </div>
+            {% endif %}
+
+            <!-- Quick Sale Buttons -->
+            <div class="quick-sale-buttons">
+                <h3><i class="fas fa-bolt"></i> Quick Sale Start</h3>
+                <div class="quick-buttons-grid">
+                    <button class="btn btn-success quick-sale-btn" onclick="startQuickSale({{ product.id }}, '30_minutes')">
+                        <i class="fas fa-clock"></i> Start Now (30 min)
+                    </button>
+                    <button class="btn btn-warning quick-sale-btn" onclick="startQuickSale({{ product.id }}, '1_hour')">
+                        <i class="fas fa-clock"></i> Start Now (1 hour)
+                    </button>
+                    <button class="btn btn-info quick-sale-btn" onclick="startQuickSale({{ product.id }}, '24_hours')">
+                        <i class="fas fa-clock"></i> Start Now (24 hours)
+                    </button>
+                </div>
+            </div>
+
+            <div class="sale-form" id="sale-form-{{ product.id }}" style="{% if product.is_on_sale %}display: block;{% else %}display: none;{% endif %}">
+                <form method="post">
+                    {% csrf_token %}
+                    <input type="hidden" name="product_id" value="{{ product.id }}">
+                    <input type="hidden" name="action" value="add_sale">
+                    
+                    <div class="form-group">
+                        <label for="sale-price-{{ product.id }}">
+                            <i class="fas fa-rand-sign"></i> Sale Price (R)
+                        </label>
+                        <input type="number" 
+                               id="sale-price-{{ product.id }}" 
+                               name="sale_price" 
+                               step="0.01" 
+                               min="0.01" 
+                               value="{% if product.sale_price %}{{ product.sale_price }}{% endif %}"
+                               placeholder="Enter sale price (must be less than R{{ product.price }})"
+                               required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="sale-start-{{ product.id }}">
+                            <i class="fas fa-play-circle"></i> Sale Start Date & Time
+                        </label>
+                        <input type="datetime-local" 
+                               id="sale-start-{{ product.id }}" 
+                               name="sale_start_date"
+                               value="{% if product.sale_start_date %}{{ product.sale_start_date|date:"Y-m-d\TH:i" }}{% endif %}">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="sale-end-{{ product.id }}">
+                            <i class="fas fa-stop-circle"></i> Sale End Date & Time (Optional)
+                        </label>
+                        <input type="datetime-local" 
+                               id="sale-end-{{ product.id }}" 
+                               name="sale_end_date"
+                               value="{% if product.sale_end_date %}{{ product.sale_end_date|date:"Y-m-d\TH:i" }}{% endif %}">
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i> {% if product.is_on_sale %}Update Sale{% else %}Start Sale{% endif %}
+                        </button>
+                        {% if product.is_on_sale %}
+                        <button type="submit" class="btn btn-danger" name="action" value="remove_sale">
+                            <i class="fas fa-times"></i> Remove Sale
+                        </button>
+                        {% endif %}
+                    </div>
+                </form>
+            </div>
+
+            <div class="form-actions">
+                {% if not product.is_on_sale %}
+                <button class="btn btn-primary" onclick="toggleSaleForm({{ product.id }})">
+                    <i class="fas fa-plus"></i> Add Sale
+                </button>
+                {% else %}
+                <button class="btn btn-secondary" onclick="toggleSaleForm({{ product.id }})">
+                    <i class="fas fa-edit"></i> Edit Sale
+                </button>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<script>
+function toggleSaleForm(productId) {
+    const form = document.getElementById('sale-form-' + productId);
+    if (form.style.display === 'none' || form.style.display === '') {
+        form.style.display = 'block';
+    } else {
+        form.style.display = 'none';
+    }
+}
+
+function startQuickSale(productId, duration) {
+    if (confirm(`Start sale for this product immediately? This will set the sale to start now and end in ${duration}.`)) {
+        const form = document.getElementById('sale-form-' + productId);
+        const salePriceInput = document.getElementById('sale-price-' + productId);
+        const salePrice = salePriceInput.value;
+        
+        if (!salePrice || parseFloat(salePrice) <= 0) {
+            alert('Please enter a valid sale price greater than 0.');
+            return;
+        }
+        
+        // Calculate end date based on duration
+        const now = new Date();
+        let endDate = new Date();
+        
+        if (duration === '30_minutes') {
+            endDate.setMinutes(now.getMinutes() + 30);
+        } else if (duration === '1_hour') {
+            endDate.setHours(now.getHours() + 1);
+        } else if (duration === '24_hours') {
+            endDate.setDate(now.getDate() + 1);
+        }
+        
+        // Format dates for form
+        const startDate = now.toISOString().slice(0, 16);
+        const endDateStr = endDate.toISOString().slice(0, 16);
+        
+        // Submit quick sale form
+        const quickSaleForm = document.createElement('form');
+        quickSaleForm.method = 'POST';
+        quickSaleForm.innerHTML = `
+            <input type="hidden" name="product_id" value="${productId}">
+            <input type="hidden" name="action" value="quick_sale">
+            <input type="hidden" name="sale_price" value="${salePrice}">
+            <input type="hidden" name="sale_start_date" value="${startDate}">
+            <input type="hidden" name="sale_end_date" value="${endDateStr}">
+            <input type="hidden" name="csrfmiddlewaretoken" value="${document.querySelector('[name=csrfmiddlewaretoken]').value}">
+        `;
+        
+        document.body.appendChild(quickSaleForm);
+        quickSaleForm.submit();
+        document.body.removeChild(quickSaleForm);
+        
+        // Show success message and reload
+        setTimeout(() => {
+            alert('Quick sale started successfully!');
+            location.reload();
+        }, 500);
+    }
+}
+</script>
+{% endblock %}

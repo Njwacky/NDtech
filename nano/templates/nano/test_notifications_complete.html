@@ -1,0 +1,86 @@
+{% extends 'nano/base.html' %}
+
+{% block title %}Complete Notification System Test{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'nano/test_notifications.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="test-container">
+    <h1><i class="fas fa-bell"></i> Complete Notification System Test</h1>
+    <p>This page tests the entire notification system within the Django framework.</p>
+
+    <div class="grid">
+        <!-- Authentication Status -->
+        <div class="test-section">
+            <h3><span class="status-indicator" id="authStatus"></span>Authentication Status</h3>
+            <div id="authInfo">Checking authentication...</div>
+            <button class="test-button" onclick="checkAuth()">Check Auth Status</button>
+        </div>
+
+        <!-- API Endpoints Test -->
+        <div class="test-section">
+            <h3><span class="status-indicator" id="apiStatus"></span>API Endpoints</h3>
+            <button class="test-button" onclick="testNotificationsAPI()">Test /api/notifications/</button>
+            <button class="test-button" onclick="testCashierRequestAPI()">Test /api/cashier_request/</button>
+            <button class="test-button" onclick="testLowStockAPI()">Test /api/check_low_stock/</button>
+            <div id="apiResults"></div>
+        </div>
+
+        <!-- Notification Display -->
+        <div class="test-section">
+            <h3><span class="status-indicator" id="displayStatus"></span>Notification Display</h3>
+            <button class="test-button" onclick="loadNotifications()">Load Notifications</button>
+            <button class="test-button success" onclick="createTestNotification()">Create Test Notification</button>
+            <button class="test-button warning" onclick="createLowStockNotification()">Create Low Stock Alert</button>
+            <button class="test-button danger" onclick="clearAllNotifications()">Clear All Notifications</button>
+            <div id="displayResults"></div>
+        </div>
+
+        <!-- Badge Count Test -->
+        <div class="test-section">
+            <h3><span class="status-indicator" id="badgeStatus"></span>Badge Count</h3>
+            <button class="test-button" onclick="testBadgeCount()">Test Badge Count</button>
+            <button class="test-button" onclick="markAllAsRead()">Mark All as Read</button>
+            <div id="badgeResults"></div>
+        </div>
+
+        <!-- Floating Button Test -->
+        <div class="test-section">
+            <h3><span class="status-indicator" id="floatingStatus"></span>Floating Message Button</h3>
+            <button class="test-button" onclick="testFloatingButton()">Test Floating Button</button>
+            <button class="test-button" onclick="simulateFloatingButtonClick()">Simulate Button Click</button>
+            <div id="floatingResults"></div>
+        </div>
+    </div>
+
+    <!-- Debug Information -->
+    <div class="test-section">
+        <h3><i class="fas fa-bug"></i> Debug Information</h3>
+        <div class="debug-info">
+            <h4>Current Status</h4>
+            <pre id="debugInfo">Loading debug information...</pre>
+        </div>
+        <button class="test-button" onclick="refreshDebugInfo()">Refresh Debug Info</button>
+    </div>
+
+    <!-- Manual Notification Creation -->
+    <div class="test-section">
+        <h3><i class="fas fa-plus"></i> Manual Notification Creation</h3>
+        <div class="grid">
+            <input type="text" id="manualTitle" placeholder="Notification Title">
+            <textarea id="manualMessage" placeholder="Notification Message"></textarea>
+            <select id="manualType">
+                <option value="cashier_request">Cashier Request</option>
+                <option value="low_stock">Low Stock</option>
+                <option value="system_alert">System Alert</option>
+            </select>
+        </div>
+        <button class="test-button success" onclick="createManualNotification()">Create Manual Notification</button>
+        <div id="manualResults"></div>
+    </div>
+</div>
+
+<script src="{% static 'nano/test_notifications.js' %}"></script>
+{% endblock %}

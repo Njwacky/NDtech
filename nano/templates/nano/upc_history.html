@@ -1,0 +1,467 @@
+{% extends 'nano/base.html' %}
+{% load static %}
+
+{% block title %}UPC History - futurePOS{% endblock %}
+
+{% block extra_css %}
+<style>
+.history-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.history-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 30px;
+    border-radius: 15px;
+    margin-bottom: 30px;
+    text-align: center;
+}
+
+.products-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 20px;
+    margin-bottom: 30px;
+}
+
+.product-card {
+    background: white;
+    border-radius: 15px;
+    padding: 20px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    border-left: 5px solid #007bff;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.product-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+}
+
+.product-name {
+    font-size: 18px;
+    font-weight: bold;
+    color: #212529;
+    margin-bottom: 10px;
+}
+
+.product-barcode {
+    font-family: 'Courier New', monospace;
+    font-size: 14px;
+    color: #007bff;
+    background: #e7f3ff;
+    padding: 5px 10px;
+    border-radius: 5px;
+    text-align: center;
+    margin-bottom: 10px;
+}
+
+.product-details {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 15px;
+}
+
+.product-detail-item {
+    font-size: 14px;
+}
+
+.detail-label {
+    font-weight: bold;
+    color: #495057;
+}
+
+.detail-value {
+    color: #212529;
+}
+
+.product-meta {
+    font-size: 12px;
+    color: #6c757d;
+    border-top: 1px solid #dee2e6;
+    padding-top: 10px;
+    margin-top: 15px;
+}
+
+.action-buttons {
+    display: flex;
+    gap: 10px;
+    margin-top: 15px;
+}
+
+.action-btn {
+    padding: 8px 15px;
+    border: none;
+    border-radius: 5px;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-decoration: none;
+    display: inline-block;
+    text-align: center;
+}
+
+.btn-primary {
+    background: #007bff;
+    color: white;
+}
+
+.btn-primary:hover {
+    background: #0056b3;
+}
+
+.btn-success {
+    background: #28a745;
+    color: white;
+}
+
+.btn-success:hover {
+    background: #218838;
+}
+
+.btn-info {
+    background: #17a2b8;
+    color: white;
+}
+
+.btn-info:hover {
+    background: #138496;
+}
+
+.search-section {
+    background: #f8f9fa;
+    padding: 20px;
+    border-radius: 10px;
+    margin-bottom: 30px;
+}
+
+.search-form {
+    display: flex;
+    gap: 15px;
+    align-items: end;
+}
+
+.search-input {
+    flex: 1;
+    padding: 10px;
+    border: 1px solid #ced4da;
+    border-radius: 5px;
+    font-size: 14px;
+}
+
+.search-btn {
+    padding: 10px 20px;
+    background: #007bff;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background 0.3s ease;
+}
+
+.search-btn:hover {
+    background: #0056b3;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: #6c757d;
+}
+
+.empty-state i {
+    font-size: 64px;
+    margin-bottom: 20px;
+    color: #dee2e6;
+}
+
+.stats-section {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
+    margin-bottom: 30px;
+}
+
+.stat-card {
+    background: white;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+    text-align: center;
+}
+
+.stat-number {
+    font-size: 32px;
+    font-weight: bold;
+    color: #007bff;
+    margin-bottom: 5px;
+}
+
+.stat-label {
+    font-size: 14px;
+    color: #6c757d;
+}
+
+.pagination {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 30px;
+}
+
+.pagination a, .pagination span {
+    padding: 10px 15px;
+    border: 1px solid #dee2e6;
+    border-radius: 5px;
+    text-decoration: none;
+    color: #007bff;
+}
+
+.pagination a:hover {
+    background: #e9ecef;
+}
+
+.pagination .current {
+    background: #007bff;
+    color: white;
+    border-color: #007bff;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="history-container">
+    <div class="history-header">
+        <h2><i class="fas fa-history"></i> UPC Lookup History</h2>
+        <p>Recently added products with barcode information</p>
+        <a href="{% url 'upc_lookup' %}" class="action-btn btn-primary" style="margin-top: 15px;">
+            <i class="fas fa-plus-circle"></i> New UPC Lookup
+        </a>
+    </div>
+
+    <div class="stats-section">
+        <div class="stat-card">
+            <div class="stat-number">{{ recent_products|length }}</div>
+            <div class="stat-label">Total Products</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number">{% if recent_products %}{% for product in recent_products %}{{ product.stock }}{% if not forloop.last %}+{% endif %}{% endfor %}{% else %}0{% endif %}</div>
+            <div class="stat-label">Total Stock</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number">{{ recent_products|length }}</div>
+            <div class="stat-label">Total Products</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number">{% if recent_products %}{{ recent_products.0.date_added|date:"Y-m-d" }}{% else %}0{% endif %}</div>
+            <div class="stat-label">Latest Date</div>
+        </div>
+    </div>
+
+    <div class="search-section">
+        <form method="get" class="search-form">
+            <div style="flex: 1;">
+                <label class="form-label">Search Products</label>
+                <input type="text" name="search" class="search-input" 
+                       placeholder="Search by name, barcode, or category..." 
+                       value="{{ request.GET.search }}">
+            </div>
+            <div>
+                <label class="form-label">Category</label>
+                <select name="category" class="search-input">
+                    <option value="">All Categories</option>
+                    {% for value, label in Product.CATEGORY_CHOICES %}
+                        <option value="{{ value }}" {% if request.GET.category == value %}selected{% endif %}>
+                            {{ label }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <button type="submit" class="search-btn">
+                <i class="fas fa-search"></i> Search
+            </button>
+        </form>
+    </div>
+
+    {% if recent_products %}
+        <div class="products-grid">
+            {% for product in recent_products %}
+                <div class="product-card">
+                    <div class="product-name">{{ product.name }}</div>
+                    
+                    {% if product.barcode %}
+                        <div class="product-barcode">
+                            <i class="fas fa-barcode"></i> {{ product.barcode }}
+                        </div>
+                    {% endif %}
+
+                    <div class="product-details">
+                        <div class="product-detail-item">
+                            <span class="detail-label">Price:</span>
+                            <span class="detail-value">R{{ product.price }}</span>
+                        </div>
+                        <div class="product-detail-item">
+                            <span class="detail-label">Stock:</span>
+                            <span class="detail-value">{{ product.stock }} units</span>
+                        </div>
+                        <div class="product-detail-item">
+                            <span class="detail-label">Category:</span>
+                            <span class="detail-value">{{ product.get_category_display }}</span>
+                        </div>
+                        {% if product.expiry_date %}
+                        <div class="product-detail-item">
+                            <span class="detail-label">Expiry:</span>
+                            <span class="detail-value">{{ product.expiry_date|date:"Y-m-d" }}</span>
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    {% if product.description %}
+                        <div style="font-size: 14px; color: #6c757d; margin-bottom: 10px;">
+                            {{ product.description|truncatewords:20 }}
+                        </div>
+                    {% endif %}
+
+                    <div class="product-meta">
+                        <div><i class="fas fa-calendar"></i> Added: {{ product.date_added|date:"Y-m-d H:i" }}</div>
+                        {% if product.is_on_sale %}
+                        <div><i class="fas fa-tag"></i> On Sale: R{{ product.sale_price }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="action-buttons">
+                        <a href="{% url 'add_stock' %}?product_id={{ product.id }}" class="action-btn btn-success">
+                            <i class="fas fa-plus"></i> Add Stock
+                        </a>
+                        <a href="{% url 'upc_lookup' %}?barcode={{ product.barcode }}" class="action-btn btn-info">
+                            <i class="fas fa-barcode"></i> Lookup
+                        </a>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="empty-state">
+            <i class="fas fa-box-open"></i>
+            <h3>No Products Found</h3>
+            <p>No products with barcode information have been added yet.</p>
+            <p>Start by looking up your first product using the UPC lookup feature.</p>
+            <a href="{% url 'upc_lookup' %}" class="action-btn btn-primary" style="margin-top: 20px;">
+                <i class="fas fa-plus-circle"></i> Start UPC Lookup
+            </a>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Add search functionality
+    const searchInput = document.querySelector('input[name="search"]');
+    const categorySelect = document.querySelector('select[name="category"]');
+    
+    // Auto-submit search on Enter key
+    if (searchInput) {
+        searchInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                e.target.form.submit();
+            }
+        });
+    }
+    
+    // Auto-submit on category change
+    if (categorySelect) {
+        categorySelect.addEventListener('change', function() {
+            this.form.submit();
+        });
+    }
+    
+    // Add keyboard shortcuts
+    document.addEventListener('keydown', function(e) {
+        // Ctrl/Cmd + / to focus search
+        if ((e.ctrlKey || e.metaKey) && e.key === '/') {
+            e.preventDefault();
+            if (searchInput) {
+                searchInput.focus();
+                searchInput.select();
+            }
+        }
+        
+        // Ctrl/Cmd + N for new UPC lookup
+        if ((e.ctrlKey || e.metaKey) && e.key === 'n') {
+            e.preventDefault();
+            window.location.href = '{% url "upc_lookup" %}';
+        }
+    });
+    
+    // Add copy barcode functionality
+    document.querySelectorAll('.product-barcode').forEach(function(barcodeElement) {
+        barcodeElement.style.cursor = 'pointer';
+        barcodeElement.title = 'Click to copy barcode';
+        
+        barcodeElement.addEventListener('click', function() {
+            const barcode = this.textContent.trim().replace('📊 ', '');
+            navigator.clipboard.writeText(barcode).then(function() {
+                // Show temporary feedback
+                const originalText = barcodeElement.innerHTML;
+                barcodeElement.innerHTML = '<i class="fas fa-check"></i> Copied!';
+                barcodeElement.style.background = '#d4edda';
+                barcodeElement.style.color = '#155724';
+                
+                setTimeout(function() {
+                    barcodeElement.innerHTML = originalText;
+                    barcodeElement.style.background = '#e7f3ff';
+                    barcodeElement.style.color = '#007bff';
+                }, 2000);
+            }).catch(function() {
+                // Fallback for older browsers
+                const textArea = document.createElement('textarea');
+                textArea.value = barcode;
+                document.body.appendChild(textArea);
+                textArea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textArea);
+                
+                // Show feedback
+                const originalText = barcodeElement.innerHTML;
+                barcodeElement.innerHTML = '<i class="fas fa-check"></i> Copied!';
+                barcodeElement.style.background = '#d4edda';
+                barcodeElement.style.color = '#155724';
+                
+                setTimeout(function() {
+                    barcodeElement.innerHTML = originalText;
+                    barcodeElement.style.background = '#e7f3ff';
+                    barcodeElement.style.color = '#007bff';
+                }, 2000);
+            });
+        });
+    });
+    
+    // Add product card hover effects
+    document.querySelectorAll('.product-card').forEach(function(card) {
+        card.addEventListener('mouseenter', function() {
+            this.style.transform = 'translateY(-5px)';
+        });
+        
+        card.addEventListener('mouseleave', function() {
+            this.style.transform = 'translateY(0)';
+        });
+    });
+    
+    // Add quick stock management
+    document.querySelectorAll('.action-btn').forEach(function(btn) {
+        if (btn.textContent.includes('Add Stock')) {
+            btn.addEventListener('click', function(e) {
+                // Could implement a quick add stock modal here
+                // For now, just navigate to the add stock page
+            });
+        }
+    });
+});
+</script>
+{% endblock %}

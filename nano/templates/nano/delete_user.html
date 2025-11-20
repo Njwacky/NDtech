@@ -1,0 +1,38 @@
+{% extends 'nano/base.html' %}
+
+{% block title %}Delete User - NDtech{% endblock %}
+
+{% block content %}
+<div class="edit-user-form">
+    <h2><i class="fas fa-user-times"></i> Delete User</h2>
+    
+    <div class="delete-confirmation">
+        <div class="warning-message">
+            <i class="fas fa-exclamation-triangle"></i>
+            <p>Are you sure you want to delete the user below?</p>
+        </div>
+        
+        <div class="user-details">
+            <h3>{{ user.username }}</h3>
+            <p><strong>Email:</strong> {{ user.email }}</p>
+            <p><strong>Role:</strong> 
+                <span class="role-badge role-{{ user.userprofile.role }}">
+                    {{ user.userprofile.role|title }}
+                </span>
+            </p>
+        </div>
+        
+        <form method="post">
+            {% csrf_token %}
+            <div class="form-actions">
+                <button type="submit" class="btn-delete-selected">
+                    <i class="fas fa-trash"></i> Yes, Delete User
+                </button>
+                <a href="{% url 'manage_users' %}" class="btn-back">
+                    <i class="fas fa-times"></i> Cancel
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

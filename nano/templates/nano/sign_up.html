@@ -1,0 +1,61 @@
+{% extends 'nano/base.html' %}
+{% load static %}
+
+{% block title %}Sign Up - NDtech{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'nano/auth.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="auth-container">
+    {% if existing_users %}
+        <div class="registration-closed">
+            <h1><i class="fas fa-lock"></i> Registration Closed</h1>
+            <div class="closed-message">
+                <p><strong>User registration is currently closed.</strong></p>
+                <p>New user accounts can only be created by a system administrator.</p>
+                <p>Please contact your system administrator to create an account for you.</p>
+            </div>
+            <div class="back-to-login">
+                <p>Already have an account? <a href="{% url 'sign_in' %}">Sign In</a></p>
+            </div>
+        </div>
+    {% else %}
+        <div class="first-user-registration">
+            <h1><i class="fas fa-user-shield"></i> Create Superuser Account</h1>
+            <div class="superuser-info">
+                <p><strong>Welcome to NDtech POS System!</strong></p>
+                <p>You are the first user to register. This account will be created as a <strong>Superuser</strong> with full system access.</p>
+                <p>As a superuser, you will be able to:</p>
+                <ul>
+                    <li>Create and manage other user accounts</li>
+                    <li>Assign roles (Admin, Manager, Cashier)</li>
+                    <li>Manage products and inventory</li>
+                    <li>Access all system features and reports</li>
+                </ul>
+            </div>
+            <form action="{% url 'sign_up' %}" method="post">
+                {% csrf_token %}
+                {% if messages %}
+                    {% for message in messages %}
+                        <div class="message {{ message.tags }}">{{ message }}</div>
+                    {% endfor %}
+                {% endif %}
+                <label for="username">Username:</label>
+                <input type="text" id="username" name="username" required><br><br>
+                <label for="email">Email:</label>
+                <input type="email" id="email" name="email" required><br><br>
+                <label for="password">Password:</label>
+                <input type="password" id="password" name="password" required><br><br>
+                <label for="confirm_password">Confirm Password:</label>
+                <input type="password" id="confirm_password" name="confirm_password" required><br><br>
+                <button type="submit"><i class="fas fa-user-plus"></i> Create Superuser Account</button>
+            </form>
+            <div class="back-to-login">
+                <p>Already have an account? <a href="{% url 'sign_in' %}">Sign In</a></p>
+            </div>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

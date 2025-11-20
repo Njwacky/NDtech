@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug Floating Button</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background: #f5f5f5;
+        }
+        
+        .debug-info {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .status {
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+        
+        .success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .warning { background: #fff3cd; color: #856404; border: 1px solid #ffeaa7; }
+        
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        
+        button:hover {
+            background: #0056b3;
+        }
+        
+        #console-output {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 15px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            max-height: 300px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+        }
+    </style>
+</head>
+<body>
+    <div class="debug-info">
+        <h1>Floating Message Button Debug</h1>
+        <p>This page helps debug the floating message button issue.</p>
+        
+        <div id="status"></div>
+        
+        <h3>Debug Steps:</h3>
+        <button onclick="checkElements()">Check DOM Elements</button>
+        <button onclick="testModalCreation()">Test Modal Creation</button>
+        <button onclick="testButtonClick()">Test Button Click</button>
+        <button onclick="simulateNotificationSystem()">Simulate Notification System</button>
+        <button onclick="clearConsole()">Clear Console</button>
+        
+        <h3>Console Output:</h3>
+        <div id="console-output"></div>
+    </div>
+
+    <!-- CSRF Token for testing -->
+    <input type="hidden" name="csrfmiddlewaretoken" value="test-token">
+
+    <script>
+        let consoleOutput = document.getElementById('console-output');
+        let statusDiv = document.getElementById('status');
+
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const logMessage = `[${timestamp}] ${message}\n`;
+            consoleOutput.textContent += logMessage;
+            consoleOutput.scrollTop = consoleOutput.scrollHeight;
+            
+            console.log(message);
+        }
+
+        function showStatus(message, type) {
+            const statusClass = type === 'success' ? 'success' : type === 'error' ? 'error' : 'warning';
+            statusDiv.innerHTML = `<div class="status ${statusClass}">${message}</div>`;
+        }
+
+        function clearConsole() {
+            consoleOutput.textContent = '';
+            log('Console cleared');
+        }
+
+        function checkElements() {
+            log('=== Checking DOM Elements ===');
+            
+            // Check if floating button exists
+            const floatingBtn = document.getElementById('floatingMessageBtn');
+            log(`Floating button exists: ${!!floatingBtn}`);
+            if (floatingBtn) {
+                log(`Floating button classes: ${floatingBtn.className}`);
+                log(`Floating button visible: ${window.getComputedStyle(floatingBtn).display !== 'none'}`);
+                log(`Floating button z-index: ${window.getComputedStyle(floatingBtn).zIndex}`);
+            }
+            
+            // Check if modal exists
+            const modal = document.getElementById('messageModal');
+            log(`Modal exists: ${!!modal}`);
+            if (modal) {
+                log(`Modal classes: ${modal.className}`);
+                log(`Modal visible: ${window.getComputedStyle(modal).display !== 'none'}`);
+                log(`Modal z-index: ${window.getComputedStyle(modal).zIndex}`);
+            }
+            
+            // Check if notification elements exist
+            const notificationBell = document.getElementById('notificationBell');
+            const notificationDropdown = document.getElementById('notificationDropdown');
+            log(`Notification bell exists: ${!!notificationBell}`);
+            log(`Notification dropdown exists: ${!!notificationDropdown}`);
+            
+            // Check CSS
+            const stylesheets = Array.from(document.styleSheets);
+            log(`Stylesheets loaded: ${stylesheets.length}`);
+            
+            // Check for FontAwesome
+            const faLink = document.querySelector('link[href*="font-awesome"]');
+            log(`FontAwesome loaded: ${!!faLink}`);
+            
+            showStatus('DOM elements check completed', 'success');
+        }
+
+        function testModalCreation() {
+            log('=== Testing Modal Creation ===');
+            
+            try {
+                // Remove existing modal if any
+                const existingModal = document.getElementById('messageModal');
+                if (existingModal) {
+                    existingModal.remove();
+                    log('Removed existing modal');
+                }
+                
+                // Create modal
+                const modal = document.createElement('div');
+                modal.className = 'message-modal';
+                modal.id = 'messageModal';
+                modal.innerHTML = `
+                    <div class="message-modal-content">
+                        <div class="message-modal-header">
+                            <h3>Send Message</h3>
+                            <button class="close-modal" id="closeModal">&times;</button>
+                        </div>
+                        <div class="message-modal-body">
+                            <div class="form-group">
+                                <label for="requestType">Request Type</label>
+                                <select id="requestType" required>
+                                    <option value="">Select a request type</option>
+                                    <option value="password_reset">Password Reset</option>
+                                    <option value="order_issue">Order Issue</option>
+                                    <option value="system_problem">System Problem</option>
+                                    <option value="stock_issue">Stock Issue</option>
+                                    <option value="customer_complaint">Customer Complaint</option>
+                                    <option value="payment_issue">Payment Issue</option>
+                                    <option value="other">Other</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="requestMessage">Message</label>
+                                <textarea id="requestMessage" placeholder="Describe your request in detail..." required></textarea>
+                            </div>
+                        </div>
+                        <div class="message-modal-footer">
+                            <button class="btn btn-secondary" id="cancelRequest">Cancel</button>
+                            <button class="btn btn-primary" id="sendRequest">Send Request</button>
+                        </div>
+                    </div>
+                `;
+                document.body.appendChild(modal);
+                
+                log('Modal created successfully');
+                log(`Modal HTML length: ${modal.innerHTML.length}`);
+                
+                // Add event listeners
+                const closeModal = document.getElementById('closeModal');
+                const cancelRequest = document.getElementById('cancelRequest');
+                
+                if (closeModal) {
+                    closeModal.addEventListener('click', () => {
+                        modal.classList.remove('show');
+                        log('Modal closed via close button');
+                    });
+                }
+                
+                if (cancelRequest) {
+                    cancelRequest.addEventListener('click', () => {
+                        modal.classList.remove('show');
+                        log('Modal closed via cancel button');
+                    });
+                }
+                
+                // Close modal when clicking outside
+                modal.addEventListener('click', (e) => {
+                    if (e.target === modal) {
+                        modal.classList.remove('show');
+                        log('Modal closed via outside click');
+                    }
+                });
+                
+                log('Event listeners added to modal');
+                
+                // Test showing modal
+                setTimeout(() => {
+                    modal.classList.add('show');
+                    log('Modal shown for testing');
+                    
+                    setTimeout(() => {
+                        modal.classList.remove('show');
+                        log('Modal hidden after test');
+                    }, 3000);
+                }, 1000);
+                
+                showStatus('Modal creation test completed', 'success');
+                
+            } catch (error) {
+                log(`Error creating modal: ${error.message}`, 'error');
+                showStatus('Modal creation failed', 'error');
+            }
+        }
+
+        function testButtonClick() {
+            log('=== Testing Button Click ===');
+            
+            const floatingBtn = document.getElementById('floatingMessageBtn');
+            if (!floatingBtn) {
+                log('Floating button not found', 'error');
+                showStatus('Floating button not found', 'error');
+                return;
+            }
+            
+            log('Found floating button');
+            log(`Button onclick: ${typeof floatingBtn.onclick}`);
+            log(`Button listeners: ${floatingBtn.getAttribute('data-listeners') || 'unknown'}`);
+            
+            // Try clicking the button
+            try {
+                floatingBtn.click();
+                log('Button clicked programmatically');
+                
+                // Check if modal appeared
+                setTimeout(() => {
+                    const modal = document.getElementById('messageModal');
+                    if (modal && modal.classList.contains('show')) {
+                        log('Modal is visible after button click');
+                        showStatus('Button click test successful', 'success');
+                    } else {
+                        log('Modal is not visible after button click', 'error');
+                        showStatus('Button click failed - modal not showing', 'error');
+                    }
+                }, 500);
+                
+            } catch (error) {
+                log(`Error clicking button: ${error.message}`, 'error');
+                showStatus('Button click failed', 'error');
+            }
+        }
+
+        function simulateNotificationSystem() {
+            log('=== Simulating Notification System ===');
+            
+            try {
+                // Simulate the NotificationSystem class
+                class MockNotificationSystem {
+                    constructor() {
+                        this.notifications = [];
+                        this.dropdownVisible = false;
+                        this.unreadCount = 0;
+                        log('MockNotificationSystem initialized');
+                    }
+                    
+                    isUserAuthenticated() {
+                        return true; // Simulate authenticated user
+                    }
+                    
+                    notificationElementsExist() {
+                        const bell = document.getElementById('notificationBell');
+                        const dropdown = document.getElementById('notificationDropdown');
+                        return !!(bell && dropdown);
+                    }
+                    
+                    init() {
+                        log('Initializing mock notification system...');
+                        this.createFloatingMessageButton();
+                        this.setupEventListeners();
+                    }
+                    
+                    createFloatingMessageButton() {
+                        log('Creating floating message button...');
+                        
+                        // Remove existing button if any
+                        const existingBtn = document.getElementById('floatingMessageBtn');
+                        if (existingBtn) {
+                            existingBtn.remove();
+                            log('Removed existing floating button');
+                        }
+                        
+                        const floatingBtn = document.createElement('div');
+                        floatingBtn.className = 'floating-message-btn';
+                        floatingBtn.innerHTML = '<i class="fas fa-comment-dots"></i>';
+                        floatingBtn.id = 'floatingMessageBtn';
+                        floatingBtn.title = 'Send Message';
+                        floatingBtn.style.cssText = `
+                            position: fixed;
+                            bottom: 20px;
+                            right: 20px;
+                            width: 60px;
+                            height: 60px;
+                            background: #007bff;
+                            border-radius: 50%;
+                            display: flex;
+                            align-items: center;
+                            justify-content: center;
+                            color: white;
+                            font-size: 1.5rem;
+                            cursor: pointer;
+                            box-shadow: 0 4px 20px rgba(0, 123, 255, 0.3);
+                            transition: all 0.3s ease;
+                            z-index: 999;
+                        `;
+                        
+                        document.body.appendChild(floatingBtn);
+                        log('Floating message button created');
+                        
+                        // Create message modal
+                        this.createMessageModal();
+                    }
+                    
+                    createMessageModal() {
+                        log('Creating message modal...');
+                        
+                        // Remove existing modal if any
+                        const existingModal = document.getElementById('messageModal');
+                        if (existingModal) {
+                            existingModal.remove();
+                            log('Removed existing modal');
+                        }
+                        
+                        const modal = document.createElement('div');
+                        modal.className = 'message-modal';
+                        modal.id = 'messageModal';
+                        modal.style.cssText = `
+                            position: fixed;
+                            top: 0;
+                            left: 0;
+                            width: 100%;
+                            height: 100%;
+                            background: rgba(0, 0, 0, 0.5);
+                            display: none;
+                            align-items: center;
+                            justify-content: center;
+                            z-index: 2000;
+                        `;
+                        
+                        modal.innerHTML = `
+                            <div style="background: white; border-radius: 12px; width: 90%; max-width: 500px; max-height: 80vh; overflow-y: auto;">
+                                <div style="padding: 20px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center;">
+                                    <h3 style="margin: 0; color: #333;">Send Message</h3>
+                                    <button class="close-modal" id="closeModal" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #666;">&times;</button>
+                                </div>
+                                <div style="padding: 20px;">
+                                    <div style="margin-bottom: 15px;">
+                                        <label style="display: block; margin-bottom: 5px; font-weight: 500; color: #333;">Request Type</label>
+                                        <select id="requestType" required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;">
+                                            <option value="">Select a request type</option>
+                                            <option value="password_reset">Password Reset</option>
+                                            <option value="order_issue">Order Issue</option>
+                                            <option value="system_problem">System Problem</option>
+                                            <option value="stock_issue">Stock Issue</option>
+                                            <option value="customer_complaint">Customer Complaint</option>
+                                            <option value="payment_issue">Payment Issue</option>
+                                            <option value="other">Other</option>
+                                        </select>
+                                    </div>
+                                    <div style="margin-bottom: 15px;">
+                                        <label style="display: block; margin-bottom: 5px; font-weight: 500; color: #333;">Message</label>
+                                        <textarea id="requestMessage" placeholder="Describe your request in detail..." required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; min-height: 100px; resize: vertical;"></textarea>
+                                    </div>
+                                </div>
+                                <div style="padding: 20px; border-top: 1px solid #eee; display: flex; justify-content: flex-end; gap: 10px;">
+                                    <button class="btn btn-secondary" id="cancelRequest" style="padding: 10px 20px; border: none; border-radius: 6px; cursor: pointer; background: #6c757d; color: white;">Cancel</button>
+                                    <button class="btn btn-primary" id="sendRequest" style="padding: 10px 20px; border: none; border-radius: 6px; cursor: pointer; background: #007bff; color: white;">Send Request</button>
+                                </div>
+                            </div>
+                        `;
+                        
+                        document.body.appendChild(modal);
+                        log('Message modal created');
+                    }
+                    
+                    setupEventListeners() {
+                        log('Setting up event listeners...');
+                        
+                        const floatingBtn = document.getElementById('floatingMessageBtn');
+                        const closeModal = document.getElementById('closeModal');
+                        const cancelRequest = document.getElementById('cancelRequest');
+                        const sendRequest = document.getElementById('sendRequest');
+                        
+                        if (floatingBtn) {
+                            floatingBtn.addEventListener('click', () => {
+                                log('Floating button clicked');
+                                this.showMessageModal();
+                            });
+                            log('Floating button event listener added');
+                        }
+                        
+                        if (closeModal) {
+                            closeModal.addEventListener('click', () => {
+                                this.hideMessageModal();
+                            });
+                            log('Close modal event listener added');
+                        }
+                        
+                        if (cancelRequest) {
+                            cancelRequest.addEventListener('click', () => {
+                                this.hideMessageModal();
+                            });
+                            log('Cancel request event listener added');
+                        }
+                        
+                        if (sendRequest) {
+                            sendRequest.addEventListener('click', () => {
+                                this.sendCashierRequest();
+                            });
+                            log('Send request event listener added');
+                        }
+                        
+                        // Close modal when clicking outside
+                        const modal = document.getElementById('messageModal');
+                        if (modal) {
+                            modal.addEventListener('click', (e) => {
+                                if (e.target === modal) {
+                                    this.hideMessageModal();
+                                }
+                            });
+                            log('Modal outside click event listener added');
+                        }
+                        
+                        log('All event listeners setup completed');
+                    }
+                    
+                    showMessageModal() {
+                        log('Showing message modal...');
+                        const modal = document.getElementById('messageModal');
+                        if (modal) {
+                            modal.style.display = 'flex';
+                            const requestType = document.getElementById('requestType');
+                            if (requestType) {
+                                requestType.focus();
+                            }
+                            log('Message modal is now visible');
+                        } else {
+                            log('Modal not found!', 'error');
+                        }
+                    }
+                    
+                    hideMessageModal() {
+                        log('Hiding message modal...');
+                        const modal = document.getElementById('messageModal');
+                        if (modal) {
+                            modal.style.display = 'none';
+                            // Reset form
+                            const requestType = document.getElementById('requestType');
+                            const requestMessage = document.getElementById('requestMessage');
+                            if (requestType) requestType.value = '';
+                            if (requestMessage) requestMessage.value = '';
+                            log('Message modal hidden');
+                        }
+                    }
+                    
+                    sendCashierRequest() {
+                        log('Sending cashier request...');
+                        const requestType = document.getElementById('requestType').value;
+                        const message = document.getElementById('requestMessage').value;
+
+                        if (!requestType || !message) {
+                            alert('Please fill in all fields');
+                            return;
+                        }
+
+                        // Simulate API call
+                        setTimeout(() => {
+                            this.hideMessageModal();
+                            this.showSuccessMessage('Your message has been sent successfully');
+                            log('Message sent successfully');
+                        }, 1000);
+                    }
+                    
+                    showSuccessMessage(message) {
+                        log(`Showing success message: ${message}`);
+                        const successDiv = document.createElement('div');
+                        successDiv.style.cssText = `
+                            position: fixed;
+                            top: 20px;
+                            right: 20px;
+                            background: #28a745;
+                            color: white;
+                            padding: 15px 20px;
+                            border-radius: 6px;
+                            box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+                            z-index: 3000;
+                        `;
+                        successDiv.textContent = message;
+                        document.body.appendChild(successDiv);
+
+                        setTimeout(() => {
+                            successDiv.remove();
+                            log('Success message removed');
+                        }, 3000);
+                    }
+                }
+                
+                // Create and initialize the mock system
+                window.mockNotificationSystem = new MockNotificationSystem();
+                window.mockNotificationSystem.init();
+                
+                showStatus('Mock notification system created successfully', 'success');
+                log('Mock notification system simulation completed');
+                
+            } catch (error) {
+                log(`Error simulating notification system: ${error.message}`, 'error');
+                showStatus('Simulation failed', 'error');
+            }
+        }
+
+        // Auto-run some checks when page loads
+        window.addEventListener('load', () => {
+            log('=== Page Loaded ===');
+            setTimeout(() => {
+                checkElements();
+            }, 1000);
+        });
+    </script>
+    
+    <!-- Add FontAwesome for icon support -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</body>
+</html>

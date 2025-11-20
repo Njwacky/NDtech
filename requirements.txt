@@ -1,0 +1,13 @@
+Django>=4.0.0
+openpyxl>=3.1.0
+pandas>=2.0.0
+psycopg2-binary>=2.9.0
+gunicorn>=21.0.0
+firebase-admin>=6.0.0
+requests>=2.31.0
+sib-api-v3-sdk>=7.0.0
+openfoodfacts>=0.1.0
+
+django-cors-headers>=4.0.0
+python-decouple>=3.8
+django-extensions>=3.2.0

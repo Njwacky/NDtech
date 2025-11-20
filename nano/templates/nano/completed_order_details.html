@@ -1,0 +1,349 @@
+{% extends 'nano/base.html' %}
+{% load static %}
+{% load dict_filters %}
+
+{% block title %}Completed Order #{{ order.id }} - NDtech{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'nano/home.css' %}">
+<style>
+        .order-container {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 1rem;
+            padding: 2rem;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            margin-top: 2rem;
+        }
+        
+        .order-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+            padding-bottom: 1rem;
+            border-bottom: 2px solid #e2e8f0;
+        }
+        
+        .order-title {
+            color: #2d3748;
+            font-size: 1.5rem;
+            font-weight: 700;
+        }
+        
+        .order-time {
+            color: #718096;
+            font-size: 0.9rem;
+        }
+        
+        .customer-info {
+            background: #f8f9fa;
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        
+        .customer-info h3 {
+            color: #4a5568;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .customer-info h3 i {
+            color: #667eea;
+        }
+        
+        .customer-details {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+        }
+        
+        .customer-detail {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .customer-detail i {
+            color: #718096;
+            width: 20px;
+        }
+        
+        .customer-detail span {
+            color: #2d3748;
+            font-weight: 500;
+        }
+        
+        .items-section {
+            margin-bottom: 2rem;
+        }
+        
+        .items-section h3 {
+            color: #4a5568;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .items-section h3 i {
+            color: #667eea;
+        }
+        
+        .items-table {
+            width: 100%;
+            background: white;
+            border-radius: 0.75rem;
+            overflow: hidden;
+            border: 2px solid #e2e8f0;
+        }
+        
+        .items-table thead {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+        }
+        
+        .items-table th,
+        .items-table td {
+            padding: 1rem;
+            text-align: left;
+        }
+        
+        .items-table tbody tr {
+            border-bottom: 1px solid #e2e8f0;
+            transition: background-color 0.2s ease;
+        }
+        
+        .items-table tbody tr:hover {
+            background: #f8f9fa;
+        }
+        
+        .items-table tbody tr:last-child {
+            border-bottom: none;
+        }
+        
+        .item-name {
+            font-weight: 600;
+            color: #2d3748;
+        }
+        
+        .item-quantity {
+            color: #718096;
+        }
+        
+        .item-price {
+            color: #667eea;
+            font-weight: 600;
+        }
+        
+        .item-total {
+            color: #2d3748;
+            font-weight: 700;
+        }
+        
+        .payment-summary {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            border: 2px solid #e2e8f0;
+        }
+        
+        .payment-summary h3 {
+            color: #4a5568;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .payment-summary h3 i {
+            color: #667eea;
+        }
+        
+        .payment-details {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1rem;
+        }
+        
+        .payment-detail {
+            text-align: center;
+            padding: 1rem;
+            background: white;
+            border-radius: 0.5rem;
+            border: 1px solid #e2e8f0;
+        }
+        
+        .payment-detail-label {
+            font-size: 0.8rem;
+            color: #718096;
+            margin-bottom: 0.5rem;
+        }
+        
+        .payment-detail-value {
+            font-weight: 700;
+            font-size: 1.1rem;
+        }
+        
+        .total-amount {
+            color: #667eea;
+        }
+        
+        .cash-received {
+            color: #48bb78;
+        }
+        
+        .change-given {
+            color: #ed8936;
+        }
+        
+        .processed-by {
+            color: #9f7aea;
+        }
+        
+        .back-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.75rem 1.5rem;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            text-decoration: none;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+        
+        .back-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+        }
+        
+        .print-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.75rem 1.5rem;
+            background: linear-gradient(135deg, #48bb78, #38a169);
+            color: white;
+            text-decoration: none;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            margin-left: 1rem;
+        }
+        
+        .print-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(72, 187, 120, 0.3);
+        }
+        
+        @media print {
+            .navbar, .back-btn, .print-btn {
+                display: none;
+            }
+            
+            .order-container {
+                box-shadow: none;
+                background: white;
+            }
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+        <div class="order-container">
+            <div class="order-header">
+                <div>
+                    <h1 class="order-title">Completed Order #{{ order.id }}</h1>
+                    <div class="order-time">
+                        <i class="fas fa-clock"></i> {{ order.completed_at|date:"H:i, d M Y" }}
+                    </div>
+                </div>
+                <div>
+                    <a href="{% url 'completed_orders' %}" class="back-btn">
+                        <i class="fas fa-arrow-left"></i> Back to Orders
+                    </a>
+                    <button onclick="window.print()" class="print-btn">
+                        <i class="fas fa-print"></i> Print
+                    </button>
+                </div>
+            </div>
+
+            <!-- Customer Information -->
+            <div class="customer-info">
+                <h3><i class="fas fa-user"></i> Customer Information</h3>
+                <div class="customer-details">
+                    <div class="customer-detail">
+                        <i class="fas fa-user"></i>
+                        <span>{{ order.customer_name }}</span>
+                    </div>
+                    <div class="customer-detail">
+                        <i class="fas fa-phone"></i>
+                        <span>{{ order.customer_phone }}</span>
+                    </div>
+                    <div class="customer-detail">
+                        <i class="fas fa-cash-register"></i>
+                        <span>Processed by: {{ order.processed_by.username|default:"System" }}</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Order Items -->
+            <div class="items-section">
+                <h3><i class="fas fa-shopping-cart"></i> Order Items</h3>
+                <table class="items-table">
+                    <thead>
+                        <tr>
+                            <th>Product</th>
+                            <th>Quantity</th>
+                            <th>Unit Price</th>
+                            <th>Total</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in items_with_totals %}
+                        <tr>
+                            <td class="item-name">{{ item.product }}</td>
+                            <td class="item-quantity">{{ item.quantity }}</td>
+                            <td class="item-price">R{{ item.price }}</td>
+                            <td class="item-total">R{{ item.total }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Payment Summary -->
+            <div class="payment-summary">
+                <h3><i class="fas fa-money-bill-wave"></i> Payment Summary</h3>
+                <div class="payment-details">
+                    <div class="payment-detail">
+                        <div class="payment-detail-label">Total Amount</div>
+                        <div class="payment-detail-value total-amount">R{{ order.total }}</div>
+                    </div>
+                    <div class="payment-detail">
+                        <div class="payment-detail-label">Cash Received</div>
+                        <div class="payment-detail-value cash-received">R{{ order.cash_received }}</div>
+                    </div>
+                    <div class="payment-detail">
+                        <div class="payment-detail-label">Change Given</div>
+                        <div class="payment-detail-value change-given">R{{ order.change_given }}</div>
+                    </div>
+                    <div class="payment-detail">
+                        <div class="payment-detail-label">Payment Method</div>
+                        <div class="payment-detail-value">{{ order.get_payment_method_display|title }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Mobile menu toggle functionality is handled by base template
+</script>
+{% endblock %}

@@ -1,0 +1,121 @@
+services:
+  db:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: futurepos_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres123}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - backend
+    restart: always
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    networks:
+      - backend
+    restart: always
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile.prod
+    command: gunicorn --bind 0.0.0.0:8000 --workers 3 --timeout 120 confige.wsgi:application
+    volumes:
+      - static_volume:/app/staticfiles
+      - media_volume:/app/media
+    networks:
+      - backend
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      - DEBUG=0
+      - DATABASE_URL=postgresql://postgres:${POSTGRES_PASSWORD:-postgres123}@db:5432/futurepos_db
+      - SECRET_KEY=${SECRET_KEY:-django-insecure-production-key-change-this}
+      - ALLOWED_HOSTS=${ALLOWED_HOSTS:-localhost,127.0.0.1}
+      - REDIS_URL=redis://redis:6379/1
+    restart: always
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.prod.conf:/etc/nginx/nginx.conf:ro
+      - ./ssl:/etc/nginx/ssl:ro
+      - static_volume:/app/staticfiles
+      - media_volume:/app/media
+    networks:
+      - backend
+    depends_on:
+      - web
+    restart: always
+
+  celery:
+    build:
+      context: .
+      dockerfile: Dockerfile.prod
+    command: celery -A confige worker -l info
+    volumes:
+      - .:/app
+    networks:
+      - backend
+    depends_on:
+      - db
+      - redis
+    environment:
+      - DEBUG=0
+      - DATABASE_URL=postgresql://postgres:${POSTGRES_PASSWORD:-postgres123}@db:5432/futurepos_db
+      - SECRET_KEY=${SECRET_KEY:-django-insecure-production-key-change-this}
+      - REDIS_URL=redis://redis:6379/1
+    restart: always
+
+  celery-beat:
+    build:
+      context: .
+      dockerfile: Dockerfile.prod
+    command: celery -A confige beat -l info --scheduler django_celery_beat.schedulers:DatabaseScheduler
+    volumes:
+      - .:/app
+    networks:
+      - backend
+    depends_on:
+      - db
+      - redis
+    environment:
+      - DEBUG=0
+      - DATABASE_URL=postgresql://postgres:${POSTGRES_PASSWORD:-postgres123}@db:5432/futurepos_db
+      - SECRET_KEY=${SECRET_KEY:-django-insecure-production-key-change-this}
+      - REDIS_URL=redis://redis:6379/1
+    restart: always
+
+networks:
+  backend:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  static_volume:
+  media_volume:

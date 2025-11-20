@@ -1,0 +1,158 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Message API</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background: #f5f5f5;
+        }
+        
+        .test-container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+        }
+        
+        select, textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+        
+        textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+        
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        
+        button:hover {
+            background: #0056b3;
+        }
+        
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 6px;
+        }
+        
+        .success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+    </style>
+</head>
+<body>
+    <!-- CSRF Token for testing -->
+    <input type="hidden" name="csrfmiddlewaretoken" value="test-token-api">
+
+    <div class="test-container">
+        <h1>Test Message API Directly</h1>
+        <p>This page tests the message API endpoint directly.</p>
+        
+        <form id="messageForm">
+            <div class="form-group">
+                <label for="requestType">Request Type</label>
+                <select id="requestType" required>
+                    <option value="">Select a request type</option>
+                    <option value="password_reset">Password Reset</option>
+                    <option value="order_issue">Order Issue</option>
+                    <option value="system_problem">System Problem</option>
+                    <option value="stock_issue">Stock Issue</option>
+                    <option value="customer_complaint">Customer Complaint</option>
+                    <option value="payment_issue">Payment Issue</option>
+                    <option value="other">Other</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="requestMessage">Message</label>
+                <textarea id="requestMessage" placeholder="Describe your request in detail..." required></textarea>
+            </div>
+            
+            <button type="submit">Send Message</button>
+        </form>
+        
+        <div id="result"></div>
+    </div>
+
+    <script>
+        document.getElementById('messageForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const requestType = document.getElementById('requestType').value;
+            const message = document.getElementById('requestMessage').value;
+            const resultDiv = document.getElementById('result');
+            
+            if (!requestType || !message) {
+                resultDiv.innerHTML = '<div class="result error">Please fill in all fields</div>';
+                return;
+            }
+            
+            const data = {
+                request_type: requestType,
+                message: message
+            };
+            
+            resultDiv.innerHTML = '<div class="result">Sending message...</div>';
+            
+            fetch('/api/cashier_request/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                },
+                body: JSON.stringify(data)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    resultDiv.innerHTML = '<div class="result success">✅ ' + data.message + '</div>';
+                    document.getElementById('requestType').value = '';
+                    document.getElementById('requestMessage').value = '';
+                } else {
+                    resultDiv.innerHTML = '<div class="result error">❌ Error: ' + data.message + '</div>';
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                resultDiv.innerHTML = '<div class="result error">❌ Network error: ' + error.message + '</div>';
+            });
+        });
+    </script>
+</body>
+</html>

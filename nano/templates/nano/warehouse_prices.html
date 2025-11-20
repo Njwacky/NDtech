@@ -1,0 +1,197 @@
+{% extends 'nano/base.html' %}
+{% load static %}
+
+{% block title %}Warehouse Prices{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'nano/warehouse.css' %}">
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'nano/warehouse.js' %}"></script>
+{% endblock %}
+
+{% block content %}
+<div class="warehouse-container">
+    <div class="warehouse-prices-card">
+        <div class="warehouse-prices-header">
+            <h4>
+                <i class="fas fa-warehouse"></i> Warehouse Prices
+            </h4>
+            <div class="warehouse-header-actions">
+                <a href="{% url 'warehouse_import' %}" class="warehouse-btn warehouse-btn-light">
+                    <i class="fas fa-upload"></i> Import Prices
+                </a>
+                <a href="{% url 'export_warehouse_prices' %}" class="warehouse-btn warehouse-btn-light">
+                    <i class="fas fa-download"></i> Export
+                </a>
+            </div>
+        </div>
+        <div class="warehouse-prices-body">
+            <!-- Search and Filter Form -->
+            <form method="get" class="warehouse-search-form">
+                <div class="warehouse-search-row">
+                    <div>
+                        <input type="text" class="warehouse-search-input" name="search" placeholder="Search products..." value="{{ search_query }}">
+                    </div>
+                    <div>
+                        <select class="warehouse-search-select" name="warehouse">
+                            <option value="">All Warehouses</option>
+                            {% for warehouse in warehouse_names %}
+                                <option value="{{ warehouse }}" {% if warehouse_filter == warehouse %}selected{% endif %}>{{ warehouse }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div>
+                        <button type="submit" class="warehouse-btn warehouse-btn-outline-primary">
+                            <i class="fas fa-search"></i> Search
+                        </button>
+                    </div>
+                    <div>
+                        <a href="{% url 'price_comparisons' %}" class="warehouse-btn warehouse-btn-success">
+                            <i class="fas fa-chart-bar"></i> Price Comparisons
+                        </a>
+                    </div>
+                </div>
+            </form>
+
+            <!-- Results Summary -->
+            {% if search_query or warehouse_filter %}
+                <div class="warehouse-results-info">
+                    <i class="fas fa-info-circle"></i>
+                    Showing {{ warehouse_prices.paginator.count }} results
+                    {% if search_query %}for "{{ search_query }}"{% endif %}
+                    {% if warehouse_filter %}in {{ warehouse_filter }}{% endif %}
+                </div>
+            {% endif %}
+
+            <!-- Prices Table -->
+            {% if warehouse_prices %}
+                <div class="warehouse-table-responsive">
+                    <table class="warehouse-table">
+                        <thead>
+                            <tr>
+                                <th>Product Name</th>
+                                <th>Warehouse</th>
+                                <th>Price</th>
+                                <th>Barcode</th>
+                                <th>Category</th>
+                                <th>Stock</th>
+                                <th>Unit Size</th>
+                                <th>Imported</th>
+                                <th>Imported By</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for price in warehouse_prices %}
+                                <tr>
+                                    <td>
+                                        <div class="warehouse-product-name">{{ price.product_name }}</div>
+                                        {% if price.file_name %}
+                                            <div class="warehouse-product-file">File: {{ price.file_name }}</div>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <span class="warehouse-badge warehouse-badge-primary">{{ price.warehouse_name }}</span>
+                                    </td>
+                                    <td>
+                                        <div class="warehouse-price">R{{ price.price }}</div>
+                                    </td>
+                                    <td>
+                                        {% if price.barcode %}
+                                            <span class="warehouse-barcode">{{ price.barcode }}</span>
+                                        {% else %}
+                                            <span class="warehouse-muted">-</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if price.category %}
+                                            <span class="warehouse-badge warehouse-badge-secondary">{{ price.category }}</span>
+                                        {% else %}
+                                            <span class="warehouse-muted">-</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if price.stock_quantity %}
+                                            {{ price.stock_quantity }}
+                                        {% else %}
+                                            <span class="warehouse-muted">-</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if price.unit_size %}
+                                            {{ price.unit_size }}
+                                        {% else %}
+                                            <span class="warehouse-muted">-</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div class="warehouse-date">{{ price.date_imported|date:"Y-m-d H:i" }}</div>
+                                    </td>
+                                    <td>
+                                        {% if price.imported_by %}
+                                            {{ price.imported_by.username }}
+                                        {% else %}
+                                            <span class="warehouse-muted">-</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Pagination -->
+                {% if warehouse_prices.has_other_pages %}
+                    <nav class="warehouse-pagination" aria-label="Warehouse prices pagination">
+                        <ul class="warehouse-pagination-list">
+                            {% if warehouse_prices.has_previous %}
+                                <li class="warehouse-page-item">
+                                    <a class="warehouse-page-link" href="?page=1{% if search_query %}&search={{ search_query }}{% endif %}{% if warehouse_filter %}&warehouse={{ warehouse_filter }}{% endif %}">First</a>
+                                </li>
+                                <li class="warehouse-page-item">
+                                    <a class="warehouse-page-link" href="?page={{ warehouse_prices.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if warehouse_filter %}&warehouse={{ warehouse_filter }}{% endif %}">Previous</a>
+                                </li>
+                            {% endif %}
+
+                            {% for num in warehouse_prices.paginator.page_range %}
+                                {% if warehouse_prices.number == num %}
+                                    <li class="warehouse-page-item active">
+                                        <span class="warehouse-page-link">{{ num }}</span>
+                                    </li>
+                                {% elif num > warehouse_prices.number|add:'-3' and num < warehouse_prices.number|add:'3' %}
+                                    <li class="warehouse-page-item">
+                                        <a class="warehouse-page-link" href="?page={{ num }}{% if search_query %}&search={{ search_query }}{% endif %}{% if warehouse_filter %}&warehouse={{ warehouse_filter }}{% endif %}">{{ num }}</a>
+                                    </li>
+                                {% endif %}
+                            {% endfor %}
+
+                            {% if warehouse_prices.has_next %}
+                                <li class="warehouse-page-item">
+                                    <a class="warehouse-page-link" href="?page={{ warehouse_prices.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if warehouse_filter %}&warehouse={{ warehouse_filter }}{% endif %}">Next</a>
+                                </li>
+                                <li class="warehouse-page-item">
+                                    <a class="warehouse-page-link" href="?page={{ warehouse_prices.paginator.num_pages }}{% if search_query %}&search={{ search_query }}{% endif %}{% if warehouse_filter %}&warehouse={{ warehouse_filter }}{% endif %}">Last</a>
+                                </li>
+                            {% endif %}
+                        </ul>
+                    </nav>
+                {% endif %}
+            {% else %}
+                <div class="warehouse-empty-state">
+                    <i class="fas fa-warehouse"></i>
+                    <h5>No warehouse prices found</h5>
+                    <p>
+                        {% if search_query or warehouse_filter %}
+                            Try adjusting your search criteria or 
+                            <a href="{% url 'warehouse_prices' %}">clear all filters</a>.
+                        {% else %}
+                            <a href="{% url 'warehouse_import' %}">Import your first warehouse prices</a> to get started.
+                        {% endif %}
+                    </p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

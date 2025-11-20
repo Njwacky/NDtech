@@ -1,0 +1,628 @@
+{% extends 'nano/base.html' %}
+{% load static %}
+
+{% block title %}UPC Lookup - NDtech{% endblock %}
+
+{% block extra_css %}
+<style>
+.upc-container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.upc-scanner-section {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 30px;
+    border-radius: 15px;
+    margin-bottom: 30px;
+    text-align: center;
+}
+
+.upc-input-group {
+    display: flex;
+    gap: 10px;
+    margin-top: 20px;
+}
+
+.upc-input {
+    flex: 1;
+    padding: 15px;
+    border: none;
+    border-radius: 10px;
+    font-size: 16px;
+    background: rgba(255, 255, 255, 0.9);
+}
+
+.upc-btn {
+    padding: 15px 30px;
+    background: #28a745;
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-size: 16px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.upc-btn:hover {
+    background: #218838;
+    transform: translateY(-2px);
+}
+
+.product-result {
+    background: white;
+    border-radius: 15px;
+    padding: 25px;
+    margin-bottom: 20px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    border-left: 5px solid #28a745;
+}
+
+.product-image {
+    max-width: 200px;
+    max-height: 200px;
+    object-fit: contain;
+    border-radius: 10px;
+    margin-bottom: 15px;
+}
+
+.product-info {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+    margin-bottom: 20px;
+}
+
+.product-info-item {
+    padding: 10px;
+    background: #f8f9fa;
+    border-radius: 8px;
+}
+
+.product-info-label {
+    font-weight: bold;
+    color: #495057;
+    margin-bottom: 5px;
+}
+
+.product-info-value {
+    color: #212529;
+    font-size: 14px;
+}
+
+.action-buttons {
+    display: flex;
+    gap: 15px;
+    margin-top: 20px;
+}
+
+.action-btn {
+    padding: 12px 25px;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-decoration: none;
+    display: inline-block;
+    text-align: center;
+}
+
+.btn-primary {
+    background: #007bff;
+    color: white;
+}
+
+.btn-primary:hover {
+    background: #0056b3;
+}
+
+.btn-success {
+    background: #28a745;
+    color: white;
+}
+
+.btn-success:hover {
+    background: #218838;
+}
+
+.btn-warning {
+    background: #ffc107;
+    color: #212529;
+}
+
+.btn-warning:hover {
+    background: #e0a800;
+}
+
+.create-product-form {
+    background: #f8f9fa;
+    padding: 20px;
+    border-radius: 10px;
+    margin-top: 20px;
+}
+
+.form-group {
+    margin-bottom: 15px;
+}
+
+.form-label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: bold;
+    color: #495057;
+}
+
+.form-control {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ced4da;
+    border-radius: 5px;
+    font-size: 14px;
+}
+
+.form-control:focus {
+    outline: none;
+    border-color: #007bff;
+    box-shadow: 0 0 0 2px rgba(0,123,255,0.25);
+}
+
+.alert {
+    padding: 15px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+}
+
+.alert-info {
+    background: #d1ecf1;
+    color: #0c5460;
+    border: 1px solid #bee5eb;
+}
+
+.alert-warning {
+    background: #fff3cd;
+    color: #856404;
+    border: 1px solid #ffeaa7;
+}
+
+.loading {
+    display: none;
+    text-align: center;
+    padding: 20px;
+}
+
+.spinner {
+    border: 4px solid #f3f3f3;
+    border-top: 4px solid #007bff;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    animation: spin 1s linear infinite;
+    margin: 0 auto 15px;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.existing-product-notice {
+    background: #fff3cd;
+    border: 1px solid #ffeaa7;
+    padding: 15px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+}
+
+.barcode-display {
+    font-family: 'Courier New', monospace;
+    font-size: 18px;
+    font-weight: bold;
+    color: #007bff;
+    background: #e7f3ff;
+    padding: 10px;
+    border-radius: 5px;
+    text-align: center;
+    margin: 10px 0;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="upc-container">
+    <div class="upc-scanner-section">
+        {% if direct_lookup %}
+            <h2><i class="fas fa-barcode"></i> Barcode Lookup Results</h2>
+            <p>Showing results for barcode: <strong>{{ upc_code }}</strong></p>
+            
+            <div class="barcode-display" style="background: rgba(255,255,255,0.2); color: white; margin: 20px 0;">
+                <i class="fas fa-barcode"></i> {{ upc_code }}
+            </div>
+            
+            <div style="margin-top: 20px;">
+                <a href="{% url 'upc_lookup' %}" class="action-btn btn-warning" style="background: rgba(255,255,255,0.2); color: white; border: 1px solid rgba(255,255,255,0.3);">
+                    <i class="fas fa-arrow-left"></i> Back to Scanner
+                </a>
+            </div>
+        {% else %}
+            <h2><i class="fas fa-barcode"></i> UPC Product Lookup</h2>
+            <p>Scan or enter a UPC/EAN barcode to fetch product details and add to stock</p>
+            
+            <form method="post" id="upcForm">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="lookup_upc">
+                <div class="upc-input-group">
+                    <input type="text" 
+                           name="upc_code" 
+                           class="upc-input" 
+                           placeholder="Enter UPC/EAN barcode (e.g., 0123456789012)"
+                           id="upcInput"
+                           autocomplete="off"
+                           autofocus>
+                    <button type="submit" class="upc-btn">
+                        <i class="fas fa-search"></i> Lookup
+                    </button>
+                </div>
+            </form>
+        {% endif %}
+    </div>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }}">
+                {{ message }}
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <div class="loading" id="loadingIndicator">
+        <div class="spinner"></div>
+        <p>Fetching product information...</p>
+    </div>
+
+    {% if product_data %}
+        <div class="product-result">
+            <h3><i class="fas fa-box"></i> Product Information</h3>
+            
+            {% if product_data.image_url %}
+                <div style="text-align: center;">
+                    <img src="{{ product_data.image_url }}" alt="{{ product_data.name }}" class="product-image">
+                </div>
+            {% endif %}
+            
+            {% if product_data.barcode %}
+                <div class="barcode-display">
+                    <i class="fas fa-barcode"></i> {{ product_data.barcode }}
+                </div>
+            {% endif %}
+
+            <div class="product-info">
+                <div class="product-info-item">
+                    <div class="product-info-label">Product Name</div>
+                    <div class="product-info-value">{{ product_data.name }}</div>
+                </div>
+                
+                <div class="product-info-item">
+                    <div class="product-info-label">Price</div>
+                    <div class="product-info-value">R{{ product_data.price }}</div>
+                </div>
+                
+                {% if product_data.brand %}
+                <div class="product-info-item">
+                    <div class="product-info-label">Brand</div>
+                    <div class="product-info-value">{{ product_data.brand }}</div>
+                </div>
+                {% endif %}
+                
+                {% if product_data.size %}
+                <div class="product-info-item">
+                    <div class="product-info-label">Size</div>
+                    <div class="product-info-value">{{ product_data.size }}</div>
+                </div>
+                {% endif %}
+                
+                {% if product_data.category %}
+                <div class="product-info-item">
+                    <div class="product-info-label">Category</div>
+                    <div class="product-info-value">{{ product_data.get_category_display|default:product_data.category }}</div>
+                </div>
+                {% endif %}
+                
+                {% if product_data.weight %}
+                <div class="product-info-item">
+                    <div class="product-info-label">Weight</div>
+                    <div class="product-info-value">{{ product_data.weight }}</div>
+                </div>
+                {% endif %}
+            </div>
+
+            {% if product_data.description %}
+            <div class="product-info-item" style="grid-column: 1 / -1;">
+                <div class="product-info-label">Description</div>
+                <div class="product-info-value">{{ product_data.description }}</div>
+            </div>
+            {% endif %}
+
+            {% if product_data.ingredients %}
+            <div class="product-info-item" style="grid-column: 1 / -1;">
+                <div class="product-info-label">Ingredients</div>
+                <div class="product-info-value">{{ product_data.ingredients }}</div>
+            </div>
+            {% endif %}
+
+            {% if product_data.nutrients %}
+            <div class="product-info-item" style="grid-column: 1 / -1;">
+                <div class="product-info-label">Nutrition Information</div>
+                <div class="product-info-value">
+                    {% for nutrient, value in product_data.nutrients.items %}
+                        {% if value %}
+                            <span style="margin-right: 15px;">{{ nutrient.title }}: {{ value }}</span>
+                        {% endif %}
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            {% if product_data.source %}
+            <div class="product-info-item" style="grid-column: 1 / -1;">
+                <div class="product-info-label">Data Source</div>
+                <div class="product-info-value">
+                    {% if product_data.source == 'upc_database' %}
+                        <i class="fas fa-database"></i> UPC Database API
+                    {% elif product_data.source == 'openfoodfacts' %}
+                        <i class="fas fa-utensils"></i> OpenFoodFacts
+                    {% elif product_data.source == 'local_database' %}
+                        <i class="fas fa-server"></i> Local Database
+                    {% else %}
+                        {{ product_data.source }}
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+
+            {% if existing_product %}
+                <div class="existing-product-notice">
+                    <h4><i class="fas fa-info-circle"></i> Product Already Exists</h4>
+                    <p>This product is already in your inventory:</p>
+                    <ul>
+                        <li><strong>Name:</strong> {{ existing_product.name }}</li>
+                        <li><strong>Current Price:</strong> R{{ existing_product.price }}</li>
+                        <li><strong>Current Stock:</strong> {{ existing_product.stock }} units</li>
+                    </ul>
+                </div>
+
+                <form method="post" style="display: inline;">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="add_to_stock">
+                    <input type="hidden" name="product_id" value="{{ existing_product.id }}">
+                    <div class="form-group">
+                        <label class="form-label">Quantity to Add:</label>
+                        <input type="number" name="quantity" class="form-control" value="1" min="1" required style="width: 200px; display: inline-block;">
+                    </div>
+                    <button type="submit" class="action-btn btn-success">
+                        <i class="fas fa-plus-circle"></i> Add to Stock
+                    </button>
+                </form>
+            {% elif manual_entry %}
+                <div class="alert alert-warning">
+                    <h4><i class="fas fa-exclamation-triangle"></i> Product Not Found in Databases</h4>
+                    <p>This barcode wasn't found in the UPC database or OpenFoodFacts. You can add it manually to your inventory.</p>
+                </div>
+            {% else %}
+                {% if is_manager %}
+                    <form method="post" id="createProductForm">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="create_product">
+                        <input type="hidden" name="barcode" value="{{ product_data.barcode }}">
+                        
+                        <div class="create-product-form">
+                            <h4><i class="fas fa-plus-circle"></i> Add New Product to Inventory</h4>
+                            
+                            <div class="form-group">
+                                <label class="form-label">Product Name *</label>
+                                <input type="text" name="name" class="form-control" value="{{ product_data.name }}" required>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label class="form-label">Price (R) *</label>
+                                <input type="number" name="price" class="form-control" value="{{ product_data.price }}" step="0.01" min="0.01" required>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label class="form-label">Category *</label>
+                                <select name="category" class="form-control" required>
+                                    <option value="">Select Category</option>
+                                    {% for value, label in Product.CATEGORY_CHOICES %}
+                                        <option value="{{ value }}" {% if product_data.category == value %}selected{% endif %}>{{ label }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label class="form-label">Initial Stock Quantity *</label>
+                                <input type="number" name="stock" class="form-control" value="1" min="0" required>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label class="form-label">Description</label>
+                                <textarea name="description" class="form-control" rows="3">{{ product_data.description }}</textarea>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label class="form-label">Expiry Date (optional)</label>
+                                <input type="date" name="expiry_date" class="form-control">
+                            </div>
+                            
+                            <button type="submit" class="action-btn btn-primary">
+                                <i class="fas fa-save"></i> Create Product
+                            </button>
+                        </div>
+                    </form>
+                {% else %}
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle"></i> 
+                        This product is not in your inventory yet. Only managers can create new products. Please contact your manager to add this product.
+                    </div>
+                {% endif %}
+            {% endif %}
+        </div>
+    {% endif %}
+
+    <div class="alert alert-info">
+        <h4><i class="fas fa-info-circle"></i> How to Use</h4>
+        <ul>
+            <li>Enter a UPC/EAN barcode manually or use a barcode scanner</li>
+            <li>Click "Lookup" to fetch product information from the database</li>
+            <li>If the product exists, you can add stock immediately</li>
+            <li>If it's a new product, managers can create it in the system</li>
+            <li>Common formats: UPC-A (12 digits), UPC-E (8 digits), EAN-13 (13 digits)</li>
+        </ul>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const upcForm = document.getElementById('upcForm');
+    const upcInput = document.getElementById('upcInput');
+    const loadingIndicator = document.getElementById('loadingIndicator');
+    
+    // Handle form submission
+    upcForm.addEventListener('submit', function(e) {
+        const upcCode = upcInput.value.trim();
+        
+        if (!upcCode) {
+            e.preventDefault();
+            alert('Please enter a UPC/EAN barcode');
+            return;
+        }
+        
+        // Clean the input (remove spaces, hyphens)
+        upcInput.value = upcCode.replace(/[\s-]/g, '');
+        
+        // Show loading indicator
+        loadingIndicator.style.display = 'block';
+        
+        // Hide loading indicator after a delay (in case of slow API)
+        setTimeout(() => {
+            loadingIndicator.style.display = 'none';
+        }, 10000);
+    });
+    
+    // Auto-focus on the input field
+    upcInput.focus();
+    
+    // Support barcode scanner input (usually ends with Enter key)
+    upcInput.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            // Small delay to allow scanner to complete input
+            setTimeout(() => {
+                upcForm.dispatchEvent(new Event('submit'));
+            }, 100);
+        }
+    });
+    
+    // Format the barcode as user types
+    upcInput.addEventListener('input', function(e) {
+        // Remove non-digit characters except for demonstration purposes
+        let value = e.target.value.replace(/[^\d]/g, '');
+        
+        // You can add formatting logic here if needed
+        // For example, add spaces for better readability
+        if (value.length > 0) {
+            // Keep the cleaned value
+            e.target.value = value;
+        }
+    });
+    
+    // Quick lookup with AJAX (optional enhancement)
+    let lookupTimeout;
+    upcInput.addEventListener('input', function(e) {
+        clearTimeout(lookupTimeout);
+        const value = e.target.value.trim();
+        
+        // Only trigger lookup if we have a complete barcode length
+        if (value.length >= 8 && value.length <= 14) {
+            lookupTimeout = setTimeout(() => {
+                // You could implement AJAX lookup here for better UX
+                // For now, we'll stick with form submission
+            }, 500);
+        }
+    });
+    
+    // Add keyboard shortcuts
+    document.addEventListener('keydown', function(e) {
+        // Ctrl/Cmd + K to focus on UPC input
+        if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+            e.preventDefault();
+            upcInput.focus();
+            upcInput.select();
+        }
+        
+        // Escape to clear input
+        if (e.key === 'Escape' && document.activeElement === upcInput) {
+            upcInput.value = '';
+            upcInput.blur();
+        }
+    });
+    
+    // Add visual feedback for valid barcode lengths
+    upcInput.addEventListener('input', function(e) {
+        const value = e.target.value.replace(/[^\d]/g, '');
+        const isValidLength = value.length >= 8 && value.length <= 14;
+        
+        if (value.length > 0) {
+            if (isValidLength) {
+                e.target.style.borderColor = '#28a745';
+                e.target.style.boxShadow = '0 0 0 2px rgba(40, 167, 69, 0.25)';
+            } else {
+                e.target.style.borderColor = '#ffc107';
+                e.target.style.boxShadow = '0 0 0 2px rgba(255, 193, 7, 0.25)';
+            }
+        } else {
+            e.target.style.borderColor = '#ced4da';
+            e.target.style.boxShadow = 'none';
+        }
+    });
+});
+
+// Function to handle barcode scanner input (if you want to integrate with actual scanners)
+function handleBarcodeScan(data) {
+    const upcInput = document.getElementById('upcInput');
+    upcInput.value = data;
+    document.getElementById('upcForm').dispatchEvent(new Event('submit'));
+}
+
+// If you have a webcam barcode scanner library, you can initialize it here
+/*
+function initializeBarcodeScanner() {
+    // Example with QuaggaJS or similar library
+    Quagga.init({
+        inputStream: {
+            name: "Live",
+            type: "LiveStream",
+            target: document.querySelector('#barcode-scanner')
+        },
+        decoder: {
+            readers: ["code_128_reader", "ean_reader", "ean_8_reader", "code_39_reader", "code_39_vin_reader", "codabar_reader", "upc_reader", "upc_e_reader", "i2of5_reader"]
+        }
+    }, function(err) {
+        if (err) {
+            console.log(err);
+            return;
+        }
+        console.log("Initialization finished. Ready to start");
+        Quagga.start();
+    });
+    
+    Quagga.onDetected(function(result) {
+        const code = result.codeResult.code;
+        handleBarcodeScan(code);
+    });
+}
+*/
+</script>
+{% endblock %}
