@@ -1,0 +1,610 @@
+.auth-container {
+    max-width: 500px;
+    margin: 50px auto;
+    padding: 20px;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    background-color: #f9f9f9;
+}
+.head-add{
+    text-align: center;
+}
+.auth-container h1 {
+    text-align: center;
+    margin-bottom: 20px;
+    box-shadow: 0px -14px 39px 8px rgba(80, 236, 223, 0.43);
+    
+}
+
+
+.auth-container form {
+    display: flex;
+    flex-direction: column;
+}
+
+.auth-container label {
+    margin-bottom: 5px;
+    font-weight: bold;
+}
+
+.auth-container input {
+    margin-bottom: 15px;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 16px;
+}
+
+.auth-container textarea {
+    margin-bottom: 15px;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 16px;
+    resize: vertical;
+}
+
+.auth-container select {
+    margin-bottom: 15px;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 16px;
+}
+
+.auth-container button {
+    padding: 10px;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 16px;
+}
+
+.auth-container button:hover {
+    background-color: #0056b3;
+}
+
+.message {
+    padding: 10px;
+    margin-bottom: 15px;
+    border-radius: 4px;
+}
+
+.message.success {
+    background-color: #d4edda;
+    color: #155724;
+    border: 1px solid #c3e6cb;
+}
+
+.message.error {
+    background-color: #f8d7da;
+    color: #721c24;
+    border: 1px solid #f5c6cb;
+}
+
+.auth-container p {
+    text-align: center;
+    margin-top: 20px;
+}
+
+.auth-container a {
+    color: #007bff;
+    text-decoration: none;
+}
+
+.auth-container a:hover {
+    text-decoration: underline;
+}
+
+.auth-links {
+    margin-top: 20px;
+    text-align: center;
+}
+
+.auth-links p {
+    margin: 10px 0;
+}
+
+.auth-links a {
+    color: #007bff;
+    text-decoration: none;
+}
+
+.auth-links a:hover {
+    text-decoration: underline;
+}
+
+.auth-description {
+    text-align: center;
+    margin-bottom: 20px;
+    color: #666;
+    font-size: 0.9em;
+}
+
+/* Mobile responsiveness - Full Screen */
+@media (max-width: 768px) {
+    /* Ensure full screen experience */
+    body {
+        margin: 0 !important;
+        padding: 0 !important;
+        width: 100vw !important;
+        min-height: 100vh !important;
+        overflow-x: hidden !important;
+    }
+    
+    .auth-container {
+        margin: 10px !important;
+        padding: 15px;
+        max-width: 100% !important;
+        width: calc(100% - 20px) !important;
+    }
+    
+    .auth-container h1 {
+        font-size: 1.5rem;
+        margin-bottom: 15px;
+    }
+    
+    .auth-container input,
+    .auth-container textarea,
+    .auth-container select {
+        padding: 12px;
+        font-size: 16px; /* Prevent zoom on iOS */
+        margin-bottom: 12px;
+    }
+    
+    .auth-container button {
+        padding: 12px;
+        font-size: 16px;
+        min-height: 48px;
+    }
+}
+
+/* Enhanced Mobile Full Screen Styles */
+@media (max-width: 480px) {
+    /* Ensure full screen experience */
+    body {
+        margin: 0 !important;
+        padding: 0 !important;
+        width: 100vw !important;
+        min-height: 100vh !important;
+        overflow-x: hidden !important;
+    }
+    
+    .auth-container {
+        margin: 5px !important;
+        padding: 12px;
+        max-width: 100% !important;
+        width: calc(100% - 10px) !important;
+        border-radius: 0 !important;
+    }
+    
+    .auth-container h1 {
+        font-size: 1.3rem;
+        margin-bottom: 12px;
+    }
+    
+    .auth-container input,
+    .auth-container textarea,
+    .auth-container select {
+        padding: 10px;
+        font-size: 16px; /* Prevent zoom on iOS */
+        margin-bottom: 10px;
+        border-radius: 4px;
+    }
+    
+    .auth-container button {
+        padding: 10px;
+        font-size: 16px;
+        min-height: 44px;
+        margin-top: 5px;
+    }
+    
+    .auth-container label {
+        font-size: 0.9rem;
+        margin-bottom: 3px;
+    }
+    
+    .message {
+        padding: 8px;
+        margin-bottom: 10px;
+        font-size: 0.9rem;
+    }
+    
+    .auth-container p {
+        font-size: 0.9rem;
+        margin-top: 15px;
+    }
+}
+
+/* Role descriptions styling */
+.role-descriptions {
+    margin: 20px 0;
+    padding: 15px;
+    background-color: #f8f9fa;
+    border: 1px solid #e9ecef;
+    border-radius: 6px;
+}
+
+.role-descriptions h3 {
+    margin: 0 0 10px 0;
+    color: #495057;
+    font-size: 1.1rem;
+}
+
+.role-descriptions ul {
+    margin: 0;
+    padding-left: 20px;
+}
+
+.role-descriptions li {
+    margin-bottom: 8px;
+    line-height: 1.4;
+}
+
+.role-descriptions strong {
+    color: #007bff;
+}
+
+/* User Management Styles */
+.manage-users-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding: 15px;
+    background-color: #f8f9fa;
+    border-radius: 8px;
+    border: 1px solid #e9ecef;
+}
+
+.page-header h2 {
+    margin: 0;
+    color: #495057;
+}
+
+.btn-create-user {
+    background-color: #28a745;
+    color: white;
+    padding: 10px 20px;
+    text-decoration: none;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 500;
+    transition: background-color 0.3s ease;
+}
+
+.btn-create-user:hover {
+    background-color: #218838;
+    color: white;
+    text-decoration: none;
+}
+
+.manage-users-form {
+    background-color: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    overflow: hidden;
+}
+
+.users-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 20px;
+}
+
+.users-table th,
+.users-table td {
+    padding: 12px;
+    text-align: left;
+    border-bottom: 1px solid #dee2e6;
+}
+
+.users-table th {
+    background-color: #f8f9fa;
+    font-weight: 600;
+    color: #495057;
+    border-bottom: 2px solid #dee2e6;
+}
+
+.users-table tr:hover {
+    background-color: #f8f9fa;
+}
+
+.current-user {
+    background-color: #e3f2fd !important;
+}
+
+.checkbox-cell {
+    width: 50px;
+    text-align: center;
+}
+
+.role-badge {
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.role-superuser {
+    background-color: #dc3545;
+    color: white;
+}
+
+.role-admin {
+    background-color: #fd7e14;
+    color: white;
+}
+
+.role-manager {
+    background-color: #ffc107;
+    color: #212529;
+}
+
+.role-cashier {
+    background-color: #28a745;
+    color: white;
+}
+
+.current-user-badge {
+    background-color: #007bff;
+    color: white;
+    padding: 2px 6px;
+    border-radius: 10px;
+    font-size: 0.75rem;
+    margin-left: 8px;
+}
+
+.action-links {
+    display: flex;
+    gap: 8px;
+}
+
+.action-links a {
+    padding: 4px 8px;
+    border-radius: 4px;
+    text-decoration: none;
+    font-size: 0.85rem;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    transition: background-color 0.3s ease;
+}
+
+.action-links .edit {
+    background-color: #007bff;
+    color: white;
+}
+
+.action-links .edit:hover {
+    background-color: #0056b3;
+    color: white;
+    text-decoration: none;
+}
+
+.action-links .delete {
+    background-color: #dc3545;
+    color: white;
+}
+
+.action-links .delete:hover {
+    background-color: #c82333;
+    color: white;
+    text-decoration: none;
+}
+
+.delete-protected {
+    padding: 4px 8px;
+    border-radius: 4px;
+    background-color: #6c757d;
+    color: white;
+    font-size: 0.85rem;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    cursor: not-allowed;
+}
+
+.self-delete-protected {
+    color: #6c757d;
+    font-size: 1.2rem;
+}
+
+.btn-delete-selected {
+    background-color: #dc3545;
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 500;
+    margin-top: 10px;
+    transition: background-color 0.3s ease;
+}
+
+.btn-delete-selected:hover {
+    background-color: #c82333;
+}
+
+.no-users {
+    text-align: center;
+    padding: 40px;
+    background-color: #f8f9fa;
+    border-radius: 8px;
+    border: 1px solid #e9ecef;
+}
+
+.no-users i {
+    font-size: 3rem;
+    color: #6c757d;
+    margin-bottom: 15px;
+}
+
+.no-users p {
+    color: #6c757d;
+    font-size: 1.1rem;
+    margin: 10px 0;
+}
+
+/* Mobile responsiveness for user management */
+@media (max-width: 768px) {
+    .page-header {
+        flex-direction: column;
+        gap: 15px;
+        text-align: center;
+    }
+    
+    .manage-users-container {
+        padding: 10px;
+    }
+    
+    .users-table {
+        font-size: 0.9rem;
+    }
+    
+    .users-table th,
+    .users-table td {
+        padding: 8px 4px;
+    }
+    
+    .action-links {
+        flex-direction: column;
+        gap: 4px;
+    }
+    
+    .action-links a {
+        font-size: 0.8rem;
+        padding: 3px 6px;
+    }
+}
+
+/* Registration specific styles */
+.registration-closed {
+    text-align: center;
+}
+
+.registration-closed h1 {
+    color: #dc3545;
+    margin-bottom: 20px;
+}
+
+.closed-message {
+    background-color: #f8d7da;
+    color: #721c24;
+    padding: 20px;
+    border-radius: 8px;
+    border: 1px solid #f5c6cb;
+    margin-bottom: 20px;
+}
+
+.closed-message p {
+    margin-bottom: 10px;
+    line-height: 1.5;
+}
+
+.first-user-registration h1 {
+    color: #28a745;
+    margin-bottom: 20px;
+}
+
+.superuser-info {
+    background-color: #d1ecf1;
+    color: #0c5460;
+    padding: 20px;
+    border-radius: 8px;
+    border: 1px solid #bee5eb;
+    margin-bottom: 20px;
+}
+
+.superuser-info p {
+    margin-bottom: 10px;
+    line-height: 1.5;
+}
+
+.superuser-info ul {
+    margin: 15px 0;
+    padding-left: 25px;
+}
+
+.superuser-info li {
+    margin-bottom: 8px;
+    line-height: 1.4;
+}
+
+.back-to-login {
+    text-align: center;
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid #dee2e6;
+}
+
+.back-to-login p {
+    color: #6c757d;
+    margin: 0;
+}
+
+/* Extra Small Mobile */
+@media (max-width: 380px) {
+    .auth-container {
+        margin: 2px !important;
+        padding: 10px;
+        width: calc(100% - 4px) !important;
+    }
+    
+    .auth-container h1 {
+        font-size: 1.2rem;
+        margin-bottom: 10px;
+    }
+    
+    .auth-container input,
+    .auth-container textarea,
+    .auth-container select {
+        padding: 8px;
+        font-size: 16px;
+        margin-bottom: 8px;
+    }
+    
+    .auth-container button {
+        padding: 8px;
+        font-size: 15px;
+        min-height: 40px;
+    }
+    
+    .auth-container label {
+        font-size: 0.85rem;
+    }
+    
+    .page-header h2 {
+        font-size: 1.2rem;
+    }
+    
+    .btn-create-user {
+        padding: 8px 15px;
+        font-size: 0.9rem;
+    }
+    
+    .users-table {
+        font-size: 0.8rem;
+    }
+    
+    .users-table th,
+    .users-table td {
+        padding: 6px 2px;
+    }
+    
+    .checkbox-cell {
+        width: 30px;
+    }
+}
