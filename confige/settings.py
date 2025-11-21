@@ -34,8 +34,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'nano',
-    'food_ordering',
+    'nano',    'food_ordering',
 ]
 
 MIDDLEWARE = [
@@ -143,6 +142,9 @@ if not DEBUG:
 # CORS settings
 CORS_ALLOW_ALL_ORIGINS = DEBUG
 CORS_ALLOWED_ORIGINS = config('CORS_ALLOWED_ORIGINS', default='http://localhost:8000,http://127.0.0.1:8000').split(',')
+
+# CSRF Trusted Origins - Add localhost:8080 to fix CSRF verification
+CSRF_TRUSTED_ORIGINS = config('CSRF_TRUSTED_ORIGINS', default='http://localhost:8080,http://127.0.0.1:8080,http://localhost:8000,http://127.0.0.1:8000').split(',')
 
 # PWA Service Worker Settings
 PWA_SERVICE_WORKER_PATH = 'static/nano/sw.js'

@@ -1,0 +1,6 @@
+version: '3.8'
+
+services:
+  nginx:
+    ports:
+      - "8080:80"  # Use port 8080 instead of 80 to avoid conflicts
