@@ -124,6 +124,9 @@ LOGIN_URL = '/accounts/login/'
 LOGIN_REDIRECT_URL = '/'
 LOGOUT_REDIRECT_URL = '/register/'
 
+# Trust proxy headers from nginx
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+
 # Production Security Settings
 if not DEBUG:
     SECURE_BROWSER_XSS_FILTER = True
