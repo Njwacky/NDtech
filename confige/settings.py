@@ -72,8 +72,8 @@ WSGI_APPLICATION = 'confige.wsgi.application'
 
 # Database configuration - Handle both local and production environments
 if config('DJANGO_DEBUG', default=False, cast=bool):
-    # Local development
-    DATABASE_URL = config('DATABASE_URL', default='postgresql://postgres:Python2001@localhost:8001/postgres')
+    # Local development - Use standard PostgreSQL port (5432)
+    DATABASE_URL = config('DATABASE_URL', default='postgresql://postgres:Python2001@localhost:5432/postgres')
 else:
     # Production (Render.com) - Use the database URL provided by Render
     DATABASE_URL = config('DATABASE_URL')
