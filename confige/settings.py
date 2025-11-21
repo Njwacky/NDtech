@@ -24,7 +24,11 @@ SECRET_KEY = config('DJANGO_SECRET_KEY')
 DEBUG = config('DJANGO_DEBUG', default=False, cast=bool)
 
 # ALLOWED_HOSTS configuration
-ALLOWED_HOSTS = config('DJANGO_ALLOWED_HOSTS', default='localhost,127.0.0.1').split(',')
+if DEBUG:
+    ALLOWED_HOSTS = config('DJANGO_ALLOWED_HOSTS', default='localhost,127.0.0.1').split(',')
+else:
+    # Production - Render.com will set this properly
+    ALLOWED_HOSTS = config('DJANGO_ALLOWED_HOSTS', default='.onrender.com').split(',')
 
 # Application definition
 INSTALLED_APPS = [
