@@ -70,8 +70,14 @@ WSGI_APPLICATION = 'confige.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
-# Always use PostgreSQL
-DATABASE_URL = config('DATABASE_URL', default='postgresql://postgres:Python2001@localhost:8001/postgres')
+# Database configuration - Handle both local and production environments
+if config('DJANGO_DEBUG', default=False, cast=bool):
+    # Local development
+    DATABASE_URL = config('DATABASE_URL', default='postgresql://postgres:Python2001@localhost:8001/postgres')
+else:
+    # Production (Render.com) - Use the database URL provided by Render
+    DATABASE_URL = config('DATABASE_URL')
+
 DATABASES = {
     'default': dj_database_url.parse(DATABASE_URL)
 }
@@ -143,8 +149,16 @@ if not DEBUG:
 CORS_ALLOW_ALL_ORIGINS = DEBUG
 CORS_ALLOWED_ORIGINS = config('CORS_ALLOWED_ORIGINS', default='http://localhost:8000,http://127.0.0.1:8000').split(',')
 
-# CSRF Trusted Origins - Add localhost:8080 to fix CSRF verification
-CSRF_TRUSTED_ORIGINS = config('CSRF_TRUSTED_ORIGINS', default='http://localhost:8080,http://127.0.0.1:8080,http://localhost:8000,http://127.0.0.1:8000').split(',')
+# CSRF Trusted Origins - Handle both local and production environments
+if DEBUG:
+    CSRF_TRUSTED_ORIGINS = config('CSRF_TRUSTED_ORIGINS', default='http://localhost:8080,http://127.0.0.1:8080,http://localhost:8000,http://127.0.0.1:8000').split(',')
+else:
+    # Production - Add your Render.com URL here
+    render_url = config('RENDER_URL', default='').strip()
+    trusted_origins = ['https://your-app-name.onrender.com']
+    if render_url:
+        trusted_origins.append(render_url)
+    CSRF_TRUSTED_ORIGINS = trusted_origins
 
 # PWA Service Worker Settings
 PWA_SERVICE_WORKER_PATH = 'static/nano/sw.js'
