@@ -16,9 +16,11 @@ services:
       - key: DJANGO_SECRET_KEY
         generateValue: true
       - key: DJANGO_ALLOWED_HOSTS
-        value: .onrender.com,localhost,127.0.0.1
+        value: ndtechpos.onrender.com,.onrender.com,localhost,127.0.0.1
       - key: PORT
         value: 10000
+      - key: RENDER_URL
+        value: https://ndtechpos.onrender.com
 
 # Optional: Redis for session storage (if needed)
 #  - type: redis
