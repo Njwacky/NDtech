@@ -26,8 +26,8 @@ DEBUG = config('DJANGO_DEBUG', default=False, cast=bool)
 if DEBUG:
     ALLOWED_HOSTS = config('DJANGO_ALLOWED_HOSTS', default='localhost,127.0.0.1').split(',')
 else:
-    # Production - Render.com will set this properly
-    ALLOWED_HOSTS = config('DJANGO_ALLOWED_HOSTS', default='.onrender.com').split(',')
+    # Production - Explicitly allow the specific Render.com domain
+    ALLOWED_HOSTS = config('DJANGO_ALLOWED_HOSTS', default='ndtechpos.onrender.com,.onrender.com').split(',')
 
 # Application definition
 INSTALLED_APPS = [
@@ -159,9 +159,9 @@ if DEBUG:
     CSRF_TRUSTED_ORIGINS = config('CSRF_TRUSTED_ORIGINS', default='http://localhost:8080,http://127.0.0.1:8080,http://localhost:8000,http://127.0.0.1:8000').split(',')
 else:
     # Production - Add your Render.com URL here
-    render_url = config('RENDER_URL', default='').strip()
-    trusted_origins = ['https://your-app-name.onrender.com']
-    if render_url:
+    render_url = config('RENDER_URL', default='https://ndtechpos.onrender.com').strip()
+    trusted_origins = ['https://ndtechpos.onrender.com']
+    if render_url and render_url not in trusted_origins:
         trusted_origins.append(render_url)
     CSRF_TRUSTED_ORIGINS = trusted_origins
 
