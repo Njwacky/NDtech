@@ -12,7 +12,6 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 
 from pathlib import Path
 from decouple import config
-import dj_database_url
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -74,16 +73,18 @@ WSGI_APPLICATION = 'confige.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
-# Database configuration - Handle both local and production environments
-if config('DJANGO_DEBUG', default=False, cast=bool):
-    # Local development - Use standard PostgreSQL port (5432)
-    DATABASE_URL = config('DATABASE_URL', default='postgresql://postgres:Python2001@localhost:5432/postgres')
-else:
-    # Production (Render.com) - Use the database URL provided by Render
-    DATABASE_URL = config('DATABASE_URL')
+# Database configuration - SQLite only (force SQLite even in production)
+import os
+
+# Ignore any DATABASE_URL environment variable to ensure SQLite is always used
+if 'DATABASE_URL' in os.environ:
+    del os.environ['DATABASE_URL']
 
 DATABASES = {
-    'default': dj_database_url.parse(DATABASE_URL)
+    'default': {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': BASE_DIR / 'db.sqlite3',
+    }
 }
 
 # Password validation

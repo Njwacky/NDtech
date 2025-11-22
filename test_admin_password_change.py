@@ -154,12 +154,12 @@ if __name__ == "__main__":
     if success:
         print("🎉 ALL TESTS PASSED!")
         print("✅ Admin users can change cashiers' passwords without knowing the old password")
-        print("✅ System is ready for deployment with PostgreSQL")
+        print("✅ System is ready for deployment with SQLite")
     else:
         print("❌ SOME TESTS FAILED!")
         print("⚠️  Please check the implementation")
     
     print(f"\n📝 Summary:")
-    print("   - PostgreSQL deployment: ✅ READY")
+    print("   - SQLite deployment: ✅ READY")
     print("   - Admin password management: ✅ READY")
     print("   - Security permissions: ✅ READY")
