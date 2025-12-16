@@ -109,6 +109,29 @@
                 </div>
             </div>
             
+            <!-- Airtime Dropdown -->
+            <div class="nav-dropdown">
+                <button class="nav-link dropdown-toggle">
+                    <i class="fas fa-mobile-alt"></i> Airtime
+                </button>
+                <div class="dropdown-menu">
+                    <a href="{% url 'airtime_dashboard' %}" class="dropdown-item">
+                        <i class="fas fa-tachometer-alt"></i> Airtime Dashboard
+                    </a>
+                    {% if user.is_superuser or user.userprofile.role == 'admin' or user.userprofile.role == 'manager' %}
+                    <a href="{% url 'airtime_management' %}" class="dropdown-item">
+                        <i class="fas fa-cogs"></i> Manage Products
+                    </a>
+                    <a href="{% url 'airtime_sales' %}" class="dropdown-item">
+                        <i class="fas fa-shopping-cart"></i> Sales Management
+                    </a>
+                    <a href="{% url 'airtime_requests_management' %}" class="dropdown-item">
+                        <i class="fas fa-clipboard-list"></i> Request Management
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+            
             {% if user.is_superuser or user.userprofile.role == 'admin' or user.userprofile.role == 'manager' %}
             <a href="{% url 'manage_users' %}" class="nav-link">
                 <i class="fas fa-users"></i> Manage Users
@@ -175,6 +198,27 @@
                 {% if user.is_superuser or user.userprofile.role == 'admin' or user.userprofile.role == 'manager' %}
                 <a href="{% url 'completed_orders' %}" class="mobile-nav-link sub-link">
                     <i class="fas fa-check-circle"></i> Completed Orders
+                </a>
+                {% endif %}
+            </div>
+            
+            <!-- Mobile Airtime Section -->
+            <div class="mobile-nav-section">
+                <div class="mobile-nav-section-title">
+                    <i class="fas fa-mobile-alt"></i> Airtime
+                </div>
+                <a href="{% url 'airtime_dashboard' %}" class="mobile-nav-link sub-link">
+                    <i class="fas fa-tachometer-alt"></i> Airtime Dashboard
+                </a>
+                {% if user.is_superuser or user.userprofile.role == 'admin' or user.userprofile.role == 'manager' %}
+                <a href="{% url 'airtime_management' %}" class="mobile-nav-link sub-link">
+                    <i class="fas fa-cogs"></i> Manage Products
+                </a>
+                <a href="{% url 'airtime_sales' %}" class="mobile-nav-link sub-link">
+                    <i class="fas fa-shopping-cart"></i> Sales Management
+                </a>
+                <a href="{% url 'airtime_requests_management' %}" class="mobile-nav-link sub-link">
+                    <i class="fas fa-clipboard-list"></i> Request Management
                 </a>
                 {% endif %}
             </div>

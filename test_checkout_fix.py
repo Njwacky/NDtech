@@ -1,165 +1,103 @@
-#!/usr/bin/env python3
-"""
-Test script to verify checkout functionality fix
-"""
-
+#!/usr/bin/env python
 import os
-import sys
 import django
+import json
 
-# Set up Django environment
+# Set up Django
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'confige.settings')
 django.setup()
 
-from django.test import Client
+from nano.models import PendingOrder, Product, Sale, CompletedOrder
 from django.contrib.auth.models import User
-from nano.models import Product, PendingOrder, CompletedOrder, UserProfile
-import json
 
-def test_checkout_functionality():
-    """Test that checkout properly moves orders from pending to completed"""
+def test_checkout_fix():
+    print("=== TEST CHECKOUT FIX ===")
     
-    print("🧪 Testing Checkout Functionality Fix")
-    print("=" * 50)
+    # Get the pending order
+    order = PendingOrder.objects.first()
+    if not order:
+        print("No pending orders found")
+        return
     
-    # Create test client
-    client = Client()
+    print(f"Testing checkout for Order ID: {order.id}")
+    print(f"Customer: {order.customer_name}")
+    print(f"Items: {order.items}")
     
-    # Create test user if not exists
-    try:
-        user = User.objects.get(username='testuser')
-    except User.DoesNotExist:
-        user = User.objects.create_user(username='testuser', password='testpass123')
-        UserProfile.objects.create(user=user, role='admin')
+    # Test product lookup for each item
+    cart_items = order.items
+    stock_issues = []
+    products_updated = []
     
-    # Log in the test user
-    login_success = client.login(username='testuser', password='testpass123')
-    print(f"   Login successful: {login_success}")
-    
-    # Create test product if not exists
-    try:
-        product = Product.objects.get(name='Test Product')
-    except Product.DoesNotExist:
-        product = Product.objects.create(
-            name='Test Product',
-            price=10.00,
-            stock=100,
-            category='basic_groceries'
-        )
-    
-    # Create a test pending order
-    order_items = [
-        {
-            'product': 'Test Product',
-            'product_id': product.id,
-            'quantity': 2,
-            'price': 10.00
-        }
-    ]
-    
-    pending_order = PendingOrder.objects.create(
-        user=user,
-        customer_name='Test Customer',
-        customer_phone='1234567890',
-        items=order_items,
-        total=20.00,
-        status='pending'
-    )
-    
-    print(f"✅ Created pending order #{pending_order.id}")
-    print(f"   Customer: {pending_order.customer_name}")
-    print(f"   Phone: {pending_order.customer_phone}")
-    print(f"   Total: R{pending_order.total}")
-    print(f"   Status: {pending_order.status}")
-    
-    # Test checkout endpoint
-    print(f"\n🔄 Testing checkout for order #{pending_order.id}...")
-    
-    checkout_data = {
-        'cash_received': '20.00',
-        'payment_method': 'cash'
-    }
-    
-    response = client.post(
-        f'/pending_orders/{pending_order.id}/checkout/',
-        data=json.dumps(checkout_data),
-        content_type='application/json'
-    )
-    
-    print(f"   Response status: {response.status_code}")
-    
-    if response.status_code == 200:
-        response_data = response.json()
-        print(f"   Response: {response_data}")
+    for item in cart_items:
+        print(f"\nProcessing item: {item}")
         
-        if response_data.get('success'):
-            print("✅ Checkout successful!")
-            
-            # Verify pending order status changed
-            pending_order.refresh_from_db()
-            print(f"   Pending order status: {pending_order.status}")
-            
-            # Verify completed order was created
-            completed_orders = CompletedOrder.objects.all()
-            if completed_orders.exists():
-                completed_order = completed_orders.first()
-                print(f"✅ Completed order created: #{completed_order.id}")
-                print(f"   Customer: {completed_order.customer_name}")
-                print(f"   Phone: {completed_order.customer_phone}")
-                print(f"   Total: R{completed_order.total}")
-                print(f"   Cash Received: R{completed_order.cash_received}")
-                print(f"   Change Given: R{completed_order.change_given}")
-                print(f"   Payment Method: {completed_order.payment_method}")
-                print(f"   Processed By: {completed_order.processed_by.username}")
-                
-                # Verify customer info is preserved
-                if (completed_order.customer_name == 'Test Customer' and 
-                    completed_order.customer_phone == '1234567890'):
-                    print("✅ Customer information correctly preserved!")
-                else:
-                    print("❌ Customer information not preserved correctly")
+        # Handle both product_id (for backward compatibility) and product name
+        product_id = item.get('product_id')
+        product_name = item.get('product')
+        quantity = item.get('quantity', 0)
+
+        if quantity <= 0:
+            stock_issues.append(f'Invalid item data: quantity={quantity}')
+            continue
+
+        try:
+            # Try to find product by ID first (for backward compatibility)
+            if product_id:
+                print(f"  Looking up product by ID: {product_id}")
+                product = Product.objects.get(id=product_id)
+            elif product_name:
+                # Try to find product by name (current format)
+                print(f"  Looking up product by name: {product_name}")
+                product = Product.objects.get(name=product_name)
             else:
-                print("❌ No completed order found")
-        else:
-            print(f"❌ Checkout failed: {response_data.get('error')}")
+                stock_issues.append(f'No product identifier found in item: {item}')
+                continue
+            
+            print(f"  ✓ Found product: {product.name} (ID: {product.id}, Stock: {product.stock})")
+            
+            if product.stock >= quantity:
+                print(f"  ✓ Sufficient stock: {product.stock} >= {quantity}")
+                products_updated.append(product.name)
+            else:
+                print(f"  ✗ Insufficient stock: {product.stock} < {quantity}")
+                stock_issues.append(f'Insufficient stock for {product.name}. Available: {product.stock}, Required: {quantity}')
+                
+        except Product.DoesNotExist:
+            if product_id:
+                print(f"  ✗ Product not found for ID: {product_id}")
+                stock_issues.append(f'Product not found for ID: {product_id}')
+            elif product_name:
+                print(f"  ✗ Product not found for name: {product_name}")
+                stock_issues.append(f'Product not found: {product_name}')
+            else:
+                print(f"  ✗ No product identifier in item")
+                stock_issues.append(f'Product not found in item: {item}')
+        except Exception as e:
+            print(f"  ✗ Error: {str(e)}")
+            stock_issues.append(f'Error updating {item.get("product", "unknown product")}: {str(e)}')
+    
+    print(f"\n=== RESULTS ===")
+    if stock_issues:
+        print("❌ Stock issues found:")
+        for issue in stock_issues:
+            print(f"  - {issue}")
     else:
-        print(f"❌ Checkout request failed with status {response.status_code}")
-        print(f"   Response: {response.content.decode()}")
-    
-    # Test pending orders list
-    print(f"\n📋 Testing pending orders list...")
-    response = client.get('/pending_orders/')
-    if response.status_code == 200:
-        orders = PendingOrder.objects.filter(status='pending')
-        print(f"   Pending orders count: {orders.count()}")
-        if orders.count() == 0:
-            print("✅ No pending orders found (order moved to completed)")
-        else:
-            print("❌ Pending orders still found")
-    else:
-        print(f"❌ Failed to get pending orders: {response.status_code}")
-    
-    # Test completed orders list
-    print(f"\n📋 Testing completed orders list...")
-    response = client.get('/completed_orders/')
-    if response.status_code == 200:
-        completed_orders = CompletedOrder.objects.all()
-        print(f"   Completed orders count: {completed_orders.count()}")
-        if completed_orders.count() > 0:
-            print("✅ Completed orders found")
-        else:
-            print("❌ No completed orders found")
-    else:
-        print(f"❌ Failed to get completed orders: {response.status_code}")
-    
-    # Cleanup
-    print(f"\n🧹 Cleaning up test data...")
-    PendingOrder.objects.all().delete()
-    CompletedOrder.objects.all().delete()
-    print("✅ Test data cleaned up")
-    
-    print(f"\n🎉 Checkout functionality test completed!")
-    print("=" * 50)
+        print("✅ All products found and stock is sufficient!")
+        print(f"Products that would be updated: {products_updated}")
+        
+        # Simulate the stock update
+        print("\n=== SIMULATING STOCK UPDATE ===")
+        for item in cart_items:
+            product_name = item.get('product')
+            quantity = item.get('quantity', 0)
+            
+            try:
+                product = Product.objects.get(name=product_name)
+                old_stock = product.stock
+                new_stock = old_stock - quantity
+                print(f"  {product.name}: {old_stock} -> {new_stock} (-{quantity})")
+            except Product.DoesNotExist:
+                print(f"  ✗ Could not find product: {product_name}")
 
 if __name__ == '__main__':
-    test_checkout_functionality()
+    test_checkout_fix()

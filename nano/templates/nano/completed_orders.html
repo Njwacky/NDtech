@@ -146,15 +146,15 @@
                     <div class="stat-label">Total Orders</div>
                 </div>
                 <div class="stat-card">
-                    <div class="stat-value">R{{ total_revenue }}</div>
+                    <div class="stat-value">R{{ total_revenue|floatformat:2 }}</div>
                     <div class="stat-label">Total Revenue</div>
                 </div>
                 <div class="stat-card">
-                    <div class="stat-value">R{{ total_cash_received }}</div>
+                    <div class="stat-value">R{{ total_cash_received|floatformat:2 }}</div>
                     <div class="stat-label">Total Cash Received</div>
                 </div>
                 <div class="stat-card">
-                    <div class="stat-value">R{{ total_change_given }}</div>
+                    <div class="stat-value">R{{ total_change_given|floatformat:2 }}</div>
                     <div class="stat-label">Total Change Given</div>
                 </div>
             </div>

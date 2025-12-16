@@ -1,0 +1,218 @@
+{% extends 'nano/base.html' %}
+{% load static %}
+
+{% block title %}Airtime Sales - futurePOS{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'nano/airtime.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <h2 class="mb-4">
+                <i class="fas fa-shopping-cart"></i> Airtime Sales
+                {% if is_manager %}
+                    <a href="{% url 'airtime_management' %}" class="btn btn-sm btn-success float-end">
+                        <i class="fas fa-plus"></i> Manage Products
+                    </a>
+                {% endif %}
+            </h2>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="fas fa-filter"></i> Filters</h5>
+                </div>
+                <div class="card-body">
+                    <form method="get" class="row g-3">
+                        <div class="col-md-3">
+                            <label for="status_filter" class="form-label">Status:</label>
+                            <select class="form-select" id="status_filter" name="status">
+                                <option value="">All Status</option>
+                                <option value="pending" {% if status_filter == 'pending' %}selected{% endif %}>Pending</option>
+                                <option value="approved" {% if status_filter == 'approved' %}selected{% endif %}>Approved</option>
+                                <option value="completed" {% if status_filter == 'completed' %}selected{% endif %}>Completed</option>
+                                <option value="cancelled" {% if status_filter == 'cancelled' %}selected{% endif %}>Cancelled</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label for="network_filter" class="form-label">Network:</label>
+                            <select class="form-select" id="network_filter" name="network">
+                                <option value="">All Networks</option>
+                                <option value="vodacom" {% if network_filter == 'vodacom' %}selected{% endif %}>Vodacom</option>
+                                <option value="mtn" {% if network_filter == 'mtn' %}selected{% endif %}>MTN</option>
+                                <option value="telkom" {% if network_filter == 'telkom' %}selected{% endif %}>Telkom</option>
+                                <option value="cell_c" {% if network_filter == 'cell_c' %}selected{% endif %}>Cell C</option>
+                                <option value="rain" {% if network_filter == 'rain' %}selected{% endif %}>Rain</option>
+                                <option value="blu" {% if network_filter == 'blu' %}selected{% endif %}>BLU</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">&nbsp;</label>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-search"></i> Apply Filters
+                            </button>
+                            <a href="{% url 'airtime_sales' %}" class="btn btn-secondary">
+                                <i class="fas fa-times"></i> Clear
+                            </a>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">&nbsp;</label>
+                            <a href="{% url 'airtime_dashboard' %}" class="btn btn-info">
+                                <i class="fas fa-arrow-left"></i> Back to Dashboard
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sales Table -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="fas fa-list"></i> Airtime Sales</h5>
+                    <span class="badge bg-info float-end">{{ sales.count }} sales</span>
+                </div>
+                <div class="card-body">
+                    {% if sales %}
+                        <div class="table-responsive">
+                            <table class="table table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Product</th>
+                                        <th>Network</th>
+                                        <th>Type</th>
+                                        <th>Customer Phone</th>
+                                        <th>Quantity</th>
+                                        <th>Total Price</th>
+                                        <th>Status</th>
+                                        <th>Requested By</th>
+                                        <th>Created</th>
+                                        {% if is_manager %}
+                                            <th>Actions</th>
+                                        {% endif %}
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for sale in sales %}
+                                        <tr>
+                                            <td>{{ sale.id }}</td>
+                                            <td>{{ sale.airtime_product.get_display_name }}</td>
+                                            <td>
+                                                <span class="badge bg-{{ sale.airtime_product.network|lower }}">
+                                                    {{ sale.airtime_product.get_network_display }}
+                                                </span>
+                                            </td>
+                                            <td>{{ sale.airtime_product.get_airtime_type_display }}</td>
+                                            <td>{{ sale.customer_phone }}</td>
+                                            <td>{{ sale.quantity }}</td>
+                                            <td>R{{ sale.total_price }}</td>
+                                            <td>
+                                                {% if sale.status == 'pending' %}
+                                                    <span class="badge bg-warning">Pending</span>
+                                                {% elif sale.status == 'approved' %}
+                                                    <span class="badge bg-info">Approved</span>
+                                                {% elif sale.status == 'completed' %}
+                                                    <span class="badge bg-success">Completed</span>
+                                                {% elif sale.status == 'cancelled' %}
+                                                    <span class="badge bg-danger">Cancelled</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>{{ sale.requested_by.username }}</td>
+                                            <td>{{ sale.created_at|date:"Y-m-d H:i" }}</td>
+                                            {% if is_manager %}
+                                                <td>
+                                                    {% if sale.status == 'pending' %}
+                                                        <a href="{% url 'approve_airtime_sale' sale.id %}" 
+                                                           class="btn btn-sm btn-success">
+                                                            <i class="fas fa-check"></i> Approve
+                                                        </a>
+                                                        <a href="{% url 'reject_airtime_sale' sale.id %}" 
+                                                           class="btn btn-sm btn-danger">
+                                                            <i class="fas fa-times"></i> Reject
+                                                        </a>
+                                                    {% elif sale.status == 'approved' %}
+                                                        <span class="text-muted">Awaiting completion</span>
+                                                    {% else %}
+                                                        <span class="text-muted">Completed</span>
+                                                    {% endif %}
+                                                </td>
+                                            {% endif %}
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Pagination -->
+                        {% if is_paginated %}
+                            <nav aria-label="Sales pagination">
+                                <ul class="pagination justify-content-center">
+                                    {% if page_obj.has_previous %}
+                                        <li class="page-item">
+                                            <a class="page-link" href="?page=1{% if status_filter %}&status={{ status_filter }}{% endif %}{% if network_filter %}&network={{ network_filter }}{% endif %}">
+                                                <i class="fas fa-angle-double-left"></i>
+                                            </a>
+                                        </li>
+                                        <li class="page-item">
+                                            <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if network_filter %}&network={{ network_filter }}{% endif %}">
+                                                <i class="fas fa-angle-left"></i>
+                                            </a>
+                                        </li>
+                                    {% endif %}
+
+                                    {% for num in page_obj.paginator.page_range %}
+                                        {% if page_obj.number == num %}
+                                            <li class="page-item active">
+                                                <span class="page-link">{{ num }}</span>
+                                            </li>
+                                        {% else %}
+                                            <li class="page-item">
+                                                <a class="page-link" href="?page={{ num }}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if network_filter %}&network={{ network_filter }}{% endif %}">
+                                                    {{ num }}
+                                                </a>
+                                            </li>
+                                        {% endif %}
+                                    {% endfor %}
+
+                                    {% if page_obj.has_next %}
+                                        <li class="page-item">
+                                            <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if network_filter %}&network={{ network_filter }}{% endif %}">
+                                                <i class="fas fa-angle-right"></i>
+                                            </a>
+                                        </li>
+                                        <li class="page-item">
+                                            <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if network_filter %}&network={{ network_filter }}{% endif %}">
+                                                <i class="fas fa-angle-double-right"></i>
+                                            </a>
+                                        </li>
+                                    {% endif %}
+                                </ul>
+                            </nav>
+                        {% endif %}
+                    {% else %}
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle"></i> No airtime sales found.
+                            {% if is_manager %}
+                                <a href="{% url 'airtime_management' %}">Add some airtime products</a> to get started.
+                            {% else %}
+                                Start selling airtime from the <a href="{% url 'airtime_dashboard' %}">dashboard</a>.
+                            {% endif %}
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

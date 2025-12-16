@@ -11,7 +11,7 @@ from django.http import JsonResponse, HttpResponseForbidden
 from django.views.decorators.csrf import csrf_exempt
 from django.utils import timezone
 from django.db.models import Q
-from .models import Product
+from .models import Product, ErrorLog, UserActivity, DeviceConnection
 from food_ordering.models import MenuItem, Restaurant
 
 class FoodOrderingIntegration:
@@ -231,6 +231,21 @@ def api_food_scanner_lookup(request, barcode):
             food_items = FoodOrderingIntegration.search_menu_items_by_barcode(barcode)
             results.extend(food_items)
             
+            # Log user activity for barcode scan
+            UserActivity.objects.create(
+                user=request.user,
+                activity_type='api_call',
+                description=f'Scanned barcode: {barcode}',
+                page_url='/food/scanner/',
+                ip_address=FoodOrderingIntegration._get_client_ip(request),
+                user_agent=request.META.get('HTTP_USER_AGENT', ''),
+                metadata={
+                    'barcode': barcode,
+                    'results_found': len(results),
+                    'scan_type': 'food_scanner'
+                }
+            )
+            
             if results:
                 return JsonResponse({
                     'success': True,
@@ -239,6 +254,20 @@ def api_food_scanner_lookup(request, barcode):
                     'total_found': len(results)
                 })
             else:
+                # Log error for barcode not found
+                ErrorLog.objects.create(
+                    error_type='user_error',
+                    severity='low',
+                    error_message=f'No products or menu items found for barcode: {barcode}',
+                    url='/food/scanner/',
+                    request_method='GET',
+                    user_agent=request.META.get('HTTP_USER_AGENT', ''),
+                    ip_address=FoodOrderingIntegration._get_client_ip(request),
+                    user=request.user,
+                    user_action='Scanning barcode for product lookup',
+                    form_data={'barcode': barcode}
+                )
+                
                 return JsonResponse({
                     'success': False,
                     'message': f'No products or menu items found for barcode: {barcode}',
@@ -246,6 +275,20 @@ def api_food_scanner_lookup(request, barcode):
                 })
                 
         except Exception as e:
+            # Log system error
+            ErrorLog.objects.create(
+                error_type='system_error',
+                severity='medium',
+                error_message=f'Error in food scanner lookup: {str(e)}',
+                url='/food/scanner/',
+                request_method='GET',
+                user_agent=request.META.get('HTTP_USER_AGENT', ''),
+                ip_address=FoodOrderingIntegration._get_client_ip(request),
+                user=request.user,
+                user_action='Scanning barcode for product lookup',
+                stack_trace=str(e)
+            )
+            
             return JsonResponse({'success': False, 'error': str(e)})
     
     return JsonResponse({'success': False, 'error': 'Invalid request method'})
@@ -333,6 +376,35 @@ def food_menu_browser(request):
         except Restaurant.DoesNotExist:
             pass
     
+    @staticmethod
+    def _get_client_ip(request):
+        """Get client IP address from request"""
+        x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+        if x_forwarded_for:
+            ip = x_forwarded_for.split(',')[0]
+        else:
+            ip = request.META.get('REMOTE_ADDR')
+        return ip
+
+    @staticmethod
+    def log_food_ordering_error(request, error_message, error_type='user_error', severity='low', user_action='', form_data=None):
+        """Log errors in food ordering system"""
+        try:
+            ErrorLog.objects.create(
+                error_type=error_type,
+                severity=severity,
+                error_message=error_message,
+                url=request.path,
+                request_method=request.method,
+                user_agent=request.META.get('HTTP_USER_AGENT', ''),
+                ip_address=FoodOrderingIntegration._get_client_ip(request),
+                user=request.user if request.user.is_authenticated else None,
+                user_action=user_action,
+                form_data=form_data or {}
+            )
+        except Exception as e:
+            print(f"Error logging food ordering error: {str(e)}")
+
     return render(request, 'nano/food_menu_browser.html', {
         'restaurants': restaurants,
         'menu_items': menu_items,

@@ -1,0 +1,267 @@
+{% extends 'nano/base.html' %}
+{% load static %}
+
+{% block title %}Resolve Error - NDtech{% endblock %}
+
+{% block extra_css %}
+<style>
+.resolve-container {
+    background: white;
+    border-radius: 15px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    overflow: hidden;
+    margin-bottom: 30px;
+}
+
+.resolve-header {
+    background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+    color: white;
+    padding: 25px;
+    text-align: center;
+}
+
+.resolve-title {
+    margin: 0;
+    font-size: 1.5rem;
+    font-weight: 600;
+}
+
+.resolve-content {
+    padding: 30px;
+}
+
+.error-summary {
+    background: #f8f9fa;
+    padding: 20px;
+    border-radius: 10px;
+    border-left: 4px solid #dc3545;
+    margin-bottom: 30px;
+}
+
+.error-summary h4 {
+    margin: 0 0 10px 0;
+    color: #dc3545;
+    font-size: 1.1rem;
+}
+
+.error-summary p {
+    margin: 0;
+    color: #2c3e50;
+    line-height: 1.5;
+}
+
+.form-group {
+    margin-bottom: 25px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 600;
+    color: #2c3e50;
+}
+
+.form-group textarea {
+    width: 100%;
+    padding: 12px;
+    border: 2px solid #e9ecef;
+    border-radius: 8px;
+    font-size: 1rem;
+    line-height: 1.5;
+    resize: vertical;
+    min-height: 120px;
+    font-family: inherit;
+}
+
+.form-group textarea:focus {
+    outline: none;
+    border-color: #007bff;
+    box-shadow: 0 0 0 3px rgba(0,123,255,0.1);
+}
+
+.form-actions {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+    margin-top: 30px;
+}
+
+.btn {
+    padding: 12px 25px;
+    border: none;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.btn-success {
+    background: #28a745;
+    color: white;
+}
+
+.btn-success:hover {
+    background: #218838;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(40,167,69,0.3);
+}
+
+.btn-secondary {
+    background: #6c757d;
+    color: white;
+}
+
+.btn-secondary:hover {
+    background: #5a6268;
+    transform: translateY(-2px);
+}
+
+.error-details-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+    margin-bottom: 20px;
+}
+
+.error-detail-item {
+    background: #f8f9fa;
+    padding: 15px;
+    border-radius: 8px;
+    border-left: 3px solid #007bff;
+}
+
+.error-detail-item strong {
+    display: block;
+    margin-bottom: 5px;
+    color: #495057;
+    font-size: 0.9rem;
+}
+
+.error-detail-item span {
+    color: #2c3e50;
+    font-size: 1rem;
+}
+
+.severity-indicator {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    border-radius: 15px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-size: 0.8rem;
+}
+
+.severity-critical {
+    background: #dc3545;
+    color: white;
+}
+
+.severity-high {
+    background: #fd7e14;
+    color: white;
+}
+
+.severity-medium {
+    background: #ffc107;
+    color: #212529;
+}
+
+.severity-low {
+    background: #28a745;
+    color: white;
+}
+
+@media (max-width: 768px) {
+    .form-actions {
+        flex-direction: column;
+    }
+    
+    .error-details-grid {
+        grid-template-columns: 1fr;
+    }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1><i class="fas fa-check-circle"></i> Resolve Error</h1>
+    <p>Mark this error as resolved and add resolution notes</p>
+</div>
+
+<div class="resolve-container">
+    <div class="resolve-header">
+        <div class="resolve-title">
+            <i class="fas fa-check-circle"></i> Resolve Error #{{ error.id }}
+        </div>
+    </div>
+    
+    <div class="resolve-content">
+        <!-- Error Summary -->
+        <div class="error-summary">
+            <h4><i class="fas fa-exclamation-triangle"></i> Error Summary</h4>
+            <p>{{ error.error_message|truncatechars:200 }}</p>
+        </div>
+        
+        <!-- Error Details -->
+        <div class="error-details-grid">
+            <div class="error-detail-item">
+                <strong>Error Type:</strong>
+                <span>{{ error.get_error_type_display }}</span>
+            </div>
+            <div class="error-detail-item">
+                <strong>Severity:</strong>
+                <span>
+                    <span class="severity-indicator severity-{{ error.severity }}">
+                        {{ error.get_severity_display }}
+                    </span>
+                </span>
+            </div>
+            <div class="error-detail-item">
+                <strong>Created:</strong>
+                <span>{{ error.created_at|date:"F j, Y, g:i A" }}</span>
+            </div>
+            {% if error.user %}
+            <div class="error-detail-item">
+                <strong>User:</strong>
+                <span>{{ error.user.username }}</span>
+            </div>
+            {% endif %}
+        </div>
+        
+        <!-- Resolution Form -->
+        <form method="post">
+            {% csrf_token %}
+            
+            <div class="form-group">
+                <label for="resolution_notes">
+                    <i class="fas fa-sticky-note"></i> Resolution Notes
+                </label>
+                <textarea 
+                    name="resolution_notes" 
+                    id="resolution_notes" 
+                    placeholder="Describe how this error was resolved. Include any steps taken, fixes applied, or preventive measures implemented..."
+                    required
+                ></textarea>
+            </div>
+            
+            <div class="form-actions">
+                <button type="submit" class="btn btn-success">
+                    <i class="fas fa-check"></i> Mark as Resolved
+                </button>
+                <a href="{% url 'error_details' error.id %}" class="btn btn-secondary">
+                    <i class="fas fa-times"></i> Cancel
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

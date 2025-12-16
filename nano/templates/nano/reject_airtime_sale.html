@@ -1,0 +1,144 @@
+{% extends 'nano/base.html' %}
+{% load static %}
+
+{% block title %}Reject Airtime Sale - futurePOS{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'nano/airtime.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <h2 class="mb-4">
+                <i class="fas fa-times-circle text-danger"></i> Reject Airtime Sale
+                <a href="{% url 'airtime_sales' %}" class="btn btn-sm btn-secondary float-end">
+                    <i class="fas fa-arrow-left"></i> Back to Sales
+                </a>
+            </h2>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="fas fa-info-circle"></i> Sale Details</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-borderless">
+                            <tr>
+                                <th width="30%">Product:</th>
+                                <td>{{ airtime_sale.airtime_product.get_display_name }}</td>
+                            </tr>
+                            <tr>
+                                <th>Network:</th>
+                                <td>
+                                    <span class="badge bg-{{ airtime_sale.airtime_product.network|lower }}">
+                                        {{ airtime_sale.airtime_product.get_network_display }}
+                                    </span>
+                                </td>
+                            </tr>
+                            <tr>
+                                <th>Type:</th>
+                                <td>{{ airtime_sale.airtime_product.get_airtime_type_display }}</td>
+                            </tr>
+                            <tr>
+                                <th>Value:</th>
+                                <td>R{{ airtime_sale.airtime_product.value }}</td>
+                            </tr>
+                            <tr>
+                                <th>Unit Price:</th>
+                                <td>R{{ airtime_sale.airtime_product.price }}</td>
+                            </tr>
+                            <tr>
+                                <th>Quantity:</th>
+                                <td>{{ airtime_sale.quantity }}</td>
+                            </tr>
+                            <tr>
+                                <th>Total Price:</th>
+                                <td class="fw-bold">R{{ airtime_sale.total_price }}</td>
+                            </tr>
+                            <tr>
+                                <th>Customer Phone:</th>
+                                <td>{{ airtime_sale.customer_phone }}</td>
+                            </tr>
+                            <tr>
+                                <th>Requested By:</th>
+                                <td>{{ airtime_sale.requested_by.username }}</td>
+                            </tr>
+                            <tr>
+                                <th>Created:</th>
+                                <td>{{ airtime_sale.created_at|date:"Y-m-d H:i:s" }}</td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="fas fa-exclamation-triangle text-warning"></i> Warning</h5>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle"></i> 
+                        <strong>You are about to reject this airtime sale.</strong>
+                        <br><br>
+                        This action cannot be undone. The customer will need to request a new sale if still needed.
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Current Stock:</label>
+                        <div class="form-control-plaintext">
+                            {{ airtime_sale.airtime_product.stock }} units available
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="fas fa-edit"></i> Rejection Action</h5>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label for="rejection_reason" class="form-label">Rejection Reason <span class="text-danger">*</span>:</label>
+                            <textarea class="form-control" id="rejection_reason" name="rejection_reason" 
+                                      rows="4" placeholder="Please provide a reason for rejecting this sale..." required></textarea>
+                            <small class="form-text text-muted">This reason will be logged for audit purposes.</small>
+                        </div>
+                        
+                        <div class="alert alert-danger">
+                            <i class="fas fa-exclamation-triangle"></i> 
+                            <strong>Important:</strong> Once rejected, this sale cannot be recovered. The customer will need to initiate a new sale request.
+                        </div>
+                        
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-danger">
+                                <i class="fas fa-times"></i> Reject Sale
+                            </button>
+                            <a href="{% url 'airtime_sales' %}" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left"></i> Back to Sales
+                            </a>
+                            <a href="{% url 'approve_airtime_sale' airtime_sale.id %}" class="btn btn-outline-warning">
+                                <i class="fas fa-undo"></i> Go Back to Approval
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

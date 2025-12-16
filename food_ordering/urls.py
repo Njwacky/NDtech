@@ -34,4 +34,9 @@ urlpatterns = [
     path('restaurants/<int:restaurant_id>/', views.RestaurantDetailView.as_view(), name='restaurant-detail'),
     path('orders/track/<str:tracking_code>/', views.OrderTrackingView.as_view(), name='order-tracking'),
     path('analytics/<int:restaurant_id>/', views.restaurant_analytics, name='restaurant-analytics'),
+    
+    # Error tracking integration
+    path('api/v1/food-scanner/<str:barcode>/', views.enhanced_food_scanner_lookup),
+    path('api/v1/food-add-to-cart/', views.enhanced_add_to_cart),
+    path('api/v1/food-error-report/', views.food_ordering_error_report),
 ]

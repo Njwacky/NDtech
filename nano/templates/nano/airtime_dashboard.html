@@ -1,0 +1,488 @@
+{% extends 'nano/base.html' %}
+{% load static %}
+
+{% block title %}Airtime Dashboard - NDtech{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'nano/airtime.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <h2 class="mb-4">
+                <i class="fas fa-mobile-alt"> Airtime Dashboard</i>
+                <button class="btn btn-sm btn-info ms-3" data-bs-toggle="collapse" data-bs-target="#dashboardHelp">
+                    <i class="fas fa-question-circle"></i> Quick Guide
+                </button>
+            </h2>
+        </div>
+    </div>
+
+    <!-- Dashboard Help Guide -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="collapse" id="dashboardHelp">
+                <div class="card border-success" style="background-color: #8bcf9f;">
+                    <div class="card-header bg-success text-black">
+                        <h5 class="mb-0">
+                            <i class="fas fa-info-circle"></i> Airtime Dashboard Guide
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-4">
+                                <h6><i class="fas fa-shopping-cart text-primary"></i> For Cashiers</h6>
+                                <ol class="small">
+                                    <li><strong>Sell Airtime:</strong> Click "Sell" button next to any product</li>
+                                    <li><strong>Enter Details:</strong> Add customer phone number and quantity</li>
+                                    <li><strong>Submit:</strong> Sale goes to manager for approval</li>
+                                    <li><strong>Track:</strong> Monitor your pending sales status</li>
+                                </ol>
+                            </div>
+                            <div class="col-md-4">
+                                <h6><i class="fas fa-user-tie text-success"></i> For Managers</h6>
+                                <ol class="small">
+                                    <li><strong>Approve Sales:</strong> Review pending cashier sales</li>
+                                    <li><strong>Manage Products:</strong> Add/edit airtime products</li>
+                                    <li><strong>Update Stock:</strong> Maintain inventory levels</li>
+                                    <li><strong>Handle Requests:</strong> Process cashier requests</li>
+                                </ol>
+                            </div>
+                            <div class="col-md-4">
+                                <h6><i class="fas fa-chart-line text-warning"></i> Quick Stats</h6>
+                                <ul class="small">
+                                    <li><strong>Total Products:</strong> All active airtime items</li>
+                                    <li><strong>Pending Sales:</strong> Awaiting your approval</li>
+                                    <li><strong>Requests:</strong> Product/stock change requests</li>
+                                    <li><strong>Your Role:</strong> Current permission level</li>
+                                </ul>
+                            </div>
+                        </div>
+                        
+                        <div class="alert alert-light mt-3">
+                            <h6 class="alert-heading"><i class="fas fa-lightbulb"></i> Pro Tips</h6>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <p class="mb-1 small"><strong>💰 Profit Margins:</strong> Set selling prices higher than face value</p>
+                                    <p class="mb-1 small"><strong>📱 Phone Format:</strong> Use 10-15 digit numbers (no spaces)</p>
+                                </div>
+                                <div class="col-md-6">
+                                    <p class="mb-1 small"><strong>📦 Stock Alerts:</strong> Monitor low stock levels</p>
+                                    <p class="mb-0 small"><strong>⚡ Fast Processing:</strong> Keep approvals prompt for customer service</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Stats -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <h5 class="card-title">Total Products</h5>
+                    <h3 class="card-text">{{ airtime_products.count }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-warning text-white">
+                <div class="card-body">
+                    <h5 class="card-title">Pending Sales</h5>
+                    <h3 class="card-text">{{ pending_sales.count }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <h5 class="card-title">Pending Requests</h5>
+                    <h3 class="card-text">{{ airtime_requests.count }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-info text-white">
+                <div class="card-body">
+                    <h5 class="card-title">Your Role</h5>
+                    <h3 class="card-text">{{ user_role|title }}</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Airtime Products -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="fas fa-box"></i> Available Airtime Products</h5>
+                    {% if is_manager %}
+                        <a href="{% url 'airtime_management' %}" class="btn btn-sm btn-success float-end">
+                            <i class="fas fa-plus"></i> Manage Products
+                        </a>
+                    {% endif %}
+                </div>
+                <div class="card-body">
+                    {% if airtime_products %}
+                        <div class="table-responsive">
+                            <table class="table table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>Network</th>
+                                        <th>Type</th>
+                                        <th>Value</th>
+                                        <th>Price</th>
+                                        <th>Stock</th>
+                                        <th>Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for product in airtime_products %}
+                                        <tr>
+                                            <td>
+                                                <span class="badge bg-{{ product.network|lower }}">
+                                                    {{ product.get_network_display }}
+                                                </span>
+                                            </td>
+                                            <td>{{ product.get_airtime_type_display }}</td>
+                                            <td>R{{ product.value }}</td>
+                                            <td>R{{ product.price }}</td>
+                                            <td>
+                                                {% if product.stock > 0 %}
+                                                    <span class="text-success">{{ product.stock }}</span>
+                                                {% else %}
+                                                    <span class="text-danger">{{ product.stock }}</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                <button type="button" class="btn btn-sm btn-primary sell-airtime-btn" 
+                                                        data-product-id="{{ product.id }}"
+                                                        data-product-name="{{ product.get_display_name }}"
+                                                        data-product-price="{{ product.price }}"
+                                                        {% if product.stock <= 0 %}disabled{% endif %}>
+                                                    <i class="fas fa-shopping-cart"></i> 
+                                                    {% if is_manager or user_role == 'cashier' %}Sell{% else %}Add to Cart{% endif %}
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle"></i> No airtime products available.
+                            {% if is_manager %}
+                                <a href="{% url 'airtime_management' %}">Add some products</a> to get started.
+                            {% endif %}
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pending Sales (for managers) -->
+    {% if is_manager and pending_sales %}
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5><i class="fas fa-clock"></i> Pending Airtime Sales</h5>
+                        <a href="{% url 'airtime_sales' %}" class="btn btn-sm btn-info float-end">
+                            View All
+                        </a>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>Product</th>
+                                        <th>Customer Phone</th>
+                                        <th>Quantity</th>
+                                        <th>Total Price</th>
+                                        <th>Requested By</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for sale in pending_sales|slice:":5" %}
+                                        <tr>
+                                            <td>{{ sale.airtime_product.get_display_name }}</td>
+                                            <td>{{ sale.customer_phone }}</td>
+                                            <td>{{ sale.quantity }}</td>
+                                            <td>R{{ sale.total_price }}</td>
+                                            <td>{{ sale.requested_by.username }}</td>
+                                            <td>
+                                                <a href="{% url 'approve_airtime_sale' sale.id %}" 
+                                                   class="btn btn-sm btn-success">
+                                                    <i class="fas fa-check"></i> Approve
+                                                </a>
+                                                <a href="{% url 'reject_airtime_sale' sale.id %}" 
+                                                   class="btn btn-sm btn-danger">
+                                                    <i class="fas fa-times"></i> Reject
+                                                </a>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+
+    <!-- Airtime Requests (for managers) -->
+    {% if is_manager and airtime_requests %}
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5><i class="fas fa-clipboard-list"></i> Airtime Management Requests</h5>
+                        <a href="{% url 'airtime_requests_management' %}" class="btn btn-sm btn-warning float-end">
+                            View All
+                        </a>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>Request Type</th>
+                                        <th>From</th>
+                                        <th>Message</th>
+                                        <th>Created</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for request in airtime_requests|slice:":5" %}
+                                        <tr>
+                                            <td>{{ request.get_request_type_display }}</td>
+                                            <td>{{ request.requested_by.username }}</td>
+                                            <td>{{ request.message|truncatewords:10 }}</td>
+                                            <td>{{ request.created_at|date:"Y-m-d H:i" }}</td>
+                                            <td>
+                                                <a href="{% url 'approve_airtime_request' request.id %}" 
+                                                   class="btn btn-sm btn-success">
+                                                    <i class="fas fa-check"></i> Approve
+                                                </a>
+                                                <a href="{% url 'reject_airtime_request' request.id %}" 
+                                                   class="btn btn-sm btn-danger">
+                                                    <i class="fas fa-times"></i> Reject
+                                                </a>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+</div>
+
+<!-- Airtime Sale Modal -->
+<div class="modal fade" id="airtimeSaleModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Sell Airtime</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="airtimeSaleForm">
+                    <div class="mb-3">
+                        <label class="form-label">Product:</label>
+                        <input type="text" class="form-control" id="productName" readonly>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Price:</label>
+                        <input type="text" class="form-control" id="productPrice" readonly>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Customer Phone Number:</label>
+                        <input type="tel" class="form-control" id="customerPhone" 
+                               placeholder="Enter customer phone number" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Quantity:</label>
+                        <input type="number" class="form-control" id="quantity" 
+                               value="1" min="1" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Total Price:</label>
+                        <input type="text" class="form-control" id="totalPrice" readonly>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="processAirtimeSale">
+                    <i class="fas fa-shopping-cart"></i> Process Sale
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+$(document).ready(function() {
+    let currentProductId = null;
+    let currentProductPrice = 0;
+
+    // Handle sell airtime button click
+    $('.sell-airtime-btn').click(function(event) {
+        event.preventDefault(); // Prevent default link behavior
+        event.stopPropagation(); // Stop event bubbling
+        
+        currentProductId = $(this).data('product-id');
+        const productName = $(this).data('product-name');
+        currentProductPrice = parseFloat($(this).data('product-price'));
+        const buttonText = $(this).text().trim();
+
+        $('#productName').val(productName);
+        $('#productPrice').val('R' + currentProductPrice.toFixed(2));
+        $('#quantity').val(1);
+        updateTotalPrice();
+
+        if (buttonText.includes('Add to Cart')) {
+            // Admin: Add to cart functionality
+            addToCart(currentProductId, productName, currentProductPrice);
+        } else {
+            // Manager/Cashier: Show sell modal
+            $('#airtimeSaleModal').modal('show');
+        }
+    });
+
+    // Add to cart function for admins
+    function addToCart(productId, productName, price) {
+        // Check if cart exists in localStorage or create it
+        let cart = JSON.parse(localStorage.getItem('cart') || '[]');
+        
+        // Check if item already in cart
+        const existingItem = cart.find(item => item.product_id === productId && item.is_airtime);
+        if (existingItem) {
+            alert('This airtime product is already in your cart!');
+            return;
+        }
+
+        // Add airtime product to cart
+        const cartItem = {
+            product_id: productId,
+            name: productName,
+            price: price,
+            quantity: 1,
+            is_airtime: true,
+            airtime_network: productName.split(' ')[0] // Extract network from name
+        };
+
+        cart.push(cartItem);
+        localStorage.setItem('cart', JSON.stringify(cart));
+        
+        alert('Airtime product added to cart! You can checkout from the main dashboard.');
+        updateCartCount();
+    }
+
+    // Update cart count display
+    function updateCartCount() {
+        const cart = JSON.parse(localStorage.getItem('cart') || '[]');
+        const cartCount = cart.length;
+        
+        // Update cart badge if it exists
+        $('.cart-count').text(cartCount);
+    }
+
+    // Update total price when quantity changes
+    $('#quantity').on('input', function() {
+        updateTotalPrice();
+    });
+
+    function updateTotalPrice() {
+        const quantity = parseInt($('#quantity').val()) || 0;
+        const total = currentProductPrice * quantity;
+        $('#totalPrice').val('R' + total.toFixed(2));
+    }
+
+    // Process airtime sale
+    $('#processAirtimeSale').click(function() {
+        const customerPhone = $('#customerPhone').val().trim();
+        const quantity = parseInt($('#quantity').val()) || 1;
+
+        if (!customerPhone) {
+            alert('Please enter customer phone number');
+            return;
+        }
+
+        if (!/^[0-9]{10,15}$/.test(customerPhone)) {
+            alert('Please enter a valid phone number (10-15 digits)');
+            return;
+        }
+
+        const button = $(this);
+        button.prop('disabled', true);
+        button.html('<i class="fas fa-spinner fa-spin"></i> Processing...');
+
+        $.ajax({
+            url: '{% url "process_airtime_sale" %}',
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            data: JSON.stringify({
+                product_id: currentProductId,
+                customer_phone: customerPhone,
+                quantity: quantity
+            }),
+            contentType: 'application/json',
+            success: function(response) {
+                if (response.success) {
+                    alert(response.message);
+                    $('#airtimeSaleModal').modal('hide');
+                    location.reload();
+                } else {
+                    alert('Error: ' + response.error);
+                }
+            },
+            error: function() {
+                alert('Error processing airtime sale. Please try again.');
+            },
+            complete: function() {
+                button.prop('disabled', false);
+                button.html('<i class="fas fa-shopping-cart"></i> Process Sale');
+            }
+        });
+    });
+});
+
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+</script>
+{% endblock %}

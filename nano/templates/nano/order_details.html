@@ -241,6 +241,66 @@
             box-shadow: 0 4px 15px rgba(72, 187, 120, 0.3);
         }
         
+        .payment-input {
+            width: 100%;
+            padding: 0.5rem;
+            border: 1px solid #e2e8f0;
+            border-radius: 0.25rem;
+            font-size: 0.9rem;
+            text-align: center;
+        }
+        
+        .payment-input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        
+        .complete-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.75rem 1.5rem;
+            background: linear-gradient(135deg, #48bb78, #38a169);
+            color: white;
+            border: none;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+        }
+        
+        .complete-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(72, 187, 120, 0.3);
+        }
+        
+        .cancel-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.75rem 1.5rem;
+            background: linear-gradient(135deg, #f56565, #e53e3e);
+            color: white;
+            text-decoration: none;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+        
+        .cancel-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(245, 101, 101, 0.3);
+        }
+        
+        .form-actions {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            margin-top: 2rem;
+        }
+        
         @media print {
             .navbar, .back-btn, .print-btn {
                 display: none;
@@ -317,7 +377,60 @@
                 </table>
             </div>
 
-            <!-- Payment Summary -->
+            <!-- Checkout Form -->
+            {% if order.status == 'pending' %}
+            <div class="checkout-form">
+                <h3><i class="fas fa-cash-register"></i> Complete Order</h3>
+                <form method="post" action="{% url 'complete_order' order.id %}" id="checkoutForm">
+                    {% csrf_token %}
+                    
+                    <div class="payment-details">
+                        <div class="payment-detail">
+                            <div class="payment-detail-label">Total Amount</div>
+                            <div class="payment-detail-value total-amount">R{{ order.total }}</div>
+                        </div>
+                        
+                        <div class="payment-detail">
+                            <label for="cash_received" class="payment-detail-label">Cash Received</label>
+                            <input type="number" 
+                                   id="cash_received" 
+                                   name="cash_received" 
+                                   class="payment-input" 
+                                   value="{{ order.total }}" 
+                                   step="0.01" 
+                                   min="0" 
+                                   required>
+                        </div>
+                        
+                        <div class="payment-detail">
+                            <label for="payment_method" class="payment-detail-label">Payment Method</label>
+                            <select id="payment_method" name="payment_method" class="payment-input">
+                                <option value="cash">Cash</option>
+                                <option value="card">Card</option>
+                                <option value="mobile">Mobile Payment</option>
+                            </select>
+                        </div>
+                        
+                        <div class="payment-detail">
+                            <div class="payment-detail-label">Change Due</div>
+                            <div class="payment-detail-value change-given" id="changeDue">R{{ order.total }}</div>
+                        </div>
+                    </div>
+                    
+                    <div class="form-actions">
+                        <button type="submit" class="complete-btn">
+                            <i class="fas fa-check-circle"></i> Complete Order
+                        </button>
+                        <a href="{% url 'pending_orders' %}" class="cancel-btn">
+                            <i class="fas fa-times-circle"></i> Cancel
+                        </a>
+                    </div>
+                </form>
+            </div>
+            {% endif %}
+            
+            <!-- Payment Summary for Completed Orders -->
+            {% if order.status == 'completed' %}
             <div class="payment-summary">
                 <h3><i class="fas fa-money-bill-wave"></i> Payment Summary</h3>
                 <div class="payment-details">
@@ -325,13 +438,55 @@
                         <div class="payment-detail-label">Total Amount</div>
                         <div class="payment-detail-value total-amount">R{{ order.total }}</div>
                     </div>
+                    {% if order.cash_received %}
+                    <div class="payment-detail">
+                        <div class="payment-detail-label">Cash Received</div>
+                        <div class="payment-detail-value cash-received">R{{ order.cash_received }}</div>
+                    </div>
+                    {% endif %}
+                    {% if order.change_given %}
+                    <div class="payment-detail">
+                        <div class="payment-detail-label">Change Given</div>
+                        <div class="payment-detail-value change-given">R{{ order.change_given }}</div>
+                    </div>
+                    {% endif %}
+                    {% if order.payment_method %}
+                    <div class="payment-detail">
+                        <div class="payment-detail-label">Payment Method</div>
+                        <div class="payment-detail-value processed-by">{{ order.get_payment_method_display }}</div>
+                    </div>
+                    {% endif %}
+                    {% if order.processed_by %}
+                    <div class="payment-detail">
+                        <div class="payment-detail-label">Processed By</div>
+                        <div class="payment-detail-value processed-by">{{ order.processed_by.username }}</div>
+                    </div>
+                    {% endif %}
                 </div>
             </div>
+            {% endif %}
         </div>
 {% endblock %}
 
 {% block extra_js %}
 <script>
     // Mobile menu toggle functionality is handled by base template
+    
+    // Handle checkout form
+    document.addEventListener('DOMContentLoaded', function() {
+        const cashReceivedInput = document.getElementById('cash_received');
+        const changeDueElement = document.getElementById('changeDue');
+        
+        if (cashReceivedInput && changeDueElement) {
+            cashReceivedInput.addEventListener('input', function() {
+                const cashReceived = parseFloat(this.value) || 0;
+                const totalAmount = parseFloat('{{ order.total }}') || 0;
+                const change = cashReceived - totalAmount;
+                
+                changeDueElement.textContent = `R${Math.abs(change).toFixed(2)}`;
+                changeDueElement.style.color = change >= 0 ? '#48bb78' : '#ed8936';
+            });
+        }
+    });
 </script>
 {% endblock %}

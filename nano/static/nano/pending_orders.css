@@ -278,7 +278,7 @@ a {
     text-decoration: none;
     font-weight: 600;
     padding: 10px 20px;
-    background: linear-gradient(135deg, #007bff 0%, #4a5764 100%);
+    background: linear-gradient(135deg, #0a0a0a 0%, #000000 100%);
     color: rgb(87, 85, 90);
     border-radius: 8px;
     display: inline-block;
@@ -288,7 +288,7 @@ a {
 
 a:hover {
     transform: translateY(-3px);
-    box-shadow: 0 8px 25px rgba(0, 123, 255, 0.4);
+    box-shadow: 0 8px 25px rgba(185, 160, 189, 0.4);
     text-decoration: none;
     color: white;
 }

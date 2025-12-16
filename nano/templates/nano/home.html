@@ -17,8 +17,92 @@
                 <button class="action-btn save-order-btn" onclick="saveOrder()">
                     <i class="fas fa-save"></i> Save Order
                 </button>
+                <button class="action-btn" id="shortcuts-btn" onclick="toggleShortcuts()" 
+                        style="background: linear-gradient(135deg, #9333ea, #7c3aed); color: white; cursor: pointer; border: none; padding: 1rem 2rem; border-radius: 0.75rem; font-size: 1rem; font-weight: 600; display: flex; align-items: center; gap: 0.5rem; min-width: 150px; justify-content: center; transition: all 0.3s ease; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);"
+                        onmouseover="this.style.background='linear-gradient(135deg, #7c3aed, #6d28d9)'; this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 20px rgba(0, 0, 0, 0.15)';"
+                        onmouseout="this.style.background='linear-gradient(135deg, #9333ea, #7c3aed)'; this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 15px rgba(0, 0, 0, 0.1)';"
+                        onmousedown="this.style.transform='scale(0.95)';"
+                        onmouseup="this.style.transform='translateY(-2px)';">
+                    <i class="fa-solid fa-circle-info"></i> 
+                </button>
+                <a href="{% url 'airtime_dashboard' %}" class="action-btn airtime-btn">
+                    <i class="fas fa-mobile-alt"></i> Airtime
+                </a>
             </div>
         </section>
+
+        <!-- Shortcuts Modal -->
+        <div id="shortcuts-modal" class="shortcuts-modal" style="display: none;">
+            <div class="shortcuts-content">
+                <div class="shortcuts-header">
+                    <h3><i class="fa-solid fa-keyboard"></i> Keyboard Shortcuts & Quick Actions</h3>
+                    <button class="close-shortcuts" onclick="toggleShortcuts()">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="shortcuts-grid">
+                    <div class="shortcut-category">
+                        <h4><i class="fas fa-shopping-cart"></i> Cart Actions</h4>
+                        <div class="shortcut-item">
+                            <kbd>Ctrl</kbd> + <kbd>C</kbd>
+                            <span>Clear Cart</span>
+                        </div>
+                        <div class="shortcut-item">
+                            <kbd>Ctrl</kbd> + <kbd>S</kbd>
+                            <span>Save Order</span>
+                        </div>
+                        <div class="shortcut-item">
+                            <kbd>Enter</kbd>
+                            <span>Checkout (when total is focused)</span>
+                        </div>
+                    </div>
+                    <div class="shortcut-category">
+                        <h4><i class="fas fa-search"></i> Search & Navigation</h4>
+                        <div class="shortcut-item">
+                            <kbd>Ctrl</kbd> + <kbd>F</kbd>
+                            <span>Focus Search</span>
+                        </div>
+                        <div class="shortcut-item">
+                            <kbd>Ctrl</kbd> + <kbd>B</kbd>
+                            <span>Toggle Barcode Scanner</span>
+                        </div>
+                        <div class="shortcut-item">
+                            <kbd>Esc</kbd>
+                            <span>Clear Search / Close Modals</span>
+                        </div>
+                    </div>
+                    <div class="shortcut-category">
+                        <h4><i class="fas fa-mouse-pointer"></i> Quick Actions</h4>
+                        <div class="shortcut-item">
+                            <i class="fas fa-hand-pointer"></i>
+                            <span>Click product to add to cart</span>
+                        </div>
+                        <div class="shortcut-item">
+                            <i class="fas fa-hand-pointer"></i>
+                            <span>Click total to checkout</span>
+                        </div>
+                        <div class="shortcut-item">
+                            <i class="fas fa-hand-pointer"></i>
+                            <span>Click sale badge for discount info</span>
+                        </div>
+                    </div>
+                    <div class="shortcut-category">
+                        <h4><i class="fas fa-user"></i> Customer & Payment</h4>
+                        <div class="shortcut-item">
+                            <kbd>Tab</kbd>
+                            <span>Navigate between fields</span>
+                        </div>
+                        <div class="shortcut-item">
+                            <kbd>↑</kbd> / <kbd>↓</kbd>
+                            <span>Adjust cash received</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="shortcuts-tips">
+                    <p><i class="fas fa-lightbulb"></i> <strong>Pro Tip:</strong> Use barcode scanning for faster checkout!</p>
+                </div>
+            </div>
+        </div>
 
         <!-- Dashboard Grid -->
         <div class="dashboard-grid">

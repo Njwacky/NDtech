@@ -1,0 +1,551 @@
+{% extends 'nano/base.html' %}
+{% load static %}
+
+{% block title %}Tracking Dashboard - NDtech{% endblock %}
+
+{% block extra_css %}
+<style>
+.dashboard-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 20px;
+    margin-bottom: 30px;
+}
+
+.stat-card {
+    background: white;
+    padding: 25px;
+    border-radius: 15px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    border-left: 5px solid #007bff;
+    transition: all 0.3s ease;
+}
+
+.stat-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+}
+
+.stat-card.devices {
+    border-left-color: #28a745;
+}
+
+.stat-card.errors {
+    border-left-color: #dc3545;
+}
+
+.stat-card.activities {
+    border-left-color: #ffc107;
+}
+
+.stat-card h3 {
+    margin: 0 0 10px 0;
+    color: #2c3e50;
+    font-size: 1.1rem;
+    font-weight: 600;
+}
+
+.stat-value {
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: #2c3e50;
+    margin-bottom: 5px;
+}
+
+.stat-label {
+    color: #666;
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.stat-change {
+    font-size: 0.85rem;
+    margin-top: 10px;
+    padding: 5px 10px;
+    border-radius: 20px;
+    display: inline-block;
+}
+
+.stat-change.positive {
+    background: #d4edda;
+    color: #155724;
+}
+
+.stat-change.negative {
+    background: #f8d7da;
+    color: #721c24;
+}
+
+.dashboard-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 30px;
+    margin-bottom: 30px;
+}
+
+@media (max-width: 768px) {
+    .dashboard-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.dashboard-section {
+    background: white;
+    border-radius: 15px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    overflow: hidden;
+}
+
+.section-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.section-title {
+    margin: 0;
+    font-size: 1.3rem;
+    font-weight: 600;
+}
+
+.section-link {
+    background: rgba(255,255,255,0.2);
+    color: white;
+    padding: 8px 15px;
+    border-radius: 20px;
+    text-decoration: none;
+    font-size: 0.9rem;
+    transition: all 0.3s ease;
+}
+
+.section-link:hover {
+    background: rgba(255,255,255,0.3);
+    transform: translateY(-2px);
+}
+
+.section-content {
+    padding: 20px;
+}
+
+.list-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 0;
+    border-bottom: 1px solid #eee;
+}
+
+.list-item:last-child {
+    border-bottom: none;
+}
+
+.item-info {
+    flex: 1;
+}
+
+.item-title {
+    font-weight: 600;
+    color: #2c3e50;
+    margin-bottom: 5px;
+}
+
+.item-subtitle {
+    color: #666;
+    font-size: 0.9rem;
+}
+
+.item-value {
+    font-weight: 600;
+    color: #007bff;
+    font-size: 1.1rem;
+}
+
+.error-item {
+    border-left: 3px solid #dc3545;
+    padding-left: 15px;
+}
+
+.error-item.high {
+    border-left-color: #dc3545;
+}
+
+.error-item.medium {
+    border-left-color: #ffc107;
+}
+
+.error-item.low {
+    border-left-color: #28a745;
+}
+
+.device-item {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.device-icon {
+    width: 40px;
+    height: 40px;
+    background: #f8f9fa;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #007bff;
+}
+
+.user-item {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.user-avatar {
+    width: 40px;
+    height: 40px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: 600;
+}
+
+.quick-actions {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 30px;
+    flex-wrap: wrap;
+}
+
+.action-btn {
+    background: white;
+    border: 2px solid #e9ecef;
+    padding: 15px 25px;
+    border-radius: 10px;
+    text-decoration: none;
+    color: #2c3e50;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    transition: all 0.3s ease;
+}
+
+.action-btn:hover {
+    border-color: #007bff;
+    background: #f8f9ff;
+    transform: translateY(-2px);
+}
+
+.action-btn i {
+    font-size: 1.2rem;
+    color: #007bff;
+}
+
+.alert-critical {
+    background: #f8d7da;
+    color: #721c24;
+    padding: 15px;
+    border-radius: 10px;
+    margin-bottom: 20px;
+    border-left: 5px solid #dc3545;
+}
+
+.alert-critical strong {
+    display: block;
+    margin-bottom: 5px;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1><i class="fas fa-chart-line"></i> Tracking Dashboard</h1>
+    <p>Monitor device connections, user activities, and system errors in real-time</p>
+</div>
+
+<!-- Quick Actions -->
+<div class="quick-actions">
+    <a href="{% url 'device_tracking' %}" class="action-btn">
+        <i class="fas fa-mobile-alt"></i>
+        Device Tracking
+    </a>
+    <a href="{% url 'error_tracking' %}" class="action-btn">
+        <i class="fas fa-exclamation-triangle"></i>
+        Error Tracking
+    </a>
+    <a href="{% url 'user_activity_tracking' %}" class="action-btn">
+        <i class="fas fa-users"></i>
+        User Activities
+    </a>
+</div>
+
+<!-- Statistics Grid -->
+<div class="dashboard-stats">
+    <div class="stat-card devices">
+        <h3><i class="fas fa-mobile-alt"></i> Devices</h3>
+        <div class="stat-value">{{ total_devices }}</div>
+        <div class="stat-label">Total Connected</div>
+        <div class="stat-change positive">
+            <i class="fas fa-arrow-up"></i> {{ active_devices }} Active Now
+        </div>
+    </div>
+
+    <div class="stat-card errors">
+        <h3><i class="fas fa-exclamation-triangle"></i> Errors</h3>
+        <div class="stat-value">{{ total_errors }}</div>
+        <div class="stat-label">Total Logged</div>
+        <div class="stat-change negative">
+            <i class="fas fa-arrow-up"></i> {{ unresolved_errors }} Unresolved
+        </div>
+    </div>
+
+    <div class="stat-card activities">
+        <h3><i class="fas fa-users"></i> Activities</h3>
+        <div class="stat-value">{{ total_activities }}</div>
+        <div class="stat-label">Total Tracked</div>
+        <div class="stat-change positive">
+            <i class="fas fa-arrow-up"></i> {{ recent_activities }} Last 24h
+        </div>
+    </div>
+
+    <div class="stat-card">
+        <h3><i class="fas fa-clock"></i> Recent</h3>
+        <div class="stat-value">{{ recent_devices }}</div>
+        <div class="stat-label">New Devices (24h)</div>
+        <div class="stat-change positive">
+            <i class="fas fa-arrow-up"></i> {{ recent_errors }} Errors (24h)
+        </div>
+    </div>
+</div>
+
+<!-- Critical Alerts -->
+{% if recent_critical_errors %}
+<div class="alert-critical">
+    <strong><i class="fas fa-exclamation-circle"></i> Critical Errors Require Attention</strong>
+    You have {{ recent_critical_errors|length }} unresolved critical errors. Please review immediately.
+</div>
+{% endif %}
+
+<!-- Dashboard Grid -->
+<div class="dashboard-grid">
+    <!-- Top Error Types -->
+    <div class="dashboard-section">
+        <div class="section-header">
+            <h2 class="section-title"><i class="fas fa-chart-pie"></i> Top Error Types</h2>
+            <a href="{% url 'error_tracking' %}" class="section-link">View All</a>
+        </div>
+        <div class="section-content">
+            {% for error_type in top_error_types %}
+            <div class="list-item">
+                <div class="item-info">
+                    <div class="item-title">{{ error_type.error_type|title }}</div>
+                    <div class="item-subtitle">Most frequent error type</div>
+                </div>
+                <div class="item-value">{{ error_type.count }}</div>
+            </div>
+            {% empty %}
+            <p style="text-align: center; color: #666; padding: 40px 0;">No errors recorded yet</p>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Top Active Users -->
+    <div class="dashboard-section">
+        <div class="section-header">
+            <h2 class="section-title"><i class="fas fa-users"></i> Top Active Users</h2>
+            <a href="{% url 'user_activity_tracking' %}" class="section-link">View All</a>
+        </div>
+        <div class="section-content">
+            {% for user_activity in top_active_users %}
+            <div class="list-item">
+                <div class="item-info">
+                    <div class="user-item">
+                        <div class="user-avatar">{{ user_activity.user__username|first|upper }}</div>
+                        <div>
+                            <div class="item-title">{{ user_activity.user__username }}</div>
+                            <div class="item-subtitle">Most active user</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="item-value">{{ user_activity.count }} activities</div>
+            </div>
+            {% empty %}
+            <p style="text-align: center; color: #666; padding: 40px 0;">No user activities recorded yet</p>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<!-- Recent Critical Errors -->
+<div class="dashboard-section">
+    <div class="section-header">
+        <h2 class="section-title"><i class="fas fa-exclamation-circle"></i> Recent Critical Errors</h2>
+        <a href="{% url 'error_tracking' %}" class="section-link">View All</a>
+    </div>
+    <div class="section-content">
+        {% for error in recent_critical_errors %}
+        <div class="list-item error-item high">
+            <div class="item-info">
+                <div class="item-title">{{ error.error_message|truncatechars:50 }}</div>
+                <div class="item-subtitle">
+                    <i class="fas fa-user"></i> {{ error.user.username|default:"Anonymous" }} • 
+                    <i class="fas fa-clock"></i> {{ error.created_at|timesince }} ago
+                </div>
+            </div>
+            <a href="{% url 'error_details' error.id %}" class="action-btn" style="padding: 8px 15px; font-size: 0.9rem;">
+                <i class="fas fa-eye"></i> View
+            </a>
+        </div>
+        {% empty %}
+        <p style="text-align: center; color: #666; padding: 40px 0;">No critical errors found</p>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- Recent Device Connections -->
+<div class="dashboard-section">
+    <div class="section-header">
+        <h2 class="section-title"><i class="fas fa-mobile-alt"></i> Recent Device Connections</h2>
+        <a href="{% url 'device_tracking' %}" class="section-link">View All</a>
+    </div>
+    <div class="section-content">
+        {% for device in recent_device_connections %}
+        <div class="list-item">
+            <div class="item-info">
+                <div class="device-item">
+                    <div class="device-icon">
+                        <i class="fas fa-{% if device.device_type == 'web' %}globe{% elif device.device_type == 'mobile' %}mobile-alt{% else %}desktop{% endif %}"></i>
+                    </div>
+                    <div>
+                        <div class="item-title">{{ device.user.username }}</div>
+                        <div class="item-subtitle">
+                            <i class="fas fa-mobile-alt"></i> {{ device.get_device_type_display }} • 
+                            <i class="fas fa-clock"></i> {{ device.session_start|timesince }} ago
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="item-value">
+                {% if device.is_active %}
+                <span style="color: #28a745;"><i class="fas fa-circle"></i> Active</span>
+                {% else %}
+                <span style="color: #6c757d;"><i class="fas fa-circle"></i> Inactive</span>
+                {% endif %}
+            </div>
+        </div>
+        {% empty %}
+        <p style="text-align: center; color: #666; padding: 40px 0;">No recent device connections</p>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Auto-refresh dashboard every 30 seconds
+setInterval(() => {
+    location.reload();
+}, 30000);
+
+// Add real-time updates for critical alerts
+function checkCriticalErrors() {
+    fetch('/api/tracking/error/?severity=critical&resolved=false')
+        .then(response => response.json())
+        .then(data => {
+            if (data.errors && data.errors.length > 0) {
+                // Show notification for new critical errors
+                data.errors.forEach(error => {
+                    showNotification(`Critical Error: ${error.error_message}`, 'error');
+                });
+            }
+        })
+        .catch(error => console.error('Error checking critical errors:', error));
+}
+
+// Check for critical errors every 10 seconds
+setInterval(checkCriticalErrors, 10000);
+
+function showNotification(message, type = 'info') {
+    // Create notification element
+    const notification = document.createElement('div');
+    notification.className = `notification ${type}`;
+    notification.innerHTML = `
+        <span class="notification-icon">
+            <i class="fas fa-${type === 'error' ? 'exclamation-circle' : 'info-circle'}"></i>
+        </span>
+        <span class="notification-message">${message}</span>
+        <button class="notification-close" onclick="this.parentElement.remove()">
+            <i class="fas fa-times"></i>
+        </button>
+    `;
+    
+    // Style the notification
+    notification.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: ${type === 'error' ? '#dc3545' : '#007bff'};
+        color: white;
+        padding: 15px 20px;
+        border-radius: 10px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+        z-index: 10000;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        max-width: 400px;
+        animation: slideIn 0.3s ease-out;
+    `;
+    
+    document.body.appendChild(notification);
+    
+    // Auto-remove after 5 seconds
+    setTimeout(() => {
+        if (notification.parentElement) {
+            notification.remove();
+        }
+    }, 5000);
+}
+
+// Add slide-in animation
+const style = document.createElement('style');
+style.textContent = `
+    @keyframes slideIn {
+        from {
+            transform: translateX(100%);
+            opacity: 0;
+        }
+        to {
+            transform: translateX(0);
+            opacity: 1;
+        }
+    }
+    
+    .notification {
+        animation: slideIn 0.3s ease-out;
+    }
+    
+    .notification-close {
+        background: none;
+        border: none;
+        color: white;
+        cursor: pointer;
+        padding: 5px;
+        border-radius: 50%;
+        margin-left: auto;
+    }
+    
+    .notification-close:hover {
+        background: rgba(255,255,255,0.2);
+    }
+`;
+document.head.appendChild(style);
+</script>
+{% endblock %}

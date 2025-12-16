@@ -20,7 +20,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = config('DJANGO_SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = config('DJANGO_DEBUG', default=False, cast=bool)
+DEBUG = config('DJANGO_DEBUG', default=True, cast=bool)
 
 # ALLOWED_HOSTS configuration
 if DEBUG:
@@ -28,7 +28,6 @@ if DEBUG:
 else:
     # Production - Explicitly allow the specific Render.com domain
     ALLOWED_HOSTS = config('DJANGO_ALLOWED_HOSTS', default='ndtechpos.onrender.com,.onrender.com').split(',')
-
 # Application definition
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -37,7 +36,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'nano',    'food_ordering',
+    'nano','food_ordering',
 ]
 
 MIDDLEWARE = [
@@ -130,12 +129,12 @@ MEDIA_ROOT = BASE_DIR / 'media'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # Login URLs
-LOGIN_URL = '/accounts/login/'
+LOGIN_URL = '/sign_in/'
 LOGIN_REDIRECT_URL = '/'
 LOGOUT_REDIRECT_URL = '/register/'
 
 # Trust proxy headers from nginx
-SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+#SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
 # Production Security Settings
 if not DEBUG:

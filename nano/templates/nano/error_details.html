@@ -1,0 +1,464 @@
+{% extends 'nano/base.html' %}
+{% load static %}
+
+{% block title %}Error Details - NDtech{% endblock %}
+
+{% block extra_css %}
+<style>
+.error-details-container {
+    background: white;
+    border-radius: 15px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    overflow: hidden;
+    margin-bottom: 30px;
+}
+
+.error-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 25px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.error-title {
+    margin: 0;
+    font-size: 1.5rem;
+    font-weight: 600;
+}
+
+.error-actions-header {
+    display: flex;
+    gap: 15px;
+    align-items: center;
+}
+
+.error-content {
+    padding: 30px;
+}
+
+.error-section {
+    margin-bottom: 30px;
+}
+
+.error-section h3 {
+    color: #2c3e50;
+    font-size: 1.2rem;
+    margin-bottom: 15px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.error-section h3 i {
+    color: #007bff;
+}
+
+.info-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 20px;
+}
+
+.info-item {
+    background: #f8f9fa;
+    padding: 20px;
+    border-radius: 10px;
+    border-left: 4px solid #007bff;
+}
+
+.info-item h4 {
+    margin: 0 0 10px 0;
+    color: #495057;
+    font-size: 1rem;
+    font-weight: 600;
+}
+
+.info-value {
+    color: #2c3e50;
+    font-size: 1.1rem;
+    line-height: 1.4;
+}
+
+.code-block {
+    background: #2d3748;
+    color: #f8f8f2;
+    padding: 20px;
+    border-radius: 10px;
+    font-family: 'Courier New', monospace;
+    font-size: 0.9rem;
+    line-height: 1.5;
+    overflow-x: auto;
+    white-space: pre-wrap;
+    word-break: break-all;
+}
+
+.severity-indicator {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 15px;
+    border-radius: 20px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.severity-critical {
+    background: #dc3545;
+    color: white;
+}
+
+.severity-high {
+    background: #fd7e14;
+    color: white;
+}
+
+.severity-medium {
+    background: #ffc107;
+    color: #212529;
+}
+
+.severity-low {
+    background: #28a745;
+    color: white;
+}
+
+.btn {
+    padding: 12px 25px;
+    border: none;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.btn-primary {
+    background: #007bff;
+    color: white;
+}
+
+.btn-primary:hover {
+    background: #0056b3;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,123,255,0.3);
+}
+
+.btn-success {
+    background: #28a745;
+    color: white;
+}
+
+.btn-success:hover {
+    background: #218838;
+    transform: translateY(-2px);
+}
+
+.btn-secondary {
+    background: #6c757d;
+    color: white;
+}
+
+.btn-secondary:hover {
+    background: #5a6268;
+    transform: translateY(-2px);
+}
+
+.similar-errors {
+    background: white;
+    border-radius: 15px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    overflow: hidden;
+}
+
+.similar-errors h3 {
+    background: #f8f9fa;
+    padding: 20px;
+    margin: 0;
+    color: #2c3e50;
+    font-size: 1.2rem;
+    border-bottom: 1px solid #dee2e6;
+}
+
+.similar-error-item {
+    padding: 15px 20px;
+    border-bottom: 1px solid #eee;
+    transition: all 0.3s ease;
+}
+
+.similar-error-item:hover {
+    background: #f8f9fa;
+}
+
+.similar-error-item:last-child {
+    border-bottom: none;
+}
+
+.similar-error-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.similar-error-message {
+    color: #495057;
+    font-size: 0.9rem;
+    margin-bottom: 5px;
+}
+
+.similar-error-time {
+    color: #666;
+    font-size: 0.85rem;
+}
+
+.error-message {
+    background: #f8f9fa;
+    padding: 20px;
+    border-radius: 10px;
+    border-left: 4px solid #dc3545;
+    color: #2c3e50;
+    font-size: 1.1rem;
+    line-height: 1.5;
+}
+
+@media (max-width: 768px) {
+    .info-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .error-actions-header {
+        flex-direction: column;
+        gap: 10px;
+    }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1><i class="fas fa-exclamation-triangle"></i> Error Details</h1>
+    <p>View detailed information about this error and similar occurrences</p>
+</div>
+
+<div class="error-details-container">
+    <div class="error-header">
+        <div class="error-title">
+            <div class="severity-indicator severity-{{ error.severity }}">
+                <i class="fas fa-exclamation-circle"></i>
+                {{ error.get_severity_display }}
+            </div>
+            Error #{{ error.id }}
+        </div>
+        
+        <div class="error-actions-header">
+            {% if not error.is_resolved %}
+            <a href="{% url 'resolve_error' error.id %}" class="btn btn-success">
+                <i class="fas fa-check"></i> Mark as Resolved
+            </a>
+            {% endif %}
+            <a href="{% url 'error_tracking' %}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Back to List
+            </a>
+        </div>
+    </div>
+    
+    <div class="error-content">
+        <!-- Basic Information -->
+        <div class="error-section">
+            <h3><i class="fas fa-info-circle"></i> Basic Information</h3>
+            <div class="info-grid">
+                <div class="info-item">
+                    <h4>Error Type</h4>
+                    <div class="info-value">{{ error.get_error_type_display }}</div>
+                </div>
+                <div class="info-item">
+                    <h4>Severity</h4>
+                    <div class="info-value">
+                        <span class="severity-indicator severity-{{ error.severity }}">
+                            {{ error.get_severity_display }}
+                        </span>
+                    </div>
+                </div>
+                <div class="info-item">
+                    <h4>Status</h4>
+                    <div class="info-value">
+                        {% if error.is_resolved %}
+                        <span style="color: #28a745;"><i class="fas fa-check-circle"></i> Resolved</span>
+                        {% else %}
+                        <span style="color: #dc3545;"><i class="fas fa-times-circle"></i> Unresolved</span>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="info-item">
+                    <h4>Created</h4>
+                    <div class="info-value">{{ error.created_at|date:"F j, Y, g:i A" }}</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- User Information -->
+        {% if error.user %}
+        <div class="error-section">
+            <h3><i class="fas fa-user"></i> User Information</h3>
+            <div class="info-grid">
+                <div class="info-item">
+                    <h4>Username</h4>
+                    <div class="info-value">{{ error.user.username }}</div>
+                </div>
+                <div class="info-item">
+                    <h4>Email</h4>
+                    <div class="info-value">{{ error.user.email }}</div>
+                </div>
+                <div class="info-item">
+                    <h4>User Action</h4>
+                    <div class="info-value">{{ error.user_action|default:"Not specified" }}</div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+        
+        <!-- Request Information -->
+        <div class="error-section">
+            <h3><i class="fas fa-globe"></i> Request Information</h3>
+            <div class="info-grid">
+                <div class="info-item">
+                    <h4>URL</h4>
+                    <div class="info-value">{{ error.url }}</div>
+                </div>
+                <div class="info-item">
+                    <h4>Method</h4>
+                    <div class="info-value">{{ error.request_method|upper }}</div>
+                </div>
+                <div class="info-item">
+                    <h4>IP Address</h4>
+                    <div class="info-value">{{ error.ip_address }}</div>
+                </div>
+                <div class="info-item">
+                    <h4>User Agent</h4>
+                    <div class="info-value" style="word-break: break-all;">{{ error.user_agent|truncatechars:50 }}</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Error Message -->
+        <div class="error-section">
+            <h3><i class="fas fa-exclamation-circle"></i> Error Message</h3>
+            <div class="error-message">{{ error.error_message }}</div>
+        </div>
+        
+        <!-- Technical Details -->
+        {% if error.stack_trace or error.file_name or error.function_name %}
+        <div class="error-section">
+            <h3><i class="fas fa-code"></i> Technical Details</h3>
+            <div class="info-grid">
+                {% if error.error_code %}
+                <div class="info-item">
+                    <h4>Error Code</h4>
+                    <div class="info-value">{{ error.error_code }}</div>
+                </div>
+                {% endif %}
+                
+                {% if error.file_name %}
+                <div class="info-item">
+                    <h4>File</h4>
+                    <div class="info-value">{{ error.file_name }}</div>
+                </div>
+                {% endif %}
+                
+                {% if error.function_name %}
+                <div class="info-item">
+                    <h4>Function</h4>
+                    <div class="info-value">{{ error.function_name }}</div>
+                </div>
+                {% endif %}
+                
+                {% if error.line_number %}
+                <div class="info-item">
+                    <h4>Line Number</h4>
+                    <div class="info-value">{{ error.line_number }}</div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Stack Trace -->
+        {% if error.stack_trace %}
+        <div class="error-section">
+            <h3><i class="fas fa-list"></i> Stack Trace</h3>
+            <div class="code-block">{{ error.stack_trace }}</div>
+        </div>
+        {% endif %}
+        
+        <!-- Form Data -->
+        {% if error.form_data %}
+        <div class="error-section">
+            <h3><i class="fas fa-edit"></i> Form Data</h3>
+            <div class="code-block">{{ error.form_data|pprint }}</div>
+        </div>
+        {% endif %}
+        
+        <!-- Resolution Information -->
+        {% if error.is_resolved %}
+        <div class="error-section">
+            <h3><i class="fas fa-check-circle"></i> Resolution Information</h3>
+            <div class="info-grid">
+                <div class="info-item">
+                    <h4>Resolved By</h4>
+                    <div class="info-value">{{ error.resolved_by.username }}</div>
+                </div>
+                <div class="info-item">
+                    <h4>Resolved At</h4>
+                    <div class="info-value">{{ error.resolved_at|date:"F j, Y, g:i A" }}</div>
+                </div>
+                {% if error.resolution_notes %}
+                <div class="info-item" style="grid-column: 1 / -1;">
+                    <h4>Resolution Notes</h4>
+                    <div class="info-value">{{ error.resolution_notes }}</div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Similar Errors -->
+{% if similar_errors %}
+<div class="similar-errors">
+    <h3><i class="fas fa-history"></i> Similar Errors ({{ similar_errors|length }})</h3>
+    
+    {% for similar_error in similar_errors %}
+    <div class="similar-error-item">
+        <div class="similar-error-meta">
+            <div>
+                <div class="similar-error-message">
+                    <strong>Error #{{ similar_error.id }}:</strong> {{ similar_error.error_message|truncatechars:100 }}
+                </div>
+                <div class="similar-error-time">
+                    {{ similar_error.created_at|date:"F j, Y, g:i A" }}
+                    {% if similar_error.user %}by {{ similar_error.user.username }}{% endif %}
+                </div>
+            </div>
+            <div>
+                <span class="severity-indicator severity-{{ similar_error.severity }}">
+                    {{ similar_error.get_severity_display }}
+                </span>
+            </div>
+        </div>
+        <div style="margin-top: 10px;">
+            <a href="{% url 'error_details' similar_error.id %}" class="btn btn-primary" style="padding: 8px 15px; font-size: 0.9rem;">
+                <i class="fas fa-eye"></i> View Details
+            </a>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+{% endblock %}

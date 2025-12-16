@@ -1,0 +1,182 @@
+{% extends 'nano/base.html' %}
+{% load static %}
+
+{% block title %}Approve Airtime Sale - futurePOS{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'nano/airtime.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <h2 class="mb-4">
+                <i class="fas fa-check-circle"></i> Approve Airtime Sale
+                <a href="{% url 'airtime_sales' %}" class="btn btn-sm btn-secondary float-end">
+                    <i class="fas fa-arrow-left"></i> Back to Sales
+                </a>
+            </h2>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="fas fa-info-circle"></i> Sale Details</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-borderless">
+                            <tr>
+                                <th width="30%">Product:</th>
+                                <td>{{ airtime_sale.airtime_product.get_display_name }}</td>
+                            </tr>
+                            <tr>
+                                <th>Network:</th>
+                                <td>
+                                    <span class="badge bg-{{ airtime_sale.airtime_product.network|lower }}">
+                                        {{ airtime_sale.airtime_product.get_network_display }}
+                                    </span>
+                                </td>
+                            </tr>
+                            <tr>
+                                <th>Type:</th>
+                                <td>{{ airtime_sale.airtime_product.get_airtime_type_display }}</td>
+                            </tr>
+                            <tr>
+                                <th>Value:</th>
+                                <td>R{{ airtime_sale.airtime_product.value }}</td>
+                            </tr>
+                            <tr>
+                                <th>Unit Price:</th>
+                                <td>R{{ airtime_sale.airtime_product.price }}</td>
+                            </tr>
+                            <tr>
+                                <th>Quantity:</th>
+                                <td>{{ airtime_sale.quantity }}</td>
+                            </tr>
+                            <tr>
+                                <th>Total Price:</th>
+                                <td class="fw-bold">R{{ airtime_sale.total_price }}</td>
+                            </tr>
+                            <tr>
+                                <th>Customer Phone:</th>
+                                <td>{{ airtime_sale.customer_phone }}</td>
+                            </tr>
+                            <tr>
+                                <th>Requested By:</th>
+                                <td>{{ airtime_sale.requested_by.username }}</td>
+                            </tr>
+                            <tr>
+                                <th>Created:</th>
+                                <td>{{ airtime_sale.created_at|date:"Y-m-d H:i:s" }}</td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="fas fa-exclamation-triangle"></i> Stock Check</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label class="form-label">Current Stock:</label>
+                        <div class="form-control-plaintext">
+                            {% if airtime_sale.airtime_product.stock >= airtime_sale.quantity %}
+                                <span class="text-success">
+                                    <i class="fas fa-check-circle"></i> 
+                                    {{ airtime_sale.airtime_product.stock }} units available
+                                </span>
+                            {% else %}
+                                <span class="text-danger">
+                                    <i class="fas fa-times-circle"></i> 
+                                    Only {{ airtime_sale.airtime_product.stock }} units available
+                                    <br>
+                                    <small>Required: {{ airtime_sale.quantity }} units</small>
+                                </span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Stock After Sale:</label>
+                        <div class="form-control-plaintext">
+                            {% if airtime_sale.airtime_product.stock >= airtime_sale.quantity %}
+                                <span class="text-info">
+                                    {{ airtime_sale.airtime_product.stock|add:"-"|add:airtime_sale.quantity }} units
+                                </span>
+                            {% else %}
+                                <span class="text-danger">
+                                    Insufficient stock!
+                                </span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="fas fa-edit"></i> Approval Action</h5>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label for="approval_notes" class="form-label">Approval Notes (Optional):</label>
+                            <textarea class="form-control" id="approval_notes" name="approval_notes" 
+                                      rows="4" placeholder="Add any notes about this approval..."></textarea>
+                        </div>
+                        
+                        {% if airtime_sale.airtime_product.stock < airtime_sale.quantity %}
+                            <div class="alert alert-danger">
+                                <i class="fas fa-exclamation-triangle"></i> 
+                                <strong>Warning:</strong> Insufficient stock available for this sale.
+                                <br>
+                                Available: {{ airtime_sale.airtime_product.stock }} units
+                                <br>
+                                Required: {{ airtime_sale.quantity }} units
+                                <br>
+                                Please update stock before approving this sale.
+                            </div>
+                            <div class="d-flex gap-2">
+                                <button type="submit" class="btn btn-success" disabled>
+                                    <i class="fas fa-check"></i> Approve Sale
+                                </button>
+                                <a href="{% url 'airtime_sales' %}" class="btn btn-secondary">
+                                    <i class="fas fa-arrow-left"></i> Back to Sales
+                                </a>
+                            </div>
+                        {% else %}
+                            <div class="alert alert-success">
+                                <i class="fas fa-check-circle"></i> 
+                                Sufficient stock available for this sale.
+                            </div>
+                            <div class="d-flex gap-2">
+                                <button type="submit" class="btn btn-success">
+                                    <i class="fas fa-check"></i> Approve Sale
+                                </button>
+                                <a href="{% url 'reject_airtime_sale' airtime_sale.id %}" class="btn btn-danger">
+                                    <i class="fas fa-times"></i> Reject Sale
+                                </a>
+                                <a href="{% url 'airtime_sales' %}" class="btn btn-secondary">
+                                    <i class="fas fa-arrow-left"></i> Back to Sales
+                                </a>
+                            </div>
+                        {% endif %}
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

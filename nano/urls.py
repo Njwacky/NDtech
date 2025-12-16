@@ -1,5 +1,6 @@
 from django.urls import path
 from . import views
+from . import views_export
 from . import upc_views
 from . import food_ordering_integration
 
@@ -78,8 +79,36 @@ urlpatterns = [
     path('notifications/', views.notifications_page, name='notifications_page'),
     path('test/fcm/', views.fcm_test_page, name='fcm_test_page'),
     
+    # Tracking URLs
+    path('tracking/', views.tracking_dashboard, name='tracking_dashboard'),
+    path('tracking/devices/', views.device_tracking, name='device_tracking'),
+    path('tracking/errors/', views.error_tracking, name='error_tracking'),
+    path('tracking/errors/<int:error_id>/', views.error_details, name='error_details'),
+    path('tracking/errors/<int:error_id>/resolve/', views.resolve_error, name='resolve_error'),
+    path('tracking/activities/', views.user_activity_tracking, name='user_activity_tracking'),
+    
+    # Tracking API URLs
+    path('api/tracking/device/', views.track_device_connection, name='track_device_connection'),
+    path('api/tracking/activity/', views.track_user_activity, name='track_user_activity'),
+    path('api/tracking/error/', views.log_error, name='log_error'),
+    
     # PWA URLs
     path('sw.js', views.service_worker, name='service_worker'),
     path('manifest.json', views.manifest, name='manifest'),
     path('offline/', views.offline, name='offline'),
+    
+    # Export URLs
+    path('export/products/excel/', views_export.export_products_excel, name='export_products_excel'),
+    
+    # Airtime URLs
+    path('airtime/', views.airtime_dashboard, name='airtime_dashboard'),
+    path('airtime/management/', views.airtime_management, name='airtime_management'),
+    path('airtime/sales/', views.airtime_sales, name='airtime_sales'),
+    path('airtime/process/', views.process_airtime_sale, name='process_airtime_sale'),
+    path('airtime/sales/<int:sale_id>/approve/', views.approve_airtime_sale, name='approve_airtime_sale'),
+    path('airtime/sales/<int:sale_id>/reject/', views.reject_airtime_sale, name='reject_airtime_sale'),
+    path('airtime/requests/', views.airtime_requests_management, name='airtime_requests_management'),
+    path('airtime/requests/<int:request_id>/approve/', views.approve_airtime_request, name='approve_airtime_request'),
+    path('airtime/requests/<int:request_id>/reject/', views.reject_airtime_request, name='reject_airtime_request'),
+    path('api/airtime/request/', views.create_airtime_request, name='create_airtime_request'),
 ]

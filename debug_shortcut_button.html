@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug Shortcut Button</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 2rem;
+        }
+
+        .debug-container {
+            background: white;
+            padding: 2rem;
+            border-radius: 1rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+
+        .debug-section {
+            margin-bottom: 1.5rem;
+            padding: 1rem;
+            background: #f8f9fa;
+            border-radius: 0.5rem;
+            border-left: 4px solid #667eea;
+        }
+
+        .debug-section h3 {
+            margin: 0 0 1rem 0;
+            color: #4a5568;
+        }
+
+        .debug-info {
+            font-family: 'Courier New', monospace;
+            background: #2d3748;
+            color: #48bb78;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            margin: 0.5rem 0;
+            white-space: pre-wrap;
+            font-size: 0.9rem;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-bottom: 2rem;
+        }
+
+        .action-btn {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 1rem 2rem;
+            border: none;
+            border-radius: 0.75rem;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            min-width: 150px;
+            justify-content: center;
+        }
+
+        .shortcuts-btn {
+            background: linear-gradient(135deg, #9333ea, #7c3aed);
+            color: white;
+            pointer-events: auto !important;
+            z-index: 1 !important;
+            position: relative !important;
+        }
+
+        .shortcuts-btn:hover {
+            background: linear-gradient(135deg, #7c3aed, #6d28d9);
+        }
+
+        .shortcuts-btn:active {
+            transform: scale(0.95);
+        }
+
+        /* Shortcuts Modal */
+        .shortcuts-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(5px);
+            z-index: 10000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .shortcuts-content {
+            background: white;
+            border-radius: 1rem;
+            padding: 2rem;
+            max-width: 800px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+
+        .shortcuts-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 2px solid #e2e8f0;
+        }
+
+        .shortcuts-header h3 {
+            color: #4a5568;
+            font-size: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin: 0;
+        }
+
+        .close-shortcuts {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            color: #718096;
+            cursor: pointer;
+            padding: 0.5rem;
+            border-radius: 0.5rem;
+            transition: all 0.3s ease;
+        }
+
+        .close-shortcuts:hover {
+            background: #f7fafc;
+            color: #e53e3e;
+        }
+
+        .test-button {
+            background: #48bb78;
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            margin: 0.5rem;
+        }
+
+        .test-button:hover {
+            background: #38a169;
+        }
+    </style>
+</head>
+<body>
+    <div class="debug-container">
+        <h1>Shortcut Button Debug Tool</h1>
+        
+        <div class="debug-section">
+            <h3>1. Button Detection</h3>
+            <div id="button-detection" class="debug-info">Checking for shortcut button...</div>
+            <button class="test-button" onclick="checkButton()">Check Button</button>
+        </div>
+
+        <div class="debug-section">
+            <h3>2. Event Listeners</h3>
+            <div id="event-listeners" class="debug-info">Checking event listeners...</div>
+            <button class="test-button" onclick="checkEventListeners()">Check Events</button>
+        </div>
+
+        <div class="debug-section">
+            <h3>3. Modal Detection</h3>
+            <div id="modal-detection" class="debug-info">Checking for shortcuts modal...</div>
+            <button class="test-button" onclick="checkModal()">Check Modal</button>
+        </div>
+
+        <div class="debug-section">
+            <h3>4. Console Log</h3>
+            <div id="console-log" class="debug-info">Console output will appear here...</div>
+            <button class="test-button" onclick="clearConsole()">Clear Console</button>
+        </div>
+    </div>
+
+    <div class="action-buttons">
+        <button class="action-btn shortcuts-btn" onclick="toggleShortcuts()">
+            <i class="fa-solid fa-circle-info"></i> Shortcuts
+        </button>
+    </div>
+
+    <!-- Shortcuts Modal -->
+    <div id="shortcuts-modal" class="shortcuts-modal">
+        <div class="shortcuts-content">
+            <div class="shortcuts-header">
+                <h3><i class="fa-solid fa-keyboard"></i> Keyboard Shortcuts & Quick Actions</h3>
+                <button class="close-shortcuts" onclick="toggleShortcuts()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="shortcuts-grid">
+                <div class="shortcut-category">
+                    <h4><i class="fas fa-shopping-cart"></i> Cart Actions</h4>
+                    <div class="shortcut-item">
+                        <kbd>Ctrl</kbd> + <kbd>C</kbd>
+                        <span>Clear Cart</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Console logging helper
+        const originalLog = console.log;
+        const originalError = console.error;
+        const consoleLogDiv = document.getElementById('console-log');
+        
+        function addToConsole(message, type = 'log') {
+            const timestamp = new Date().toLocaleTimeString();
+            const prefix = type === 'error' ? 'ERROR' : 'INFO';
+            consoleLogDiv.textContent += `[${timestamp}] ${prefix}: ${message}\n`;
+            consoleLogDiv.scrollTop = consoleLogDiv.scrollHeight;
+        }
+        
+        console.log = function(...args) {
+            originalLog.apply(console, args);
+            addToConsole(args.join(' '), 'log');
+        };
+        
+        console.error = function(...args) {
+            originalError.apply(console, args);
+            addToConsole(args.join(' '), 'error');
+        };
+
+        // Toggle shortcuts modal
+        function toggleShortcuts() {
+            const modal = document.getElementById('shortcuts-modal');
+            console.log('Toggle shortcuts called, modal:', modal);
+            
+            if (modal) {
+                if (modal.style.display === 'none' || !modal.style.display) {
+                    modal.style.display = 'flex';
+                    document.body.style.overflow = 'hidden';
+                    console.log('Modal opened');
+                    addToConsole('Modal opened successfully');
+                } else {
+                    modal.style.display = 'none';
+                    document.body.style.overflow = '';
+                    console.log('Modal closed');
+                    addToConsole('Modal closed successfully');
+                }
+            } else {
+                console.error('Shortcuts modal not found');
+                addToConsole('ERROR: Shortcuts modal not found', 'error');
+            }
+        }
+
+        // Debug functions
+        function checkButton() {
+            const button = document.querySelector('.shortcuts-btn');
+            const detection = document.getElementById('button-detection');
+            
+            if (button) {
+                const rect = button.getBoundingClientRect();
+                const computedStyle = window.getComputedStyle(button);
+                
+                detection.textContent = `
+Button Found: YES
+Element: ${button.tagName}.${button.className}
+Position: ${rect.left}, ${rect.top}, ${rect.width}x${rect.height}
+Display: ${computedStyle.display}
+Visibility: ${computedStyle.visibility}
+Pointer Events: ${computedStyle.pointerEvents}
+Z-Index: ${computedStyle.zIndex}
+Cursor: ${computedStyle.cursor}
+                `.trim();
+                addToConsole('Shortcut button detected successfully');
+            } else {
+                detection.textContent = 'Button Found: NO';
+                addToConsole('ERROR: Shortcut button not found', 'error');
+            }
+        }
+
+        function checkEventListeners() {
+            const button = document.querySelector('.shortcuts-btn');
+            const listeners = document.getElementById('event-listeners');
+            
+            if (button) {
+                // Check if onclick is set
+                const hasOnClick = button.onclick !== null;
+                const hasAttribute = button.hasAttribute('onclick');
+                
+                listeners.textContent = `
+Event Listeners Check:
+onclick property: ${hasOnClick}
+onclick attribute: ${hasAttribute}
+Event listeners: ${button.getEventListeners ? 'Available' : 'Not available in this browser'}
+                `.trim();
+                addToConsole('Event listeners checked');
+            } else {
+                listeners.textContent = 'Button not found - cannot check events';
+                addToConsole('ERROR: Cannot check events - button not found', 'error');
+            }
+        }
+
+        function checkModal() {
+            const modal = document.getElementById('shortcuts-modal');
+            const detection = document.getElementById('modal-detection');
+            
+            if (modal) {
+                const computedStyle = window.getComputedStyle(modal);
+                
+                detection.textContent = `
+Modal Found: YES
+Element: ${modal.tagName}#${modal.id}
+Display: ${computedStyle.display}
+Visibility: ${computedStyle.visibility}
+Z-Index: ${computedStyle.zIndex}
+Position: ${computedStyle.position}
+                `.trim();
+                addToConsole('Shortcuts modal detected successfully');
+            } else {
+                detection.textContent = 'Modal Found: NO';
+                addToConsole('ERROR: Shortcuts modal not found', 'error');
+            }
+        }
+
+        function clearConsole() {
+            consoleLogDiv.textContent = '';
+            addToConsole('Console cleared');
+        }
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('DOM Content Loaded - Debug page initializing');
+            addToConsole('Debug page loaded successfully');
+            
+            // Set up event listeners like in the main page
+            const shortcutsButton = document.querySelector('.shortcuts-btn');
+            console.log('Shortcuts button found:', shortcutsButton);
+            
+            if (shortcutsButton) {
+                // Remove any existing event listeners first
+                shortcutsButton.removeEventListener('click', toggleShortcuts);
+                
+                // Add click event listener
+                shortcutsButton.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    console.log('Shortcuts button clicked via event listener');
+                    toggleShortcuts();
+                });
+                
+                // Touch event support for mobile
+                shortcutsButton.addEventListener('touchstart', function(e) {
+                    e.preventDefault();
+                    this.classList.add('touch-active');
+                });
+                
+                shortcutsButton.addEventListener('touchend', function(e) {
+                    e.preventDefault();
+                    this.classList.remove('touch-active');
+                    console.log('Shortcuts button touched');
+                    toggleShortcuts();
+                });
+                
+                // Also add backup click handler
+                shortcutsButton.onclick = function(e) {
+                    e.preventDefault();
+                    console.log('Shortcuts button clicked via onclick');
+                    toggleShortcuts();
+                };
+                
+                console.log('Shortcuts button event listeners setup complete');
+                addToConsole('Event listeners setup complete');
+            } else {
+                console.error('Shortcuts button not found');
+                addToConsole('ERROR: Shortcuts button not found during setup', 'error');
+            }
+            
+            // Run initial checks
+            checkButton();
+            checkModal();
+        });
+    </script>
+</body>
+</html>

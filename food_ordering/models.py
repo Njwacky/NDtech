@@ -4,6 +4,9 @@ from django.utils import timezone
 import json
 import uuid
 
+# Import tracking models from nano app for integration
+from nano.models import ErrorLog, UserActivity, DeviceConnection
+
 class Restaurant(models.Model):
     """Restaurant/Shop model for food ordering system"""
     owner = models.ForeignKey(User, on_delete=models.CASCADE, related_name='restaurants')
@@ -350,3 +353,220 @@ class CustomerReview(models.Model):
 
     def __str__(self):
         return f"Review by {self.customer} for {self.restaurant}"
+
+# Food Ordering Specific Tracking Models
+
+class FoodOrderingActivity(models.Model):
+    """Track food ordering specific activities"""
+    ACTIVITY_TYPES = [
+        ('restaurant_view', 'Restaurant View'),
+        ('menu_browse', 'Menu Browse'),
+        ('item_view', 'Menu Item View'),
+        ('add_to_cart', 'Add to Cart'),
+        ('remove_from_cart', 'Remove from Cart'),
+        ('checkout', 'Checkout'),
+        ('payment', 'Payment'),
+        ('order_placed', 'Order Placed'),
+        ('order_cancelled', 'Order Cancelled'),
+        ('delivery_tracking', 'Delivery Tracking'),
+        ('review_left', 'Review Left'),
+        ('search_restaurant', 'Search Restaurant'),
+        ('filter_menu', 'Filter Menu'),
+        ('barcode_scan', 'Barcode Scan'),
+    ]
+    
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='food_activities')
+    activity_type = models.CharField(max_length=30, choices=ACTIVITY_TYPES)
+    
+    # Activity details
+    description = models.TextField(blank=True)
+    restaurant = models.ForeignKey(Restaurant, on_delete=models.SET_NULL, null=True, blank=True, related_name='activity_logs')
+    menu_item = models.ForeignKey(MenuItem, on_delete=models.SET_NULL, null=True, blank=True, related_name='activity_logs')
+    order = models.ForeignKey(Order, on_delete=models.SET_NULL, null=True, blank=True, related_name='activity_logs')
+    
+    # Request context
+    ip_address = models.GenericIPAddressField(null=True, blank=True)
+    user_agent = models.TextField(blank=True)
+    device_connection = models.ForeignKey(DeviceConnection, on_delete=models.SET_NULL, null=True, blank=True)
+    
+    # Additional data
+    metadata = models.JSONField(default=dict, help_text="Additional activity data")
+    duration_ms = models.PositiveIntegerField(null=True, blank=True, help_text="Activity duration in milliseconds")
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['user', 'activity_type', 'created_at']),
+            models.Index(fields=['activity_type', 'created_at']),
+            models.Index(fields=['restaurant', 'created_at']),
+            models.Index(fields=['order', 'created_at']),
+        ]
+    
+    def __str__(self):
+        return f"{self.user.username} - {self.get_activity_type_display()} - {self.created_at}"
+
+class FoodOrderingError(models.Model):
+    """Track food ordering specific errors"""
+    ERROR_TYPES = [
+        ('order_error', 'Order Error'),
+        ('payment_error', 'Payment Error'),
+        ('inventory_error', 'Inventory Error'),
+        ('delivery_error', 'Delivery Error'),
+        ('menu_error', 'Menu Error'),
+        ('restaurant_error', 'Restaurant Error'),
+        ('customer_error', 'Customer Error'),
+        ('integration_error', 'Integration Error'),
+        ('validation_error', 'Validation Error'),
+        ('api_error', 'API Error'),
+    ]
+    
+    ERROR_SEVERITY = [
+        ('low', 'Low'),
+        ('medium', 'Medium'),
+        ('high', 'High'),
+        ('critical', 'Critical'),
+    ]
+    
+    # Error information
+    error_type = models.CharField(max_length=20, choices=ERROR_TYPES)
+    severity = models.CharField(max_length=10, choices=ERROR_SEVERITY, default='medium')
+    error_message = models.TextField()
+    error_code = models.CharField(max_length=50, blank=True)
+    
+    # Context information
+    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='food_errors')
+    restaurant = models.ForeignKey(Restaurant, on_delete=models.SET_NULL, null=True, blank=True, related_name='error_logs')
+    order = models.ForeignKey(Order, on_delete=models.SET_NULL, null=True, blank=True, related_name='error_logs')
+    menu_item = models.ForeignKey(MenuItem, on_delete=models.SET_NULL, null=True, blank=True, related_name='error_logs')
+    device_connection = models.ForeignKey(DeviceConnection, on_delete=models.SET_NULL, null=True, blank=True)
+    
+    # Request information
+    url = models.URLField()
+    request_method = models.CharField(max_length=10)
+    request_data = models.JSONField(null=True, blank=True)
+    user_agent = models.TextField(blank=True)
+    ip_address = models.GenericIPAddressField(null=True, blank=True)
+    
+    # Stack trace and debugging
+    stack_trace = models.TextField(blank=True)
+    line_number = models.PositiveIntegerField(null=True, blank=True)
+    file_name = models.CharField(max_length=255, blank=True)
+    function_name = models.CharField(max_length=100, blank=True)
+    
+    # User action context
+    user_action = models.CharField(max_length=100, blank=True, help_text="What the user was trying to do")
+    form_data = models.JSONField(null=True, blank=True, help_text="Form data that caused the error")
+    
+    # Resolution tracking
+    is_resolved = models.BooleanField(default=False)
+    resolution_notes = models.TextField(blank=True)
+    resolved_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='resolved_food_errors')
+    resolved_at = models.DateTimeField(null=True, blank=True)
+    
+    # Timestamps
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['error_type', 'severity']),
+            models.Index(fields=['user', 'created_at']),
+            models.Index(fields=['restaurant', 'created_at']),
+            models.Index(fields=['is_resolved']),
+            models.Index(fields=['created_at']),
+        ]
+    
+    def __str__(self):
+        return f"{self.get_error_type_display()} - {self.error_message[:50]}..."
+    
+    def get_occurrence_count(self):
+        """Get how many times this error has occurred"""
+        return FoodOrderingError.objects.filter(
+            error_message=self.error_message,
+            error_type=self.error_type,
+            url=self.url
+        ).count()
+    
+    def mark_resolved(self, resolved_by_user, notes=""):
+        """Mark error as resolved"""
+        from django.utils import timezone
+        self.is_resolved = True
+        self.resolved_by = resolved_by_user
+        self.resolved_at = timezone.now()
+        self.resolution_notes = notes
+        self.save()
+
+class FoodOrderingDeviceTracking(models.Model):
+    """Track device usage for food ordering app"""
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='food_device_sessions')
+    device_id = models.CharField(max_length=100)
+    device_type = models.CharField(max_length=20, choices=[
+        ('web', 'Web'),
+        ('android', 'Android'),
+        ('ios', 'iOS'),
+        ('tablet', 'Tablet'),
+        ('mobile', 'Mobile'),
+    ])
+    
+    # Location information
+    ip_address = models.GenericIPAddressField()
+    user_agent = models.TextField()
+    location_country = models.CharField(max_length=100, blank=True)
+    location_city = models.CharField(max_length=100, blank=True)
+    latitude = models.DecimalField(max_digits=10, decimal_places=8, null=True, blank=True)
+    longitude = models.DecimalField(max_digits=10, decimal_places=8, null=True, blank=True)
+    
+    # Session tracking
+    session_start = models.DateTimeField(auto_now_add=True)
+    last_activity = models.DateTimeField(auto_now=True)
+    session_duration_seconds = models.PositiveIntegerField(default=0)
+    is_active = models.BooleanField(default=True)
+    
+    # Food ordering specific metrics
+    restaurants_viewed = models.PositiveIntegerField(default=0)
+    menu_items_viewed = models.PositiveIntegerField(default=0)
+    orders_placed = models.PositiveIntegerField(default=0)
+    cart_additions = models.PositiveIntegerField(default=0)
+    checkout_attempts = models.PositiveIntegerField(default=0)
+    payments_completed = models.PositiveIntegerField(default=0)
+    
+    # Usage statistics
+    page_views = models.PositiveIntegerField(default=0)
+    actions_performed = models.PositiveIntegerField(default=0)
+    data_transferred_mb = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    
+    class Meta:
+        ordering = ['-last_activity']
+        indexes = [
+            models.Index(fields=['user', 'is_active']),
+            models.Index(fields=['device_id']),
+            models.Index(fields=['session_start']),
+            models.Index(fields=['last_activity']),
+        ]
+    
+    def __str__(self):
+        return f"{self.user.username} - {self.device_type} ({self.device_id})"
+    
+    def get_session_duration_display(self):
+        """Get human-readable session duration"""
+        if self.session_duration_seconds < 60:
+            return f"{self.session_duration_seconds}s"
+        elif self.session_duration_seconds < 3600:
+            minutes = self.session_duration_seconds // 60
+            return f"{minutes}m"
+        else:
+            hours = self.session_duration_seconds // 3600
+            minutes = (self.session_duration_seconds % 3600) // 60
+            return f"{hours}h {minutes}m"
+    
+    def update_activity(self):
+        """Update last activity and recalculate session duration"""
+        from django.utils import timezone
+        self.last_activity = timezone.now()
+        if self.session_start:
+            duration = self.last_activity - self.session_start
+            self.session_duration_seconds = int(duration.total_seconds())
+        self.save()
