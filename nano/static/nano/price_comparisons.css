@@ -9,20 +9,20 @@
     --bg-primary: #ffffff;
     --bg-secondary: #f8f9fa;
     --bg-tertiary: #e9ecef;
-    --text-primary: #333333;
-    --text-secondary: #666666;
-    --text-muted: #999999;
-    --border-color: #dddddd;
-    --shadow-light: rgba(0, 0, 0, 0.1);
-    --shadow-medium: rgba(0, 0, 0, 0.15);
+    --text-primary: #344e41;
+    --text-secondary: #588157;
+    --text-muted: #a3b18a;
+    --border-color: #dad7cd;
+    --shadow-light: rgba(88, 129, 87, 0.1);
+    --shadow-medium: rgba(88, 129, 87, 0.15);
     --card-bg: #ffffff;
     --table-bg: #ffffff;
-    --table-hover: #f8f9fa;
+    --table-hover: #f5f5f0;
     --input-bg: #ffffff;
-    --input-border: #dddddd;
-    --gradient-start: #667eea;
-    --gradient-end: #764ba2;
-    --marketing-bg: rgba(15, 15, 15, 0.95);
+    --input-border: #dad7cd;
+    --gradient-start: #588157;
+    --gradient-end: #344e41;
+    --marketing-bg: rgba(52, 78, 65, 0.95);
 }
 
 /* Dark Theme Variables */
@@ -48,8 +48,8 @@
 
 body {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    background: linear-gradient(135deg, var(--gradient-start) 0%, var(--gradient-end) 100%);
-    color: var(--text-primary);
+    background: linear-gradient(135deg, #588157 0%, #344e41 100%);
+    color: #f5f5f0;
     line-height: 1.6;
     min-height: 100vh;
     transition: all 0.3s ease;
@@ -102,8 +102,9 @@ body {
 .infographic-title {
     font-size: 2.5rem;
     font-weight: 700;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, #588157 0%, #a3b18a 100%);
     -webkit-background-clip: text;
+    background-clip: text;
     -webkit-text-fill-color: transparent;
     margin-bottom: 10px;
     text-transform: uppercase;
@@ -143,7 +144,7 @@ body {
     left: 0;
     right: 0;
     height: 4px;
-    background: linear-gradient(90deg, #667eea, #764ba2);
+    background: linear-gradient(90deg, #588157, #a3b18a);
 }
 
 .stat-card:hover {
@@ -155,7 +156,7 @@ body {
     width: 60px;
     height: 60px;
     margin: 0 auto 15px;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, #588157 0%, #a3b18a 100%);
     border-radius: 50%;
     display: flex;
     align-items: center;
@@ -167,9 +168,9 @@ body {
 .stat-number {
     font-size: 2.5rem;
     font-weight: 700;
-    color: var(--gradient-start);
+    color: #588157;
     margin-bottom: 5px;
-    text-shadow: 0 2px 4px var(--shadow-light);
+    text-shadow: 0 2px 4px rgba(88, 129, 87, 0.2);
 }
 
 .stat-label {
@@ -215,7 +216,7 @@ body {
 
 .progress-bar {
     height: 100%;
-    background: linear-gradient(90deg, #667eea, #764ba2);
+    background: linear-gradient(90deg, #588157, #a3b18a);
     border-radius: 10px;
     transition: width 1s ease;
     display: flex;
@@ -251,8 +252,8 @@ body {
 
 .comparison-savings {
     display: inline-block;
-    background: linear-gradient(135deg, #28a745, #20c997);
-    color: white;
+    background: linear-gradient(135deg, #588157, #a3b18a);
+    color: #f5f5f0;
     padding: 8px 16px;
     border-radius: 25px;
     font-weight: 600;
@@ -276,8 +277,8 @@ body {
 }
 
 .price-item.best-price {
-    background: linear-gradient(135deg, #28a745, #20c997);
-    color: white;
+    background: linear-gradient(135deg, #588157, #a3b18a);
+    color: #f5f5f0;
     font-weight: 600;
     border: none;
 }
@@ -291,9 +292,9 @@ body {
     margin-right: 8px;
 }
 
-.indicator-high { background: #dc3545; }
-.indicator-medium { background: #ffc107; }
-.indicator-low { background: #28a745; }
+.indicator-high { background: #a3b18a; }
+.indicator-medium { background: #588157; }
+.indicator-low { background: #344e41; }
 
 /* Marketing Highlights */
 .marketing-highlight {
@@ -453,13 +454,13 @@ body {
 }
 
 .btn-primary {
-    background-color: #007bff;
-    color: white;
+    background-color: #588157;
+    color: #f5f5f0;
 }
 
 .btn-success {
-    background-color: #28a745;
-    color: white;
+    background-color: #a3b18a;
+    color: #f5f5f0;
 }
 
 .btn-light {
@@ -568,12 +569,12 @@ body {
 
 .price-highlight {
     font-weight: bold;
-    color: #28a745;
+    color: #588157;
 }
 
 .savings-badge {
-    background-color: #28a745;
-    color: white;
+    background-color: #588157;
+    color: #f5f5f0;
     padding: 2px 8px;
     border-radius: 12px;
     font-size: 0.8rem;

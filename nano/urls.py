@@ -111,4 +111,5 @@ urlpatterns = [
     path('airtime/requests/<int:request_id>/approve/', views.approve_airtime_request, name='approve_airtime_request'),
     path('airtime/requests/<int:request_id>/reject/', views.reject_airtime_request, name='reject_airtime_request'),
     path('api/airtime/request/', views.create_airtime_request, name='create_airtime_request'),
+    path('airtime/process-quick/', views.process_quick_airtime_sale, name='process_quick_airtime_sale'),
 ]

@@ -62,13 +62,26 @@ def home(request):
     return render(request, 'nano/home.html', {'products': products})
 
 def register(request):
-    return render(request, 'nano/register.html')
+    # Check if any users already exist
+    existing_users = User.objects.exists()
+
+    if existing_users:
+        # If users exist, show the sign_up page which will display "registration closed"
+        return redirect('sign_up')
+    else:
+        # If no users exist, show the sign_up page for first user registration
+        return redirect('sign_up')
 
 def sign_up(request):
     # Check if any users already exist
     existing_users = User.objects.exists()
 
     if request.method == 'POST':
+        # First check if users already exist - if so, don't allow registration
+        if existing_users:
+            messages.error(request, 'Registration is closed. An admin account already exists. New users must be created by the administrator.')
+            return redirect('sign_in')
+
         username = request.POST.get('username', '').strip()
         email = request.POST.get('email', '').strip()
         password = request.POST.get('password', '')
@@ -109,21 +122,16 @@ def sign_up(request):
             with transaction.atomic():
                 user = User.objects.create_user(username=username, email=email, password=password)
 
-                # If this is the first user, make them an admin
-                if not existing_users:
-                    user.is_staff = True  # Make staff to access admin
-                    user.save()
+                # This is the first user, make them an admin
+                user.is_staff = True  # Make staff to access admin
+                user.save()
 
-                    # Create or update admin profile (not superuser)
-                    profile, created = UserProfile.objects.get_or_create(user=user)
-                    profile.role = 'admin'
-                    profile.created_by = None  # First user has no creator
-                    profile.save()
-                    messages.success(request, 'Admin account created successfully! You can now manage other users.')
-                else:
-                    # For subsequent users, they need to be created by an existing superuser/admin
-                    messages.error(request, 'Registration is closed. New users must be created by a superuser or admin.')
-                    return redirect('sign_in')
+                # Create or update admin profile (not superuser)
+                profile, created = UserProfile.objects.get_or_create(user=user)
+                profile.role = 'admin'
+                profile.created_by = None  # First user has no creator
+                profile.save()
+                messages.success(request, 'Admin account created successfully! You can now manage other users.')
         except Exception as e:
             messages.error(request, f'Error creating account: {str(e)}')
             return redirect('sign_in')
@@ -228,7 +236,7 @@ def add_stock(request):
 
     if request.method == 'POST':
         mode = request.POST.get('mode', 'add_stock')  # 'add_stock', 'add_product', 'import_products', or 'delete_product'
-        
+
         if mode == 'delete_product':
             # Delete Product mode - only for managers
             if not is_manager:
@@ -260,7 +268,7 @@ def add_stock(request):
                 return redirect('add_stock')
 
             file = request.FILES['file']
-            
+
             # Check file extension
             file_extension = file.name.split('.')[-1].lower()
             if file_extension not in ['csv', 'xlsx', 'xls']:
@@ -759,7 +767,7 @@ def edit_user(request, user_id):
             # Admin users can change other users' passwords without current password
             # But users changing their own password need current password
             is_admin_changing_other_user = (
-                request.user.is_superuser or 
+                request.user.is_superuser or
                 (hasattr(request.user, 'userprofile') and request.user.userprofile.role == 'admin')
             ) and request.user.id != user.id
 
@@ -895,10 +903,10 @@ def save_order(request):
             # Validate customer information
             if not customer_name:
                 return JsonResponse({'success': False, 'error': 'Customer name is required'})
-            
+
             if not customer_phone:
                 return JsonResponse({'success': False, 'error': 'Customer phone number is required'})
-            
+
             # Validate phone number format
             import re
             phone_regex = r'^[0-9]{10,15}$'
@@ -946,13 +954,13 @@ def complete_order(request, order_id):
             # Validate form data
             cash_received_str = request.POST.get('cash_received', str(order.total))
             payment_method = request.POST.get('payment_method', 'cash')
-            
+
             # Validate payment method
             valid_payment_methods = [choice[0] for choice in CompletedOrder.PAYMENT_METHOD_CHOICES]
             if payment_method not in valid_payment_methods:
                 messages.error(request, f'Invalid payment method. Must be one of: {", ".join(valid_payment_methods)}')
                 return redirect('order_details', order_id=order_id)
-            
+
             # Validate cash received
             try:
                 cash_received = float(cash_received_str)
@@ -962,17 +970,17 @@ def complete_order(request, order_id):
             except ValueError:
                 messages.error(request, 'Invalid cash received amount')
                 return redirect('order_details', order_id=order_id)
-            
+
             # Check if order is already completed
             if order.status == 'completed':
                 messages.warning(request, 'This order has already been completed')
                 return redirect('completed_orders')
-            
+
             # Update product stock with better error handling
             cart_items = order.items
             stock_issues = []
             products_updated = []
-            
+
             for item in cart_items:
                 # Handle both product_id (for backward compatibility) and product name
                 product_id = item.get('product_id')
@@ -997,7 +1005,7 @@ def complete_order(request, order_id):
                         product.stock -= quantity
                         product.save()
                         products_updated.append(product.name)
-                        
+
                         # Create sale record for inventory tracking
                         Sale.objects.create(
                             product=product,
@@ -1015,7 +1023,7 @@ def complete_order(request, order_id):
                         stock_issues.append(f'Product not found in item: {item}')
                 except Exception as e:
                     stock_issues.append(f'Error updating {item.get("product", "unknown product")}: {str(e)}')
-            
+
             # If there are stock issues, show error and don't complete order
             if stock_issues:
                 for issue in stock_issues:
@@ -1048,7 +1056,7 @@ def complete_order(request, order_id):
                 success_msg += f' Change: R{change_given:.2f}'
             if products_updated:
                 success_msg += f' Updated stock for: {", ".join(products_updated)}'
-            
+
             messages.success(request, success_msg)
             return redirect('completed_orders')
 
@@ -1393,10 +1401,10 @@ def checkout_order(request, order_id=None):
                 # Validate customer information
                 if not customer_name:
                     return JsonResponse({'status': 'error', 'message': 'Customer name is required'})
-                
+
                 if not customer_phone:
                     return JsonResponse({'status': 'error', 'message': 'Customer phone number is required'})
-                
+
                 # Validate phone number format
                 import re
                 phone_regex = r'^[0-9]{10,15}$'
@@ -1422,7 +1430,7 @@ def checkout_order(request, order_id=None):
                                 product = possible_products.first()
                             else:
                                 return JsonResponse({'status': 'error', 'message': f'Product not found: {product_name}'})
-                    
+
                     if product.stock < quantity:
                         return JsonResponse({
                             'status': 'error',
@@ -1461,7 +1469,7 @@ def checkout_order(request, order_id=None):
                                 product = possible_products.first()
                             else:
                                 continue  # Skip this item if product not found
-                    
+
                     Sale.objects.create(
                         product=product,
                         quantity=quantity,
@@ -1487,7 +1495,7 @@ def checkout_order(request, order_id=None):
                                 product = possible_products.first()
                             else:
                                 continue  # Skip this item if product not found
-                    
+
                     product.stock -= quantity
                     product.save()
 
@@ -2425,17 +2433,17 @@ def airtime_dashboard(request):
     """Airtime dashboard with separate functionality"""
     # Allow all authenticated users
     airtime_products = AirtimeProduct.objects.filter(is_active=True).order_by('network', 'airtime_type', 'value')
-    
+
     # Get user role to determine permissions
     user_role = getattr(request.user.userprofile, 'role', 'cashier') if hasattr(request.user, 'userprofile') else 'cashier'
     is_manager = user_role in ['admin', 'manager', 'superuser']
-    
+
     # Get pending airtime sales that need approval
     pending_sales = AirtimeSale.objects.filter(status='pending').order_by('-created_at')
-    
+
     # Get airtime requests
     airtime_requests = AirtimeRequest.objects.filter(status='pending').order_by('-created_at')
-    
+
     return render(request, 'nano/airtime_dashboard.html', {
         'airtime_products': airtime_products,
         'pending_sales': pending_sales,
@@ -2453,7 +2461,7 @@ def airtime_management(request):
 
     if request.method == 'POST':
         mode = request.POST.get('mode', 'add_product')
-        
+
         if mode == 'add_product':
             name = request.POST.get('name', '').strip()
             network = request.POST.get('network', '')
@@ -2569,31 +2577,31 @@ def airtime_sales(request):
     # Allow all authenticated users
     user_role = getattr(request.user.userprofile, 'role', 'cashier') if hasattr(request.user, 'userprofile') else 'cashier'
     is_manager = user_role in ['admin', 'manager', 'superuser']
-    
+
     # Get filter parameters
     status_filter = request.GET.get('status', '')
     network_filter = request.GET.get('network', '')
-    
+
     # Build query
     sales = AirtimeSale.objects.all()
-    
+
     if status_filter:
         sales = sales.filter(status=status_filter)
-    
+
     if network_filter:
         sales = sales.filter(airtime_product__network=network_filter)
-    
+
     # For cashiers, only show their own sales
     if not is_manager:
         sales = sales.filter(requested_by=request.user)
-    
+
     sales = sales.order_by('-created_at')
-    
+
     # Pagination
     paginator = Paginator(sales, 20)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
-    
+
     return render(request, 'nano/airtime_sales.html', {
         'sales': page_obj,
         'is_paginated': page_obj.has_other_pages(),
@@ -2627,7 +2635,7 @@ def process_airtime_sale(request):
 
             try:
                 airtime_product = AirtimeProduct.objects.get(id=product_id)
-                
+
                 # Check stock
                 if airtime_product.stock < quantity:
                     return JsonResponse({
@@ -2639,7 +2647,7 @@ def process_airtime_sale(request):
 
                 # Get user role
                 user_role = getattr(request.user.userprofile, 'role', 'cashier') if hasattr(request.user, 'userprofile') else 'cashier'
-                
+
                 # Create airtime sale
                 airtime_sale = AirtimeSale.objects.create(
                     airtime_product=airtime_product,
@@ -2686,7 +2694,7 @@ def process_airtime_sale(request):
                     # For managers/admins, process immediately
                     airtime_product.stock -= quantity
                     airtime_product.save()
-                    
+
                     airtime_sale.status = 'completed'
                     airtime_sale.completed_at = timezone.now()
                     airtime_sale.approved_by = request.user
@@ -2710,6 +2718,144 @@ def process_airtime_sale(request):
     return JsonResponse({'success': False, 'error': 'Invalid request method'})
 
 @login_required
+def process_quick_airtime_sale(request):
+    """Process quick airtime sale from management page"""
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            network = data.get('network', '').strip()
+            amount = data.get('amount', 0)
+            airtime_type = data.get('type', '').strip()
+            price = data.get('price', 0)
+            customer_phone = data.get('customer_phone', '').strip()
+            product_name = data.get('product_name', '').strip()
+
+            # Validate required fields
+            if not all([network, amount, airtime_type, price, customer_phone, product_name]):
+                return JsonResponse({'success': False, 'error': 'Missing required fields'})
+
+            # Validate phone number format
+            phone_regex = r'^[0-9]{10,15}$'
+            if not re.match(phone_regex, customer_phone):
+                return JsonResponse({'success': False, 'error': 'Please enter a valid phone number (10-15 digits)'})
+
+            # Validate numeric values
+            try:
+                amount = float(amount)
+                price = float(price)
+                if amount <= 0 or price <= 0:
+                    return JsonResponse({'success': False, 'error': 'Amount and price must be greater than 0'})
+            except ValueError:
+                return JsonResponse({'success': False, 'error': 'Invalid amount or price values'})
+
+            # Validate network and type
+            if network not in dict(AirtimeProduct.NETWORK_CHOICES):
+                return JsonResponse({'success': False, 'error': 'Invalid network'})
+
+            if airtime_type not in dict(AirtimeProduct.TYPE_CHOICES):
+                return JsonResponse({'success': False, 'error': 'Invalid airtime type'})
+
+            # Find or create a temporary airtime product for this sale
+            # First try to find an existing product that matches
+            airtime_product = AirtimeProduct.objects.filter(
+                network=network,
+                airtime_type=airtime_type,
+                value=amount
+            ).first()
+
+            if not airtime_product:
+                # Create a temporary product for this quick sale
+                airtime_product = AirtimeProduct.objects.create(
+                    name=product_name,
+                    network=network,
+                    airtime_type=airtime_type,
+                    value=amount,
+                    price=price,
+                    stock=1,  # Temporary stock
+                    is_active=False  # Mark as inactive/temporary
+                )
+
+            # Check if we have sufficient stock for non-temporary products
+            if airtime_product.is_active and airtime_product.stock < 1:
+                return JsonResponse({'success': False, 'error': 'Insufficient stock for this product'})
+
+            # Get user role
+            user_role = getattr(request.user.userprofile, 'role', 'cashier') if hasattr(request.user, 'userprofile') else 'cashier'
+
+            # Create airtime sale
+            airtime_sale = AirtimeSale.objects.create(
+                airtime_product=airtime_product,
+                quantity=1,
+                total_price=price,
+                customer_phone=customer_phone,
+                requested_by=request.user,
+                status='approved' if user_role != 'cashier' else 'pending'
+            )
+
+            # If user is cashier, create notification for managers
+            if user_role == 'cashier':
+                admin_users = User.objects.filter(
+                    Q(is_superuser=True) |
+                    Q(userprofile__role__in=['admin', 'manager'])
+                ).distinct()
+
+                for admin_user in admin_users:
+                    notification = Notification.objects.create(
+                        title=f"Quick Airtime Sale Approval Required",
+                        message=f"Quick airtime sale request from {request.user.username}: {product_name} for {customer_phone} (R{price})",
+                        notification_type='cashier_request',
+                        target_role='admin',
+                        target_user=admin_user,
+                        created_by=request.user,
+                        request_type='airtime_sale_approval',
+                        request_data={
+                            'airtime_sale_id': airtime_sale.id,
+                            'product_name': product_name,
+                            'customer_phone': customer_phone,
+                            'total_price': str(price),
+                            'quantity': 1,
+                            'network': network,
+                            'amount': str(amount),
+                            'type': airtime_type
+                        }
+                    )
+                    # Send FCM notification
+                    send_fcm_notification_to_user(admin_user, notification.title, notification.message)
+
+                return JsonResponse({
+                    'success': True,
+                    'message': 'Quick airtime sale request submitted and is pending manager approval',
+                    'requires_approval': True
+                })
+            else:
+                # For managers/admins, process immediately
+                if airtime_product.is_active:
+                    airtime_product.stock -= 1
+                    airtime_product.save()
+                else:
+                    # For temporary products, we don't track stock
+                    pass
+
+                airtime_sale.status = 'completed'
+                airtime_sale.completed_at = timezone.now()
+                airtime_sale.approved_by = request.user
+                airtime_sale.approved_at = timezone.now()
+                airtime_sale.save()
+
+                return JsonResponse({
+                    'success': True,
+                    'message': 'Quick airtime sale completed successfully',
+                    'requires_approval': False
+                })
+
+        except json.JSONDecodeError:
+            return JsonResponse({'success': False, 'error': 'Invalid data format'})
+        except Exception as e:
+            return JsonResponse({'success': False, 'error': str(e)})
+
+    return JsonResponse({'success': False, 'error': 'Invalid request method'})
+
+@login_required
 def approve_airtime_sale(request, sale_id):
     """Approve airtime sale (for managers)"""
     # Allow only managers, admins, and superusers
@@ -2720,7 +2866,7 @@ def approve_airtime_sale(request, sale_id):
 
     if request.method == 'POST':
         approval_notes = request.POST.get('approval_notes', '').strip()
-        
+
         # Update airtime sale
         airtime_sale.status = 'approved'
         airtime_sale.approved_by = request.user
@@ -2750,7 +2896,7 @@ def reject_airtime_sale(request, sale_id):
 
     if request.method == 'POST':
         rejection_reason = request.POST.get('rejection_reason', '').strip()
-        
+
         # Update airtime sale
         airtime_sale.status = 'cancelled'
         airtime_sale.approved_by = request.user
@@ -2773,7 +2919,7 @@ def airtime_requests_management(request):
         return HttpResponseForbidden("You do not have permission to access this page.")
 
     requests = AirtimeRequest.objects.all().order_by('-created_at')
-    
+
     # Pagination
     paginator = Paginator(requests, 20)
     page_number = request.GET.get('page')
@@ -2796,7 +2942,7 @@ def approve_airtime_request(request, request_id):
 
     if request.method == 'POST':
         approval_notes = request.POST.get('approval_notes', '').strip()
-        
+
         # Update request
         airtime_request.status = 'approved'
         airtime_request.approved_by = request.user
@@ -2846,7 +2992,7 @@ def reject_airtime_request(request, request_id):
 
     if request.method == 'POST':
         rejection_reason = request.POST.get('rejection_reason', '').strip()
-        
+
         # Update request
         airtime_request.status = 'rejected'
         airtime_request.approved_by = request.user
@@ -3177,11 +3323,11 @@ def export_products_excel(request):
             output = io.BytesIO()
             with pd.ExcelWriter(output, engine='openpyxl') as writer:
                 df.to_excel(writer, sheet_name='Products', index=False)
-                
+
                 # Get the workbook and worksheet for formatting
                 workbook = writer.book
                 worksheet = writer.sheets['Products']
-                
+
                 # Auto-adjust column widths
                 for column in worksheet.columns:
                     max_length = 0
@@ -3202,7 +3348,7 @@ def export_products_excel(request):
                 content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
             )
             response['Content-Disposition'] = f'attachment; filename="products_export_{timezone.now().strftime("%Y%m%d_%H%M%S")}.xlsx"'
-            
+
             messages.success(request, f'Successfully exported {products.count()} products to Excel!')
             return response
 
@@ -3238,21 +3384,21 @@ def tracking_dashboard(request):
     # Allow only superusers or users with admin/manager roles
     if not (request.user.is_superuser or (hasattr(request.user, 'userprofile') and request.user.userprofile.role in ['admin', 'manager'])):
         return HttpResponseForbidden("You do not have permission to access this page.")
-    
+
     # Get statistics
     total_errors = ErrorLog.objects.count()
     unresolved_errors = ErrorLog.objects.filter(is_resolved=False).count()
     critical_errors = ErrorLog.objects.filter(severity='critical', is_resolved=False).count()
-    
+
     # Get recent errors
     recent_errors = ErrorLog.objects.order_by('-created_at')[:10]
-    
+
     # Get error statistics by type
     error_types = ErrorLog.objects.values('error_type').annotate(count=Count('id')).order_by('-count')
-    
+
     # Get error statistics by severity
     severity_stats = ErrorLog.objects.values('severity').annotate(count=Count('id')).order_by('-count')
-    
+
     return render(request, 'nano/tracking_dashboard.html', {
         'total_errors': total_errors,
         'unresolved_errors': unresolved_errors,
@@ -3268,39 +3414,39 @@ def device_tracking(request):
     # Allow only superusers or users with admin/manager roles
     if not (request.user.is_superuser or (hasattr(request.user, 'userprofile') and request.user.userprofile.role in ['admin', 'manager'])):
         return HttpResponseForbidden("You do not have permission to access this page.")
-    
+
     # Get search parameters
     search_query = request.GET.get('search', '').strip()
     device_type_filter = request.GET.get('device_type', '')
-    
+
     # Build query
     device_connections = DeviceConnection.objects.all()
-    
+
     if search_query:
         device_connections = device_connections.filter(
             Q(user__username__icontains=search_query) |
             Q(device_id__icontains=search_query) |
             Q(ip_address__icontains=search_query)
         )
-    
+
     if device_type_filter:
         device_connections = device_connections.filter(device_type=device_type_filter)
-    
+
     # Order by last activity
     device_connections = device_connections.order_by('-last_activity')
-    
+
     # Get statistics
     total_connections = device_connections.count()
     active_connections = device_connections.filter(is_active=True).count()
-    
+
     # Get device type statistics
     device_types = DeviceConnection.objects.values('device_type').annotate(count=Count('id')).order_by('-count')
-    
+
     # Pagination
     paginator = Paginator(device_connections, 25)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
-    
+
     return render(request, 'nano/device_tracking.html', {
         'device_connections': page_obj,
         'total_connections': total_connections,
@@ -3316,7 +3462,7 @@ def error_tracking(request):
     # Allow only superusers or users with admin/manager roles
     if not (request.user.is_superuser or (hasattr(request.user, 'userprofile') and request.user.userprofile.role in ['admin', 'manager'])):
         return HttpResponseForbidden("You do not have permission to access this page.")
-    
+
     # Get search parameters
     search_query = request.GET.get('search', '').strip()
     error_type_filter = request.GET.get('error_type', '')
@@ -3324,55 +3470,55 @@ def error_tracking(request):
     status_filter = request.GET.get('status', '')
     date_from = request.GET.get('date_from', '')
     date_to = request.GET.get('date_to', '')
-    
+
     # Build query
     errors = ErrorLog.objects.all()
-    
+
     if search_query:
         errors = errors.filter(
             Q(error_message__icontains=search_query) |
             Q(url__icontains=search_query) |
             Q(user__username__icontains=search_query)
         )
-    
+
     if error_type_filter:
         errors = errors.filter(error_type=error_type_filter)
-    
+
     if severity_filter:
         errors = errors.filter(severity=severity_filter)
-    
+
     if status_filter == 'resolved':
         errors = errors.filter(is_resolved=True)
     elif status_filter == 'unresolved':
         errors = errors.filter(is_resolved=False)
-    
+
     if date_from:
         try:
             date_from_obj = timezone.datetime.strptime(date_from, '%Y-%m-%d').date()
             errors = errors.filter(created_at__date__gte=date_from_obj)
         except ValueError:
             pass
-    
+
     if date_to:
         try:
             date_to_obj = timezone.datetime.strptime(date_to, '%Y-%m-%d').date()
             errors = errors.filter(created_at__date__lte=date_to_obj)
         except ValueError:
             pass
-    
+
     # Order by most recent
     errors = errors.order_by('-created_at')
-    
+
     # Get statistics
     total_errors = errors.count()
     unresolved_errors = errors.filter(is_resolved=False).count()
     critical_errors = errors.filter(severity='critical', is_resolved=False).count()
-    
+
     # Pagination
     paginator = Paginator(errors, 50)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
-    
+
     return render(request, 'nano/error_tracking.html', {
         'errors': page_obj,
         'total_errors': total_errors,
@@ -3392,15 +3538,15 @@ def error_details(request, error_id):
     # Allow only superusers or users with admin/manager roles
     if not (request.user.is_superuser or (hasattr(request.user, 'userprofile') and request.user.userprofile.role in ['admin', 'manager'])):
         return HttpResponseForbidden("You do not have permission to access this page.")
-    
+
     error = get_object_or_404(ErrorLog, id=error_id)
-    
+
     # Find similar errors (same error message and type, different instances)
     similar_errors = ErrorLog.objects.filter(
         error_message=error.error_message,
         error_type=error.error_type
     ).exclude(id=error.id).order_by('-created_at')[:10]
-    
+
     return render(request, 'nano/error_details.html', {
         'error': error,
         'similar_errors': similar_errors
@@ -3412,17 +3558,17 @@ def resolve_error(request, error_id):
     # Allow only superusers or users with admin/manager roles
     if not (request.user.is_superuser or (hasattr(request.user, 'userprofile') and request.user.userprofile.role in ['admin', 'manager'])):
         return HttpResponseForbidden("You do not have permission to access this page.")
-    
+
     error = get_object_or_404(ErrorLog, id=error_id)
-    
+
     if request.method == 'POST':
         resolution_notes = request.POST.get('resolution_notes', '').strip()
-        
+
         error.mark_resolved(request.user, resolution_notes)
         messages.success(request, f'Error #{error.id} marked as resolved successfully!')
-        
+
         return redirect('error_tracking')
-    
+
     return render(request, 'nano/resolve_error.html', {'error': error})
 
 @login_required
@@ -3431,58 +3577,58 @@ def user_activity_tracking(request):
     # Allow only superusers or users with admin/manager roles
     if not (request.user.is_superuser or (hasattr(request.user, 'userprofile') and request.user.userprofile.role in ['admin', 'manager'])):
         return HttpResponseForbidden("You do not have permission to access this page.")
-    
+
     # Get search parameters
     search_query = request.GET.get('search', '').strip()
     activity_type_filter = request.GET.get('activity_type', '')
     user_filter = request.GET.get('user', '')
     date_from = request.GET.get('date_from', '')
     date_to = request.GET.get('date_to', '')
-    
+
     # Build query
     activities = UserActivity.objects.all()
-    
+
     if search_query:
         activities = activities.filter(
             Q(user__username__icontains=search_query) |
             Q(description__icontains=search_query) |
             Q(page_url__icontains=search_query)
         )
-    
+
     if activity_type_filter:
         activities = activities.filter(activity_type=activity_type_filter)
-    
+
     if user_filter:
         activities = activities.filter(user__username__icontains=user_filter)
-    
+
     if date_from:
         try:
             date_from_obj = timezone.datetime.strptime(date_from, '%Y-%m-%d').date()
             activities = activities.filter(created_at__date__gte=date_from_obj)
         except ValueError:
             pass
-    
+
     if date_to:
         try:
             date_to_obj = timezone.datetime.strptime(date_to, '%Y-%m-%d').date()
             activities = activities.filter(created_at__date__lte=date_to_obj)
         except ValueError:
             pass
-    
+
     # Order by most recent
     activities = activities.order_by('-created_at')
-    
+
     # Get statistics
     total_activities = activities.count()
-    
+
     # Get activity type statistics
     activity_types = UserActivity.objects.values('activity_type').annotate(count=Count('id')).order_by('-count')
-    
+
     # Pagination
     paginator = Paginator(activities, 50)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
-    
+
     return render(request, 'nano/user_activity_tracking.html', {
         'activities': page_obj,
         'total_activities': total_activities,
@@ -3501,23 +3647,23 @@ def track_device_connection(request):
     if request.method == 'POST':
         try:
             data = json.loads(request.body)
-            
+
             # Get user from request (should be authenticated)
             if not request.user.is_authenticated:
                 return JsonResponse({'success': False, 'error': 'Authentication required'})
-            
+
             # Extract device information
             device_id = data.get('device_id', '')
             device_type = data.get('device_type', 'web')
             ip_address = data.get('ip_address', '')
             user_agent = data.get('user_agent', '')
-            
+
             # Get location data if available
             location_country = data.get('location_country', '')
             location_city = data.get('location_city', '')
             latitude = data.get('latitude')
             longitude = data.get('longitude')
-            
+
             # Create or update device connection
             device_connection, created = DeviceConnection.objects.update_or_create(
                 user=request.user,
@@ -3533,21 +3679,21 @@ def track_device_connection(request):
                     'is_active': True
                 }
             )
-            
+
             # Update activity
             device_connection.update_activity()
-            
+
             return JsonResponse({
                 'success': True,
                 'device_connection_id': device_connection.id,
                 'created': created
             })
-            
+
         except json.JSONDecodeError:
             return JsonResponse({'success': False, 'error': 'Invalid JSON data'})
         except Exception as e:
             return JsonResponse({'success': False, 'error': str(e)})
-    
+
     return JsonResponse({'success': False, 'error': 'Only POST requests are supported'})
 
 @csrf_exempt
@@ -3556,27 +3702,27 @@ def track_user_activity(request):
     if request.method == 'POST':
         try:
             data = json.loads(request.body)
-            
+
             # Get user from request (should be authenticated)
             if not request.user.is_authenticated:
                 return JsonResponse({'success': False, 'error': 'Authentication required'})
-            
+
             # Extract activity information
             activity_type = data.get('activity_type', '')
             description = data.get('description', '')
             page_url = data.get('page_url', '')
             object_type = data.get('object_type', '')
             object_id = data.get('object_id')
-            
+
             # Get request context
             ip_address = data.get('ip_address', '')
             user_agent = data.get('user_agent', '')
             device_connection_id = data.get('device_connection_id')
-            
+
             # Additional metadata
             metadata = data.get('metadata', {})
             duration_ms = data.get('duration_ms')
-            
+
             # Get device connection if provided
             device_connection = None
             if device_connection_id:
@@ -3584,7 +3730,7 @@ def track_user_activity(request):
                     device_connection = DeviceConnection.objects.get(id=device_connection_id)
                 except DeviceConnection.DoesNotExist:
                     pass
-            
+
             # Create user activity
             activity = UserActivity.objects.create(
                 user=request.user,
@@ -3599,17 +3745,17 @@ def track_user_activity(request):
                 metadata=metadata,
                 duration_ms=duration_ms
             )
-            
+
             return JsonResponse({
                 'success': True,
                 'activity_id': activity.id
             })
-            
+
         except json.JSONDecodeError:
             return JsonResponse({'success': False, 'error': 'Invalid JSON data'})
         except Exception as e:
             return JsonResponse({'success': False, 'error': str(e)})
-    
+
     return JsonResponse({'success': False, 'error': 'Only POST requests are supported'})
 
 @csrf_exempt
@@ -3618,35 +3764,35 @@ def log_error(request):
     if request.method == 'POST':
         try:
             data = json.loads(request.body)
-            
+
             # Get user from request (can be anonymous for system errors)
             user = getattr(request, 'user', None)
             if not user or not user.is_authenticated:
                 user = None
-            
+
             # Extract error information
             error_type = data.get('error_type', 'system_error')
             severity = data.get('severity', 'medium')
             error_message = data.get('error_message', '')
             error_code = data.get('error_code', '')
-            
+
             # Request information
             url = data.get('url', '')
             request_method = data.get('request_method', '')
             request_data = data.get('request_data', {})
             user_agent = data.get('user_agent', '')
             ip_address = data.get('ip_address', '')
-            
+
             # Stack trace and debugging
             stack_trace = data.get('stack_trace', '')
             line_number = data.get('line_number')
             file_name = data.get('file_name', '')
             function_name = data.get('function_name', '')
-            
+
             # User action context
             user_action = data.get('user_action', '')
             form_data = data.get('form_data', {})
-            
+
             # Get device connection if provided
             device_connection_id = data.get('device_connection_id')
             device_connection = None
@@ -3655,7 +3801,7 @@ def log_error(request):
                     device_connection = DeviceConnection.objects.get(id=device_connection_id)
                 except DeviceConnection.DoesNotExist:
                     pass
-            
+
             # Create error log
             error = ErrorLog.objects.create(
                 error_type=error_type,
@@ -3676,15 +3822,15 @@ def log_error(request):
                 user_action=user_action,
                 form_data=form_data
             )
-            
+
             return JsonResponse({
                 'success': True,
                 'error_id': error.id
             })
-            
+
         except json.JSONDecodeError:
             return JsonResponse({'success': False, 'error': 'Invalid JSON data'})
         except Exception as e:
             return JsonResponse({'success': False, 'error': str(e)})
-    
+
     return JsonResponse({'success': False, 'error': 'Only POST requests are supported'})

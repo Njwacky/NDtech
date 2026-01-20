@@ -72,7 +72,7 @@ function updateCart() {
                 ${item.isOnSale ? '<span class="cart-item-sale-badge">SALE</span>' : ''}
             </div>
             ${priceDisplay}
-            <button class="remove-btn" onclick="removeFromCart('${item.product}', ${item.price})">-</button>
+            <button class="cancel-btn" onclick="removeFromCart('${item.product}', ${item.price})" title="Remove item">⛔</button>
         `;
         cartItems.appendChild(div);
     });

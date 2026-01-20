@@ -8,23 +8,21 @@
 {% endblock %}
 
 {% block content %}
+        <!-- Transparent Background Images -->
+        <div class="bg-decoration-1"></div>
+        <div class="bg-decoration-2"></div>
+        
         <!-- Action Buttons Section -->
         <section class="action-section">
             <div class="action-buttons">
                 <button class="action-btn clear-btn" onclick="clearCart()">
                     <i class="fas fa-trash"></i> Clear Cart
                 </button>
+                
                 <button class="action-btn save-order-btn" onclick="saveOrder()">
                     <i class="fas fa-save"></i> Save Order
                 </button>
-                <button class="action-btn" id="shortcuts-btn" onclick="toggleShortcuts()" 
-                        style="background: linear-gradient(135deg, #9333ea, #7c3aed); color: white; cursor: pointer; border: none; padding: 1rem 2rem; border-radius: 0.75rem; font-size: 1rem; font-weight: 600; display: flex; align-items: center; gap: 0.5rem; min-width: 150px; justify-content: center; transition: all 0.3s ease; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);"
-                        onmouseover="this.style.background='linear-gradient(135deg, #7c3aed, #6d28d9)'; this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 20px rgba(0, 0, 0, 0.15)';"
-                        onmouseout="this.style.background='linear-gradient(135deg, #9333ea, #7c3aed)'; this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 15px rgba(0, 0, 0, 0.1)';"
-                        onmousedown="this.style.transform='scale(0.95)';"
-                        onmouseup="this.style.transform='translateY(-2px)';">
-                    <i class="fa-solid fa-circle-info"></i> 
-                </button>
+                
                 <a href="{% url 'airtime_dashboard' %}" class="action-btn airtime-btn">
                     <i class="fas fa-mobile-alt"></i> Airtime
                 </a>
@@ -86,16 +84,7 @@
                             <span>Click sale badge for discount info</span>
                         </div>
                     </div>
-                    <div class="shortcut-category">
-                        <h4><i class="fas fa-user"></i> Customer & Payment</h4>
-                        <div class="shortcut-item">
-                            <kbd>Tab</kbd>
-                            <span>Navigate between fields</span>
-                        </div>
-                        <div class="shortcut-item">
-                            <kbd>↑</kbd> / <kbd>↓</kbd>
-                            <span>Adjust cash received</span>
-                        </div>
+
                     </div>
                 </div>
                 <div class="shortcuts-tips">
@@ -113,6 +102,7 @@
                     <div class="search-box">
                         <i class="fas fa-search"></i>
                         <input type="text" id="product-search" placeholder="Search products by name..." autocomplete="off">
+                        <div class="shortcut-hint">Ctrl+F</div>
                         <button class="clear-search-btn" id="clear-search" style="display: none;">
                             <i class="fas fa-times"></i>
                         </button>
@@ -121,6 +111,7 @@
                         <button type="button" class="btn btn-scan-barcode" onclick="toggleBarcodeScan()">
                             <i class="fas fa-barcode"></i> Scan Barcode
                         </button>
+                        <div class="shortcut-hint">Ctrl+B</div>
                         <div id="barcode-scan-panel" class="barcode-scan-panel" style="display: none;">
                             <input type="text" 
                                    id="barcode-scan-input" 
@@ -192,6 +183,7 @@
                                required
                                minlength="2"
                                maxlength="100">
+                        <div class="shortcut-hint">Tab to navigate</div>
                     </div>
                     <div class="customer-input-group">
                         <label for="customer-phone" class="customer-label">
@@ -206,6 +198,7 @@
                                required
                                minlength="10"
                                maxlength="15">
+                        <div class="shortcut-hint">Tab to navigate</div>
                     </div>
                 </div>
 
@@ -224,6 +217,7 @@
                                    step="0.01" 
                                    min="0"
                                    oninput="calculateChange()">
+                        <div class="shortcut-hint">↑/↓ to adjust</div>
                         </div>
                     </div>
                     
@@ -240,6 +234,7 @@
                     <div class="cart-summary">
                         <div class="cart-total" id="total" onclick="checkoutOrder()">R0.00</div>
                         <div class="cart-label">Click to Checkout</div>
+                        <div class="shortcut-hint">Enter to checkout</div>
                     </div>
                 </div>
             </section>
@@ -247,5 +242,5 @@
 {% endblock %}
 
 {% block extra_js %}
-<script src="{% static 'nano/home.js' %}"></script>
+<script src="{% static 'nano/home.min.js' %}"></script>
 {% endblock %}

@@ -8,12 +8,12 @@
 }
 
 .notifications-header {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
+    background: linear-gradient(135deg, #588157 0%, #344e41 100%);
+    color: #f5f5f0;
     padding: 30px;
     border-radius: 12px;
     margin-bottom: 30px;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 8px 32px rgba(88, 129, 87, 0.1);
 }
 
 .header-content {
@@ -125,8 +125,8 @@
 }
 
 .notification-item.unread {
-    background-color: #e3f2fd;
-    border-left: 4px solid #2196f3;
+    background-color: #f5f5f0;
+    border-left: 4px solid #588157;
 }
 
 .notification-item.read {
@@ -176,18 +176,18 @@
 }
 
 .notification-type.low-stock {
-    background: #fff3cd;
-    color: #856404;
+    background: #f5f5f0;
+    color: #344e41;
 }
 
 .notification-type.cashier-request {
-    background: #d1ecf1;
-    color: #0c5460;
+    background: #e8f5e8;
+    color: #344e41;
 }
 
 .notification-type.system-alert {
-    background: #f8d7da;
-    color: #721c24;
+    background: #f5f5f0;
+    color: #344e41;
 }
 
 .notification-actions {
@@ -205,39 +205,39 @@
 }
 
 .btn-mark-read {
-    background: #28a745;
-    color: white;
+    background: #588157;
+    color: #f5f5f0;
 }
 
 .btn-mark-read:hover {
-    background: #218838;
+    background: #344e41;
 }
 
 .btn-dismiss {
-    background: #dc3545;
-    color: white;
+    background: #a3b18a;
+    color: #f5f5f0;
 }
 
 .btn-dismiss:hover {
-    background: #c82333;
+    background: #588157;
 }
 
 .btn-edit-user {
-    background: #ff6b35;
-    color: white;
+    background: #a3b18a;
+    color: #f5f5f0;
 }
 
 .btn-edit-user:hover {
-    background: #e55a2b;
+    background: #588157;
 }
 
 .btn-add-stock {
-    background: #28a745;
-    color: white;
+    background: #588157;
+    color: #f5f5f0;
 }
 
 .btn-add-stock:hover {
-    background: #218838;
+    background: #344e41;
 }
 
 .empty-state {
@@ -344,12 +344,12 @@
 }
 
 .btn-primary {
-    background: #007bff;
-    color: white;
+    background: #588157;
+    color: #f5f5f0;
 }
 
 .btn-primary:hover {
-    background: #0056b3;
+    background: #344e41;
 }
 
 .btn-secondary {
@@ -391,8 +391,8 @@
     align-items: center;
     gap: 4px;
     padding: 2px 8px;
-    background: #ff6b35;
-    color: white;
+    background: #a3b18a;
+    color: #f5f5f0;
     border-radius: 12px;
     font-size: 0.7rem;
     font-weight: 500;
@@ -519,8 +519,8 @@
     position: absolute;
     top: -8px;
     right: -8px;
-    background: #dc3545;
-    color: white;
+    background: #a3b18a;
+    color: #f5f5f0;
     border-radius: 50%;
     width: 18px;
     height: 18px;
@@ -534,13 +534,13 @@
 
 @keyframes pulse {
     0% {
-        box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.7);
+        box-shadow: 0 0 0 0 rgba(163, 177, 138, 0.7);
     }
     70% {
-        box-shadow: 0 0 0 10px rgba(220, 53, 69, 0);
+        box-shadow: 0 0 0 10px rgba(163, 177, 138, 0);
     }
     100% {
-        box-shadow: 0 0 0 0 rgba(220, 53, 69, 0);
+        box-shadow: 0 0 0 0 rgba(163, 177, 138, 0);
     }
 }
 
@@ -595,14 +595,14 @@
 .mark-all-read {
     background: none;
     border: none;
-    color: #007bff;
+    color: #588157;
     cursor: pointer;
     font-size: 0.85rem;
     text-decoration: underline;
 }
 
 .mark-all-read:hover {
-    color: #0056b3;
+    color: #344e41;
 }
 
 /* Notification Items */
@@ -618,8 +618,8 @@
 }
 
 .notification-item.unread {
-    background-color: #e3f2fd;
-    border-left: 4px solid #2196f3;
+    background-color: #f5f5f0;
+    border-left: 4px solid #588157;
 }
 
 .notification-item.read {
@@ -660,18 +660,18 @@
 }
 
 .notification-type.low-stock {
-    background: #fff3cd;
-    color: #856404;
+    background: #f5f5f0;
+    color: #344e41;
 }
 
 .notification-type.cashier-request {
-    background: #d1ecf1;
-    color: #0c5460;
+    background: #e8f5e8;
+    color: #344e41;
 }
 
 .notification-type.system-alert {
-    background: #f8d7da;
-    color: #721c24;
+    background: #f5f5f0;
+    color: #344e41;
 }
 
 /* Notification Actions */
@@ -691,21 +691,21 @@
 }
 
 .btn-mark-read {
-    background: #28a745;
-    color: white;
+    background: #588157;
+    color: #f5f5f0;
 }
 
 .btn-mark-read:hover {
-    background: #218838;
+    background: #344e41;
 }
 
 .btn-dismiss {
-    background: #dc3545;
-    color: white;
+    background: #a3b18a;
+    color: #f5f5f0;
 }
 
 .btn-dismiss:hover {
-    background: #c82333;
+    background: #588157;
 }
 
 /* Empty State */
@@ -728,15 +728,15 @@
     right: 20px !important;
     width: 60px !important;
     height: 60px !important;
-    background: #007bff !important;
+    background: #588157 !important;
     border-radius: 50% !important;
     display: flex !important;
     align-items: center !important;
     justify-content: center !important;
-    color: white !important;
+    color: #f5f5f0 !important;
     font-size: 1.5rem !important;
     cursor: pointer !important;
-    box-shadow: 0 4px 20px rgba(0, 123, 255, 0.3) !important;
+    box-shadow: 0 4px 20px rgba(88, 129, 87, 0.3) !important;
     transition: all 0.3s ease !important;
     z-index: 9999 !important;
     border: none !important;
@@ -746,8 +746,8 @@
 
 .floating-message-btn:hover {
     transform: scale(1.1) !important;
-    box-shadow: 0 6px 25px rgba(0, 123, 255, 0.4) !important;
-    background: #0056b3 !important;
+    box-shadow: 0 6px 25px rgba(88, 129, 87, 0.4) !important;
+    background: #344e41 !important;
 }
 
 .floating-message-btn:active {
@@ -909,12 +909,12 @@
 }
 
 .btn-primary {
-    background: #007bff;
-    color: white;
+    background: #588157;
+    color: #f5f5f0;
 }
 
 .btn-primary:hover {
-    background: #0056b3;
+    background: #344e41;
 }
 
 .btn-secondary {
@@ -940,8 +940,8 @@
 
 /* Password Notification Styles */
 .password-notification {
-    border-left: 4px solid #ff6b35 !important;
-    background-color: #fff5f0 !important;
+    border-left: 4px solid #a3b18a !important;
+    background-color: #f5f5f0 !important;
 }
 
 .password-badge {
@@ -949,8 +949,8 @@
     align-items: center;
     gap: 4px;
     padding: 2px 8px;
-    background: #ff6b35;
-    color: white;
+    background: #a3b18a;
+    color: #f5f5f0;
     border-radius: 12px;
     font-size: 0.7rem;
     font-weight: 500;
@@ -962,13 +962,13 @@
 }
 
 .btn-edit-user {
-    background: #ff6b35;
-    color: white;
+    background: #a3b18a;
+    color: #f5f5f0;
     font-weight: 500;
 }
 
 .btn-edit-user:hover {
-    background: #e55a2b;
+    background: #588157;
     transform: translateY(-1px);
 }
 
