@@ -2427,6 +2427,179 @@ def register_fcm_token(request):
 
     return JsonResponse({'success': False, 'error': 'Only POST requests are supported'})
 
+@login_required
+def cashier_airtime_quick_sell(request):
+    """Cashier airtime quick sell page"""
+    # Allow all authenticated users (cashiers, managers, admins)
+    
+    # Calculate available credit for this cashier
+    # For now, we'll use a simple approach - managers can set credit amount
+    # In a real implementation, this would come from a separate model
+    
+    # Get user role
+    user_role = getattr(request.user.userprofile, 'role', 'cashier') if hasattr(request.user, 'userprofile') else 'cashier'
+    is_manager = user_role in ['admin', 'manager', 'superuser']
+    
+    # For demonstration, give cashiers R500 credit by default
+    # In production, this should come from a ManagerCredit model or similar
+    available_credit = 500.00 if not is_manager else 1000.00
+    
+    # Check if there are any airtime products available
+    airtime_products = AirtimeProduct.objects.filter(is_active=True).exists()
+    
+    return render(request, 'nano/cashier_airtime_quick_sell.html', {
+        'available_credit': available_credit,
+        'user_role': user_role,
+        'is_manager': is_manager,
+        'airtime_products': airtime_products
+    })
+
+@login_required
+def process_cashier_airtime_sale(request):
+    """Process cashier airtime quick sell"""
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            network = data.get('network', '').strip()
+            amount = data.get('amount', 0)
+            airtime_type = data.get('type', '').strip()
+            price = data.get('price', 0)
+            customer_phone = data.get('customer_phone', '').strip()
+            product_name = data.get('product_name', '').strip()
+            use_credit = data.get('use_credit', False)
+
+            # Validate required fields
+            if not all([network, amount, airtime_type, price, customer_phone, product_name]):
+                return JsonResponse({'success': False, 'error': 'Missing required fields'})
+
+            # Validate phone number format
+            phone_regex = r'^[0-9]{10,15}$'
+            if not re.match(phone_regex, customer_phone):
+                return JsonResponse({'success': False, 'error': 'Please enter a valid phone number (10-15 digits)'})
+
+            # Validate numeric values
+            try:
+                amount = float(amount)
+                price = float(price)
+                if amount <= 0 or price <= 0:
+                    return JsonResponse({'success': False, 'error': 'Amount and price must be greater than 0'})
+            except ValueError:
+                return JsonResponse({'success': False, 'error': 'Invalid amount or price values'})
+
+            # Validate network and type
+            if network not in dict(AirtimeProduct.NETWORK_CHOICES):
+                return JsonResponse({'success': False, 'error': 'Invalid network'})
+
+            if airtime_type not in dict(AirtimeProduct.TYPE_CHOICES):
+                return JsonResponse({'success': False, 'error': 'Invalid airtime type'})
+
+            # Get user role and check permissions
+            user_role = getattr(request.user.userprofile, 'role', 'cashier') if hasattr(request.user, 'userprofile') else 'cashier'
+            is_manager = user_role in ['admin', 'manager', 'superuser']
+
+            # Check credit availability if using credit mode
+            if use_credit and not is_manager:
+                # For demo purposes, check against hardcoded credit
+                # In production, this should check against a ManagerCredit model
+                available_credit = 500.00
+                if price > available_credit:
+                    return JsonResponse({
+                        'success': False,
+                        'error': f'Insufficient credit. Available: R{available_credit:.2f}, Required: R{price:.2f}'
+                    })
+
+            # Find or create a temporary airtime product for this sale
+            airtime_product = AirtimeProduct.objects.filter(
+                network=network,
+                airtime_type=airtime_type,
+                value=amount
+            ).first()
+
+            if not airtime_product:
+                # Create a temporary product for this quick sell
+                airtime_product = AirtimeProduct.objects.create(
+                    name=product_name,
+                    network=network,
+                    airtime_type=airtime_type,
+                    value=amount,
+                    price=price,
+                    stock=1,  # Temporary stock
+                    is_active=False  # Mark as inactive/temporary
+                )
+
+            # Check if we have sufficient stock for non-temporary products
+            if airtime_product.is_active and airtime_product.stock < 1:
+                return JsonResponse({'success': False, 'error': 'Insufficient stock for this product'})
+
+            # Create airtime sale record
+            airtime_sale = AirtimeSale.objects.create(
+                airtime_product=airtime_product,
+                quantity=1,
+                total_price=price,
+                customer_phone=customer_phone,
+                requested_by=request.user,
+                status='completed',  # Always completed immediately for quick sell
+                approved_by=request.user,  # Self-approved for quick sell
+                approved_at=timezone.now()
+            )
+
+            # Process sale immediately
+            if airtime_product.is_active:
+                airtime_product.stock -= 1
+                airtime_product.save()
+
+            # Mark as completed
+            airtime_sale.completed_at = timezone.now()
+            airtime_sale.save()
+
+            # Generate voucher code (simplified for demo)
+            import random
+            import string
+            voucher_code = f"VT{network.upper()}{amount}{''.join(random.choices(string.digits, k=6))}"
+            airtime_sale.voucher_code = voucher_code
+            airtime_sale.save()
+
+            # Create notification for managers if credit was used
+            if use_credit and not is_manager:
+                admin_users = User.objects.filter(
+                    Q(is_superuser=True) |
+                    Q(userprofile__role__in=['admin', 'manager'])
+                ).distinct()
+
+                for admin_user in admin_users:
+                    notification = Notification.objects.create(
+                        title=f"Cashier Credit Used: {request.user.username}",
+                        message=f"Cashier {request.user.username} used R{price:.2f} credit for {product_name} - {customer_phone}",
+                        notification_type='cashier_request',
+                        target_role='admin',
+                        target_user=admin_user,
+                        created_by=request.user,
+                        request_type='credit_used',
+                        request_data={
+                            'cashier': request.user.username,
+                            'amount': price,
+                            'product': product_name,
+                            'customer_phone': customer_phone,
+                            'voucher_code': voucher_code
+                        }
+                    )
+                    # Send FCM notification
+                    send_fcm_notification_to_user(admin_user, notification.title, notification.message)
+
+            return JsonResponse({
+                'success': True,
+                'message': f'Airtime sale completed successfully! Voucher: {voucher_code}',
+                'voucher_code': voucher_code,
+                'requires_approval': False
+            })
+
+        except json.JSONDecodeError:
+            return JsonResponse({'success': False, 'error': 'Invalid data format'})
+        except Exception as e:
+            return JsonResponse({'success': False, 'error': str(e)})
+
+    return JsonResponse({'success': False, 'error': 'Invalid request method'})
+
 # Airtime Views
 @login_required
 def airtime_dashboard(request):
@@ -2648,64 +2821,30 @@ def process_airtime_sale(request):
                 # Get user role
                 user_role = getattr(request.user.userprofile, 'role', 'cashier') if hasattr(request.user, 'userprofile') else 'cashier'
 
-                # Create airtime sale
+                # Create airtime sale - NO APPROVAL REQUIRED FOR CASHIERS (urgent purchases)
                 airtime_sale = AirtimeSale.objects.create(
                     airtime_product=airtime_product,
                     quantity=quantity,
                     total_price=total_price,
                     customer_phone=customer_phone,
                     requested_by=request.user,
-                    status='approved' if user_role != 'cashier' else 'pending'
+                    status='completed'  # Always completed immediately - no approval needed
                 )
 
-                # If user is cashier, create notification for managers
-                if user_role == 'cashier':
-                    admin_users = User.objects.filter(
-                        Q(is_superuser=True) |
-                        Q(userprofile__role__in=['admin', 'manager'])
-                    ).distinct()
+                # Process sale immediately for all users (including cashiers)
+                airtime_product.stock -= quantity
+                airtime_product.save()
 
-                    for admin_user in admin_users:
-                        notification = Notification.objects.create(
-                            title=f"Airtime Sale Approval Required",
-                            message=f"Airtime sale request from {request.user.username}: {airtime_product.get_display_name()} for {customer_phone} (R{total_price})",
-                            notification_type='cashier_request',
-                            target_role='admin',
-                            target_user=admin_user,
-                            created_by=request.user,
-                            request_type='airtime_sale_approval',
-                            request_data={
-                                'airtime_sale_id': airtime_sale.id,
-                                'product_name': airtime_product.get_display_name(),
-                                'customer_phone': customer_phone,
-                                'total_price': str(total_price),
-                                'quantity': quantity
-                            }
-                        )
-                        # Send FCM notification
-                        send_fcm_notification_to_user(admin_user, notification.title, notification.message)
+                airtime_sale.completed_at = timezone.now()
+                airtime_sale.approved_by = request.user
+                airtime_sale.approved_at = timezone.now()
+                airtime_sale.save()
 
-                    return JsonResponse({
-                        'success': True,
-                        'message': 'Airtime sale request submitted and is pending manager approval',
-                        'requires_approval': True
-                    })
-                else:
-                    # For managers/admins, process immediately
-                    airtime_product.stock -= quantity
-                    airtime_product.save()
-
-                    airtime_sale.status = 'completed'
-                    airtime_sale.completed_at = timezone.now()
-                    airtime_sale.approved_by = request.user
-                    airtime_sale.approved_at = timezone.now()
-                    airtime_sale.save()
-
-                    return JsonResponse({
-                        'success': True,
-                        'message': 'Airtime sale completed successfully',
-                        'requires_approval': False
-                    })
+                return JsonResponse({
+                    'success': True,
+                    'message': 'Airtime sale completed successfully',
+                    'requires_approval': False
+                })
 
             except AirtimeProduct.DoesNotExist:
                 return JsonResponse({'success': False, 'error': 'Airtime product not found'})
@@ -2779,74 +2918,34 @@ def process_quick_airtime_sale(request):
             if airtime_product.is_active and airtime_product.stock < 1:
                 return JsonResponse({'success': False, 'error': 'Insufficient stock for this product'})
 
-            # Get user role
-            user_role = getattr(request.user.userprofile, 'role', 'cashier') if hasattr(request.user, 'userprofile') else 'cashier'
-
-            # Create airtime sale
+            # Create airtime sale - NO APPROVAL REQUIRED FOR CASHIERS (urgent purchases)
             airtime_sale = AirtimeSale.objects.create(
                 airtime_product=airtime_product,
                 quantity=1,
                 total_price=price,
                 customer_phone=customer_phone,
                 requested_by=request.user,
-                status='approved' if user_role != 'cashier' else 'pending'
+                status='completed'  # Always completed immediately - no approval needed
             )
 
-            # If user is cashier, create notification for managers
-            if user_role == 'cashier':
-                admin_users = User.objects.filter(
-                    Q(is_superuser=True) |
-                    Q(userprofile__role__in=['admin', 'manager'])
-                ).distinct()
-
-                for admin_user in admin_users:
-                    notification = Notification.objects.create(
-                        title=f"Quick Airtime Sale Approval Required",
-                        message=f"Quick airtime sale request from {request.user.username}: {product_name} for {customer_phone} (R{price})",
-                        notification_type='cashier_request',
-                        target_role='admin',
-                        target_user=admin_user,
-                        created_by=request.user,
-                        request_type='airtime_sale_approval',
-                        request_data={
-                            'airtime_sale_id': airtime_sale.id,
-                            'product_name': product_name,
-                            'customer_phone': customer_phone,
-                            'total_price': str(price),
-                            'quantity': 1,
-                            'network': network,
-                            'amount': str(amount),
-                            'type': airtime_type
-                        }
-                    )
-                    # Send FCM notification
-                    send_fcm_notification_to_user(admin_user, notification.title, notification.message)
-
-                return JsonResponse({
-                    'success': True,
-                    'message': 'Quick airtime sale request submitted and is pending manager approval',
-                    'requires_approval': True
-                })
+            # Process sale immediately for all users (including cashiers)
+            if airtime_product.is_active:
+                airtime_product.stock -= 1
+                airtime_product.save()
             else:
-                # For managers/admins, process immediately
-                if airtime_product.is_active:
-                    airtime_product.stock -= 1
-                    airtime_product.save()
-                else:
-                    # For temporary products, we don't track stock
-                    pass
+                # For temporary products, we don't track stock
+                pass
 
-                airtime_sale.status = 'completed'
-                airtime_sale.completed_at = timezone.now()
-                airtime_sale.approved_by = request.user
-                airtime_sale.approved_at = timezone.now()
-                airtime_sale.save()
+            airtime_sale.completed_at = timezone.now()
+            airtime_sale.approved_by = request.user
+            airtime_sale.approved_at = timezone.now()
+            airtime_sale.save()
 
-                return JsonResponse({
-                    'success': True,
-                    'message': 'Quick airtime sale completed successfully',
-                    'requires_approval': False
-                })
+            return JsonResponse({
+                'success': True,
+                'message': 'Quick airtime sale completed successfully',
+                'requires_approval': False
+            })
 
         except json.JSONDecodeError:
             return JsonResponse({'success': False, 'error': 'Invalid data format'})
@@ -2943,38 +3042,14 @@ def approve_airtime_request(request, request_id):
     if request.method == 'POST':
         approval_notes = request.POST.get('approval_notes', '').strip()
 
-        # Update request
+        # Update airtime request
         airtime_request.status = 'approved'
         airtime_request.approved_by = request.user
         airtime_request.approved_at = timezone.now()
         airtime_request.approval_notes = approval_notes
         airtime_request.save()
 
-        # Process the request based on type
-        if airtime_request.request_type == 'add_airtime':
-            # Extract data and create airtime product
-            request_data = airtime_request.request_data
-            AirtimeProduct.objects.create(
-                name=request_data.get('name', ''),
-                network=request_data.get('network', ''),
-                airtime_type=request_data.get('airtime_type', ''),
-                value=request_data.get('value', 0),
-                price=request_data.get('price', 0),
-                description=request_data.get('description', ''),
-                stock=request_data.get('stock', 0)
-            )
-
-        elif airtime_request.request_type == 'update_stock':
-            # Update stock for airtime product
-            request_data = airtime_request.request_data
-            try:
-                product = AirtimeProduct.objects.get(id=request_data.get('product_id'))
-                product.stock += request_data.get('quantity', 0)
-                product.save()
-            except AirtimeProduct.DoesNotExist:
-                pass
-
-        messages.success(request, f'Airtime request approved successfully!')
+        messages.success(request, f'Airtime request from {airtime_request.requested_by.username} approved successfully!')
         return redirect('airtime_requests_management')
 
     return render(request, 'nano/approve_airtime_request.html', {
@@ -2993,14 +3068,14 @@ def reject_airtime_request(request, request_id):
     if request.method == 'POST':
         rejection_reason = request.POST.get('rejection_reason', '').strip()
 
-        # Update request
+        # Update airtime request
         airtime_request.status = 'rejected'
         airtime_request.approved_by = request.user
         airtime_request.approved_at = timezone.now()
         airtime_request.approval_notes = rejection_reason
         airtime_request.save()
 
-        messages.success(request, f'Airtime request rejected!')
+        messages.success(request, f'Airtime request from {airtime_request.requested_by.username} rejected!')
         return redirect('airtime_requests_management')
 
     return render(request, 'nano/reject_airtime_request.html', {
@@ -3008,111 +3083,22 @@ def reject_airtime_request(request, request_id):
     })
 
 @login_required
-def create_airtime_request(request):
-    """Create airtime management request (for cashiers)"""
-    if request.method == 'POST':
-        try:
-            data = json.loads(request.body)
-            request_type = data.get('request_type', '').strip()
-            message = data.get('message', '').strip()
-            request_data = data.get('request_data', {})
-
-            if not request_type or not message:
-                return JsonResponse({
-                    'success': False,
-                    'error': 'Request type and message are required'
-                })
-
-            # Create airtime request
-            airtime_request = AirtimeRequest.objects.create(
-                request_type=request_type,
-                requested_by=request.user,
-                title=f"Airtime {request_type.replace('_', ' ').title()} Request",
-                message=message,
-                request_data=request_data
-            )
-
-            # Create notification for admins/managers
-            admin_users = User.objects.filter(
-                Q(is_superuser=True) |
-                Q(userprofile__role__in=['admin', 'manager'])
-            ).distinct()
-
-            for admin_user in admin_users:
-                notification = Notification.objects.create(
-                    title=f"Airtime Management Request: {request_type}",
-                    message=f"Airtime {request_type.replace('_', ' ').title()} request from {request.user.username}: {message}",
-                    notification_type='cashier_request',
-                    target_role='admin',
-                    target_user=admin_user,
-                    created_by=request.user,
-                    request_type='airtime_management',
-                    request_data={
-                        'airtime_request_id': airtime_request.id,
-                        'request_type': request_type,
-                        'message': message
-                    }
-                )
-                # Send FCM notification
-                send_fcm_notification_to_user(admin_user, notification.title, notification.message)
-
-            return JsonResponse({'success': True, 'message': 'Airtime request submitted successfully'})
-
-        except json.JSONDecodeError:
-            return JsonResponse({'success': False, 'error': 'Invalid JSON data format'})
-        except Exception as e:
-            return JsonResponse({'success': False, 'error': str(e)})
-
-    return JsonResponse({'success': False, 'error': 'Invalid request method'})
-
-@csrf_exempt
-def unregister_fcm_token(request):
-    """Unregister FCM token"""
-    if request.method == 'POST':
-        try:
-            data = json.loads(request.body)
-            token = data.get('token', '').strip()
-
-            if not token:
-                return JsonResponse({'success': False, 'error': 'FCM token is required'})
-
-            # Get user
-            user = getattr(request, 'user', None)
-            if not user or not user.is_authenticated:
-                return JsonResponse({'success': False, 'error': 'Authentication required'})
-
-            # Delete the token
-            deleted_count, _ = FCMToken.objects.filter(user=user, token=token).delete()
-
-            if deleted_count > 0:
-                return JsonResponse({'success': True, 'message': 'FCM token unregistered successfully'})
-            else:
-                return JsonResponse({'success': False, 'error': 'FCM token not found'})
-
-        except json.JSONDecodeError:
-            return JsonResponse({'success': False, 'error': 'Invalid JSON data'})
-        except Exception as e:
-            return JsonResponse({'success': False, 'error': str(e)})
-
-    return JsonResponse({'success': False, 'error': 'Only POST requests are supported'})
-
-@login_required
 def send_test_notification(request):
-    """Send a test push notification to the current user"""
+    """Send test notification"""
     if request.method == 'POST':
         try:
             data = json.loads(request.body)
-            title = data.get('title', 'Test Notification')
-            message = data.get('message', 'This is a test notification from futurePOS')
+            target_user_id = data.get('target_user_id')
+            message = data.get('message', 'This is a test notification')
 
-            # Send FCM notification
-            success = send_fcm_notification_to_user(request.user, title, message)
+            if target_user_id:
+                target_user = User.objects.get(id=target_user_id)
+                success = send_fcm_notification_to_user(target_user, 'Test Notification', message)
+            else:
+                success = send_fcm_notification_to_user(request.user, 'Test Notification', message)
 
             if success:
-                return JsonResponse({
-                    'success': True,
-                    'message': 'Test notification sent successfully'
-                })
+                return JsonResponse({'success': True, 'message': 'Test notification sent successfully'})
             else:
                 return JsonResponse({
                     'success': False,

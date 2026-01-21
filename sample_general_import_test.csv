@@ -1,0 +1,36 @@
+Product Name,Category,Price,Cost,Stock,SKU,Supplier,Status,Description
+Coca Cola 500ml,Beverages,15.00,8.50,100,COCA-COLA,active,Classic cola drink
+Steyns Brown Bread,Bakery,25.00,15.00,50,STEYNS,active,Fresh brown bread loaf
+Lays Chips 45g,Snacks,12.00,7.00,200,LAYS,active,Original potato chips
+Dairy Milk 1L,Dairy,28.00,22.00,30,DAIRYLAND,active,Full cream milk
+Sunlight Soap 200g,Toiletries,18.00,12.00,80,SUNLIGHT,active,Laundry soap bar
+Rice 5kg,Grains,95.00,75.00,25,RICECO,active,Long grain white rice
+Cooking Oil 750ml,Cooking,45.00,35.00,40,OILCO,active,Sunflower cooking oil
+Sugar 1kg,Pantry,22.00,16.00,60,SUGARCO,active,White granulated sugar
+Coffee 250g,Beverages,85.00,65.00,15,COFFEEPLUS,active,Instant coffee powder
+Toilet Paper 4 rolls,Toiletries,35.00,25.00,45,PAPERCO,active,Soft toilet paper
+Maize Meal 2kg,Grains,45.00,32.00,35,MAIZECO,active,Fine maize meal
+Tomato Sauce 700ml,Condiments,28.00,20.00,55,TOMATOCO,active,Tomato sauce
+Eggs 30 pack,Dairy,65.00,55.00,20,EGGFARM,active,Fresh chicken eggs
+Chicken 1kg,Meat,75.00,60.00,15,MEATCO,active,Fresh chicken pieces
+Beef 500g,Meat,85.00,70.00,10,MEATCO,active,Fresh beef mince
+Pasta 500g,Pantry,18.00,12.00,70,PASTACO,active,Italian style pasta
+Baked Beans 410g,Canned,15.00,10.00,80,CANCO,active,Baked beans in sauce
+Tuna 170g,Canned,22.00,16.00,40,FISHCO,active,Canned tuna fish
+Peanut Butter 500g,Spreads,35.00,25.00,30,NUTCO,active,Smooth peanut butter
+Jam 500g,Spreads,28.00,20.00,50,JAMCO,active,Mixed fruit jam
+Tea Bags 100 pack,Beverages,45.00,30.00,25,TEACO,active,Black tea bags
+Biscuits 200g,Snacks,15.00,10.00,90,BISCO,active,Butter biscuits
+Yogurt 1L,Dairy,32.00,24.00,35,DAIRYLAND,active,Plain yogurt
+Cheese 500g,Dairy,65.00,50.00,20,CHEESECO,active,Cheddar cheese
+Salt 1kg,Pantry,12.00,8.00,100,SALTCO,active,Table salt
+Pepper 100g,Spices,25.00,18.00,60,SPICECO,active,Black pepper ground
+Vinegar 750ml,Condiments,18.00,12.00,70,VINEGARCO,active,White vinegar
+Flour 2.5kg,Bakery,45.00,32.00,40,FLOURCO,active,All purpose flour
+Sugar Free Drinks 6 pack,Beverages,35.00,25.00,30,DRINKCO,active,Assorted flavors
+Chocolate Bar 50g,Confectionery,12.00,8.00,120,CHOCO,active,Milk chocolate
+Chewing Gum 10 pack,Confectionery,15.00,10.00,80,GUMCO,active,Mint flavor
+Hand Sanitizer 50ml,Toiletries,25.00,18.00,100,HEALTHCO,active,Alcohol based sanitizer
+Face Masks 10 pack,Toiletries,45.00,35.00,50,HEALTHCO,active,Disposable face masks
+Dishwashing Liquid 750ml,Toiletries,32.00,22.00,60,CLEANCO,active,Lemon scented
+Laundry Powder 1kg,Toiletries,55.00,40.00,25,CLEANCO,active,Laundry detergent

@@ -1,0 +1,22 @@
+Product Name,Network,Value,Price,Stock,Airtime Type,Status
+Vodacom R5 Airtime,Vodacom,5,7.50,50,airtime,active
+Vodacom R10 Airtime,Vodacom,10,12.00,75,airtime,active
+Vodacom R20 Airtime,Vodacom,20,22.00,100,airtime,active
+Vodacom R50 Airtime,Vodacom,50,52.00,25,airtime,active
+MTN R5 Airtime,MTN,5,7.50,60,airtime,active
+MTN R10 Airtime,MTN,10,12.00,80,airtime,active
+MTN R15 Airtime,MTN,15,17.00,45,airtime,active
+MTN R30 Airtime,MTN,30,32.00,35,airtime,active
+Cell C R10 Airtime,Cell C,10,13.00,40,airtime,active
+Cell C R20 Airtime,Cell C,20,23.00,55,airtime,active
+Telkom R5 Airtime,Telkom,5,7.50,30,airtime,active
+Telkom R25 Airtime,Telkom,25,27.00,20,airtime,active
+Rain R10 Data,Rain,10,13.00,25,data,active
+Rain R20 Data,Rain,20,23.00,15,data,active
+BLU R15 Data,BLU,15,18.00,10,data,active
+Vodacom R5 Data,Vodacom,5,8.00,35,data,active
+MTN R10 Data,MTN,10,13.00,40,data,active
+Cell C R25 Data,Cell C,25,28.00,20,data,active
+Telkom R30 Data,Telkom,30,33.00,15,data,active
+Rain R50 Data,Rain,50,53.00,8,data,active
+BLU R20 Data,BLU,20,23.00,12,data,active

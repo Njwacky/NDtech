@@ -1,0 +1,696 @@
+{% extends 'nano/base.html' %}
+{% load static %}
+
+{% block title %}Quick Airtime Sell - futurePOS{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'nano/airtime-modern.css' %}">
+<style>
+/* Enhanced Earthy Green Theme for Quick Airtime Sell */
+
+.cashier-airtime-container {
+    background: linear-gradient(135deg, #588157 0%, #344e41 50%, #2d3e35 100%) !important;
+    min-height: 100vh !important;
+    padding: 2rem !important;
+    border-radius: 1.5rem !important;
+    margin: 0 !important;
+}
+
+.credit-balance {
+    background: linear-gradient(135deg, rgba(88, 129, 87, 0.9), rgba(52, 78, 65, 0.9)) !important;
+    backdrop-filter: blur(20px) !important;
+    border: 2px solid rgba(163, 177, 138, 0.3) !important;
+    box-shadow: 0 8px 32px rgba(52, 78, 65, 0.3) !important;
+}
+
+.action-card {
+    background: rgba(245, 245, 240, 0.95) !important;
+    backdrop-filter: blur(20px) !important;
+    border: 2px solid rgba(163, 177, 138, 0.3) !important;
+    color: #344e41 !important;
+    box-shadow: 0 4px 20px rgba(52, 78, 65, 0.15) !important;
+}
+
+.action-card:hover {
+    transform: translateY(-5px) !important;
+    box-shadow: 0 12px 40px rgba(52, 78, 65, 0.25) !important;
+    border-color: #588157 !important;
+}
+
+.action-card.active {
+    border-color: #588157 !important;
+    background: linear-gradient(135deg, rgba(88, 129, 87, 0.1), rgba(163, 177, 138, 0.1)) !important;
+}
+
+.action-icon.credit {
+    background: linear-gradient(135deg, #588157, #344e41) !important;
+}
+
+.action-icon.quick {
+    background: linear-gradient(135deg, #a3b18a, #588157) !important;
+}
+
+.action-icon.custom {
+    background: linear-gradient(135deg, #344e41, #a3b18a) !important;
+}
+
+.action-title {
+    color: #344e41 !important;
+}
+
+.action-description {
+    color: #6b7280 !important;
+}
+
+.network-selector, .amount-section, .customer-section {
+    background: rgba(245, 245, 240, 0.95) !important;
+    backdrop-filter: blur(20px) !important;
+    border: 2px solid rgba(163, 177, 138, 0.3) !important;
+    color: #344e41 !important;
+    box-shadow: 0 4px 20px rgba(52, 78, 65, 0.15) !important;
+}
+
+.network-btn {
+    background: rgba(255, 255, 255, 0.9) !important;
+    border: 2px solid rgba(163, 177, 138, 0.3) !important;
+    color: #344e41 !important;
+}
+
+.network-btn:hover {
+    border-color: #588157 !important;
+    transform: translateY(-2px) !important;
+    box-shadow: 0 4px 15px rgba(88, 129, 87, 0.3) !important;
+}
+
+.network-btn.selected {
+    border-color: #588157 !important;
+    background: linear-gradient(135deg, rgba(88, 129, 87, 0.1), rgba(163, 177, 138, 0.1)) !important;
+}
+
+.template-btn {
+    background: rgba(255, 255, 255, 0.9) !important;
+    border: 2px solid rgba(163, 177, 138, 0.3) !important;
+    color: #344e41 !important;
+}
+
+.template-btn:hover {
+    border-color: #588157 !important;
+    transform: translateY(-2px) !important;
+    box-shadow: 0 4px 15px rgba(88, 129, 87, 0.3) !important;
+}
+
+.template-btn.selected {
+    border-color: #588157 !important;
+    background: linear-gradient(135deg, rgba(88, 129, 87, 0.1), rgba(163, 177, 138, 0.1)) !important;
+}
+
+.template-amount {
+    color: #344e41 !important;
+}
+
+.template-type {
+    color: #6b7280 !important;
+}
+
+.template-price {
+    color: #588157 !important;
+}
+
+.custom-amount-form {
+    background: rgba(163, 177, 138, 0.1) !important;
+    border: 1px solid rgba(163, 177, 138, 0.2) !important;
+}
+
+.form-group label {
+    color: #344e41 !important;
+    font-weight: 700 !important;
+}
+
+.form-group input, .form-group select {
+    background: rgba(255, 255, 255, 0.9) !important;
+    border: 2px solid rgba(163, 177, 138, 0.3) !important;
+    color: #344e41 !important;
+}
+
+.form-group input:focus, .form-group select:focus {
+    border-color: #588157 !important;
+    box-shadow: 0 0 0 4px rgba(88, 129, 87, 0.15) !important;
+}
+
+.calculated-price {
+    background: rgba(88, 129, 87, 0.1) !important;
+    border: 2px solid rgba(88, 129, 87, 0.2) !important;
+    color: #344e41 !important;
+}
+
+.product-summary {
+    background: rgba(163, 177, 138, 0.1) !important;
+    border: 1px solid rgba(163, 177, 138, 0.2) !important;
+}
+
+.summary-item .label {
+    color: #6b7280 !important;
+}
+
+.summary-item.total {
+    color: #588157 !important;
+    border-top: 2px solid #588157 !important;
+}
+
+.action-btn.secondary {
+    background: linear-gradient(135deg, #6b7280, #4b5563) !important;
+    color: white !important;
+}
+
+.action-btn.success {
+    background: linear-gradient(135deg, #588157, #344e41) !important;
+    color: white !important;
+}
+
+.action-btn.success:hover {
+    transform: translateY(-2px) !important;
+    box-shadow: 0 4px 15px rgba(88, 129, 87, 0.4) !important;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="cashier-airtime-container">
+    <!-- Header -->
+    <div class="airtime-header">
+        <div class="header-content">
+            <div class="header-title">
+                <div class="title-icon">
+                    <i class="fas fa-bolt"></i>
+                </div>
+                <div class="title-text">
+                    <h1>Quick Airtime Sell</h1>
+                    <p class="subtitle">Sell airtime instantly with customizable amounts</p>
+                </div>
+            </div>
+            <div class="header-actions">
+                <a href="{% url 'airtime_dashboard' %}" class="action-btn primary" style="background: linear-gradient(135deg, #a3b18a, #588157); color: white; border: none; padding: 0.75rem 1.5rem; border-radius: 0.75rem; text-decoration: none; display: flex; align-items: center; gap: 0.5rem; font-weight: 600; transition: all 0.3s ease;">
+                    <i class="fas fa-chart-line"></i>
+                    <span>Airtime Dashboard</span>
+                </a>
+                <a href="{% url 'home' %}" class="action-btn secondary">
+                    <i class="fas fa-arrow-left"></i>
+                    <span>Back to POS</span>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Credit Balance -->
+    <div class="credit-balance">
+        <h3>Available Airtime Credit</h3>
+        <div class="credit-amount">R{{ available_credit|default:"0.00" }}</div>
+        <p>Credit provided by manager for quick sales</p>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="quick-actions">
+        <div class="action-card" id="useCreditCard">
+            <div class="action-icon credit">
+                <i class="fas fa-wallet"></i>
+            </div>
+            <div class="action-title">Use Manager Credit</div>
+            <div class="action-description">Sell using credit provided by manager (R{{ available_credit|default:"0.00" }} available)</div>
+        </div>
+        
+        <div class="action-card" id="managerQuickSellCard">
+            <div class="action-icon quick">
+                <i class="fas fa-bolt"></i>
+            </div>
+            <div class="action-title">Manager Quick Sell</div>
+            <div class="action-description">Access manager's quick airtime templates</div>
+        </div>
+        
+        <div class="action-card" id="customAmountCard">
+            <div class="action-icon custom">
+                <i class="fas fa-calculator"></i>
+            </div>
+            <div class="action-title">Custom Amount</div>
+            <div class="action-description">Create custom airtime amounts for customers</div>
+        </div>
+    </div>
+
+    <!-- Network Selection -->
+    <div class="network-selector" id="networkSelector" style="display: none;">
+        <h3>Select Network</h3>
+        <div class="network-grid">
+            <button class="network-btn vodacom" data-network="vodacom">
+                <div class="network-icon vodacom">
+                    <i class="fas fa-broadcast-tower"></i>
+                </div>
+                <span>Vodacom</span>
+            </button>
+            <button class="network-btn mtn" data-network="mtn">
+                <div class="network-icon mtn">
+                    <i class="fas fa-broadcast-tower"></i>
+                </div>
+                <span>MTN</span>
+            </button>
+            <button class="network-btn cell_c" data-network="cell_c">
+                <div class="network-icon cell_c">
+                    <i class="fas fa-broadcast-tower"></i>
+                </div>
+                <span>Cell C</span>
+            </button>
+            <button class="network-btn telkom" data-network="telkom">
+                <div class="network-icon telkom">
+                    <i class="fas fa-broadcast-tower"></i>
+                </div>
+                <span>Telkom</span>
+            </button>
+            <button class="network-btn rain" data-network="rain">
+                <div class="network-icon rain">
+                    <i class="fas fa-broadcast-tower"></i>
+                </div>
+                <span>Rain</span>
+            </button>
+            <button class="network-btn blu" data-network="blu">
+                <div class="network-icon blu">
+                    <i class="fas fa-broadcast-tower"></i>
+                </div>
+                <span>BLU</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Amount Selection -->
+    <div class="amount-section" id="amountSelector" style="display: none;">
+        <h3>Select Amount</h3>
+        
+        <!-- Quick Templates -->
+        <div class="template-grid" id="templateGrid">
+            <button class="template-btn" data-amount="5" data-type="airtime">
+                <span class="template-amount">R5</span>
+                <span class="template-type">Airtime</span>
+                <span class="template-price">R7</span>
+            </button>
+            <button class="template-btn" data-amount="10" data-type="airtime">
+                <span class="template-amount">R10</span>
+                <span class="template-type">Airtime</span>
+                <span class="template-price">R12</span>
+            </button>
+            <button class="template-btn" data-amount="15" data-type="airtime">
+                <span class="template-amount">R15</span>
+                <span class="template-type">Airtime</span>
+                <span class="template-price">R17</span>
+            </button>
+            <button class="template-btn" data-amount="20" data-type="airtime">
+                <span class="template-amount">R20</span>
+                <span class="template-type">Airtime</span>
+                <span class="template-price">R22</span>
+            </button>
+            <button class="template-btn" data-amount="30" data-type="airtime">
+                <span class="template-amount">R30</span>
+                <span class="template-type">Airtime</span>
+                <span class="template-price">R32</span>
+            </button>
+            <button class="template-btn" data-amount="50" data-type="airtime">
+                <span class="template-amount">R50</span>
+                <span class="template-type">Airtime</span>
+                <span class="template-price">R52</span>
+            </button>
+            <button class="template-btn" data-amount="10" data-type="data">
+                <span class="template-amount">R10</span>
+                <span class="template-type">Data</span>
+                <span class="template-price">R13</span>
+            </button>
+            <button class="template-btn" data-amount="20" data-type="data">
+                <span class="template-amount">R20</span>
+                <span class="template-type">Data</span>
+                <span class="template-price">R23</span>
+            </button>
+            <button class="template-btn" data-amount="30" data-type="data">
+                <span class="template-amount">R30</span>
+                <span class="template-type">Data</span>
+                <span class="template-price">R33</span>
+            </button>
+        </div>
+
+        <!-- Custom Amount -->
+        <div class="custom-amount-form">
+            <h4>Custom Amount</h4>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Amount (R)</label>
+                    <input type="number" id="customAmount" min="1" step="1" placeholder="Enter amount">
+                </div>
+                <div class="form-group">
+                    <label>Type</label>
+                    <select id="customType">
+                        <option value="airtime">Airtime (+R2)</option>
+                        <option value="data">Data (+R3)</option>
+                    </select>
+                </div>
+            </div>
+            <div class="calculated-price">
+                <span>Selling Price: </span>
+                <span id="calculatedPrice">R0.00</span>
+            </div>
+            <button class="action-btn success" id="useCustomAmount">
+                <i class="fas fa-calculator"></i>
+                Use Custom Amount
+            </button>
+        </div>
+    </div>
+
+    <!-- Customer Details -->
+    <div class="customer-section" id="customerDetails" style="display: none;">
+        <h3>Customer Details</h3>
+        <div class="customer-form">
+            <div class="form-group">
+                <label>Customer Phone Number</label>
+                <input type="tel" id="customerPhone" placeholder="Enter phone number" required>
+            </div>
+            <div class="selected-product">
+                <h4>Selected Product</h4>
+                <div class="product-summary">
+                    <div class="summary-item">
+                        <span>Network:</span>
+                        <span id="selectedNetwork">-</span>
+                    </div>
+                    <div class="summary-item">
+                        <span>Type:</span>
+                        <span id="selectedType">-</span>
+                    </div>
+                    <div class="summary-item">
+                        <span>Amount:</span>
+                        <span id="selectedAmount">-</span>
+                    </div>
+                    <div class="summary-item total">
+                        <span>Total Price:</span>
+                        <span id="selectedPrice">-</span>
+                    </div>
+                </div>
+            </div>
+            <div class="action-buttons">
+                <button class="action-btn secondary" id="backToAmount">
+                    <i class="fas fa-arrow-left"></i>
+                    Back
+                </button>
+                <button class="action-btn success" id="processQuickSell">
+                    <i class="fas fa-shopping-cart"></i>
+                    Process Sale
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+$(document).ready(function() {
+    let selectedNetwork = null;
+    let selectedAmount = null;
+    let selectedType = null;
+    let selectedPrice = null;
+    let selectedMode = null; // 'credit', 'manager_quick', or 'custom'
+    let availableCredit = parseFloat('{{ available_credit|default:"0.00" }}');
+
+    // Action card selection
+    $('.action-card').click(function() {
+        $('.action-card').removeClass('active');
+        $(this).addClass('selected');
+        
+        const cardId = $(this).attr('id');
+        
+        if (cardId === 'useCreditCard') {
+            selectedMode = 'credit';
+            if (availableCredit <= 0) {
+                showNotification('No available credit. Please request credit from manager.', 'warning');
+                return;
+            }
+            showNetworkSelector();
+        } else if (cardId === 'managerQuickSellCard') {
+            selectedMode = 'manager_quick';
+            showNetworkSelector();
+        } else if (cardId === 'customAmountCard') {
+            selectedMode = 'custom';
+            showNetworkSelector();
+        }
+    });
+
+    function showNetworkSelector() {
+        $('#networkSelector').fadeIn(300);
+        $('html, body').animate({
+            scrollTop: $('#networkSelector').offset().top - 20
+        }, 500);
+    }
+
+    // Network selection
+    $('.network-btn').click(function() {
+        $('.network-btn').removeClass('selected');
+        $(this).addClass('selected');
+        
+        selectedNetwork = $(this).data('network');
+        $('#amountSelector').fadeIn(300);
+        
+        // Scroll to amount selector
+        $('html, body').animate({
+            scrollTop: $('#amountSelector').offset().top - 20
+        }, 500);
+    });
+
+    // Template button selection
+    $('.template-btn').click(function() {
+        $('.template-btn').removeClass('selected');
+        $(this).addClass('selected');
+        
+        selectedAmount = parseFloat($(this).data('amount'));
+        selectedType = $(this).data('type');
+        selectedPrice = parseFloat($(this).find('.template-price').text().replace('R', ''));
+        
+        // Check credit availability if using credit mode
+        if (selectedMode === 'credit' && selectedPrice > availableCredit) {
+            showNotification('Insufficient credit. Available: R' + availableCredit.toFixed(2), 'warning');
+            return;
+        }
+        
+        showCustomerDetails();
+    });
+
+    // Custom amount calculation
+    $('#customAmount, #customType').on('input change', function() {
+        calculateCustomPrice();
+    });
+
+    function calculateCustomPrice() {
+        const amount = parseFloat($('#customAmount').val()) || 0;
+        const type = $('#customType').val();
+        const markup = type === 'data' ? 3 : 2;
+        const totalPrice = amount + markup;
+        
+        $('#calculatedPrice').text('R' + totalPrice.toFixed(2));
+    }
+
+    // Use custom amount
+    $('#useCustomAmount').click(function() {
+        const amount = parseFloat($('#customAmount').val()) || 0;
+        const type = $('#customType').val();
+        const markup = type === 'data' ? 3 : 2;
+        const totalPrice = amount + markup;
+        
+        if (amount <= 0) {
+            showNotification('Please enter a valid amount', 'warning');
+            return;
+        }
+        
+        // Check credit availability if using credit mode
+        if (selectedMode === 'credit' && totalPrice > availableCredit) {
+            showNotification('Insufficient credit. Available: R' + availableCredit.toFixed(2), 'warning');
+            return;
+        }
+        
+        selectedAmount = amount;
+        selectedType = type;
+        selectedPrice = totalPrice;
+        
+        showCustomerDetails();
+    });
+
+    // Show customer details
+    function showCustomerDetails() {
+        $('#amountSelector').fadeOut(300);
+        $('#customerDetails').fadeIn(300);
+        
+        // Update summary
+        $('#selectedNetwork').text(selectedNetwork.charAt(0).toUpperCase() + selectedNetwork.slice(1));
+        $('#selectedType').text(selectedType.charAt(0).toUpperCase() + selectedType.slice(1));
+        $('#selectedAmount').text('R' + selectedAmount.toFixed(2));
+        $('#selectedPrice').text('R' + selectedPrice.toFixed(2));
+        
+        // Scroll to customer details
+        $('html, body').animate({
+            scrollTop: $('#customerDetails').offset().top - 20
+        }, 500);
+        
+        // Focus on phone input
+        $('#customerPhone').focus();
+    }
+
+    // Back to amount selection
+    $('#backToAmount').click(function() {
+        $('#customerDetails').fadeOut(300);
+        $('#amountSelector').fadeIn(300);
+    });
+
+    // Process quick sell
+    $('#processQuickSell').click(function() {
+        const customerPhone = $('#customerPhone').val().trim();
+        
+        // Validation
+        if (!customerPhone) {
+            showNotification('Please enter customer phone number', 'warning');
+            $('#customerPhone').focus();
+            return;
+        }
+        
+        if (!/^[0-9]{10,15}$/.test(customerPhone)) {
+            showNotification('Please enter a valid phone number (10-15 digits)', 'warning');
+            $('#customerPhone').focus();
+            return;
+        }
+        
+        if (!selectedNetwork || !selectedAmount || !selectedType || !selectedPrice) {
+            showNotification('Please complete selection', 'warning');
+            return;
+        }
+        
+        const button = $(this);
+        button.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Processing...');
+        
+        // Create product name
+        const productName = `${selectedNetwork.charAt(0).toUpperCase() + selectedNetwork.slice(1)} R${selectedAmount} ${selectedType.charAt(0).toUpperCase() + selectedType.slice(1)}`;
+        
+        // Prepare data based on mode
+        let saleData = {
+            network: selectedNetwork,
+            amount: selectedAmount,
+            type: selectedType,
+            price: selectedPrice,
+            customer_phone: customerPhone,
+            product_name: productName
+        };
+        
+        if (selectedMode === 'credit') {
+            saleData.use_credit = true;
+        }
+        
+        $.ajax({
+            url: '{% url "process_cashier_airtime_sale" %}',
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            data: JSON.stringify(saleData),
+            contentType: 'application/json',
+            success: function(response) {
+                if (response.success) {
+                    showNotification(response.message, 'success');
+                    resetForm();
+                    setTimeout(() => location.reload(), 1500);
+                } else {
+                    showNotification('Error: ' + response.error, 'error');
+                }
+            },
+            error: function(xhr, status, error) {
+                let errorMessage = 'Error processing airtime sale. Please try again.';
+                if (xhr.responseJSON && xhr.responseJSON.error) {
+                    errorMessage = 'Error: ' + xhr.responseJSON.error;
+                }
+                showNotification(errorMessage, 'error');
+            },
+            complete: function() {
+                button.prop('disabled', false).html('<i class="fas fa-shopping-cart"></i> Process Sale');
+            }
+        });
+    });
+
+    // Reset form
+    function resetForm() {
+        $('.action-card, .network-btn, .template-btn').removeClass('selected');
+        $('#customerDetails, #amountSelector, #networkSelector').hide();
+        $('#customerPhone, #customAmount').val('');
+        $('#calculatedPrice').text('R0.00');
+        selectedNetwork = null;
+        selectedAmount = null;
+        selectedType = null;
+        selectedPrice = null;
+        selectedMode = null;
+    }
+
+    // Show notification function
+    function showNotification(message, type = 'info') {
+        // Remove existing notifications
+        $('.notification').remove();
+        
+        // Create notification element
+        const notification = $(`
+            <div class="notification ${type}">
+                <div class="notification-content">
+                    <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'warning' ? 'exclamation-triangle' : type === 'error' ? 'times-circle' : 'info-circle'}"></i>
+                    <span>${message}</span>
+                </div>
+                <button class="notification-close">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+        `);
+        
+        // Add to body
+        $('body').append(notification);
+        
+        // Show notification with animation
+        setTimeout(() => notification.addClass('show'), 100);
+        
+        // Auto remove after 5 seconds
+        setTimeout(() => {
+            notification.removeClass('show');
+            setTimeout(() => notification.remove(), 300);
+        }, 5000);
+        
+        // Handle close button
+        notification.find('.notification-close').click(() => {
+            notification.removeClass('show');
+            setTimeout(() => notification.remove(), 300);
+        });
+    }
+
+    // Keyboard navigation
+    $(document).keydown(function(e) {
+        if (e.key === 'Escape') {
+            if ($('#customerDetails').is(':visible')) {
+                $('#backToAmount').click();
+            } else if ($('#amountSelector').is(':visible')) {
+                $('#networkSelector').fadeIn(300);
+                $('#amountSelector').fadeOut(300);
+            } else if ($('#networkSelector').is(':visible')) {
+                resetForm();
+            }
+        }
+    });
+
+    // CSRF token function
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+});
+</script>
+{% endblock %}

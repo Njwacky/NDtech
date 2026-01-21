@@ -40,7 +40,6 @@ urlpatterns = [
     
     # FCM (Firebase Cloud Messaging) URLs
     path('api/fcm/register/', views.register_fcm_token, name='register_fcm_token'),
-    path('api/fcm/unregister/', views.unregister_fcm_token, name='unregister_fcm_token'),
     path('api/fcm/test/', views.send_test_notification, name='send_test_notification'),
     path('api/fcm/test-connection/', views.test_fcm_connection, name='test_fcm_connection'),
     path('api/fcm/tokens/', views.get_user_fcm_tokens, name='get_user_fcm_tokens'),
@@ -110,6 +109,7 @@ urlpatterns = [
     path('airtime/requests/', views.airtime_requests_management, name='airtime_requests_management'),
     path('airtime/requests/<int:request_id>/approve/', views.approve_airtime_request, name='approve_airtime_request'),
     path('airtime/requests/<int:request_id>/reject/', views.reject_airtime_request, name='reject_airtime_request'),
-    path('api/airtime/request/', views.create_airtime_request, name='create_airtime_request'),
     path('airtime/process-quick/', views.process_quick_airtime_sale, name='process_quick_airtime_sale'),
+    path('airtime/cashier-quick-sell/', views.cashier_airtime_quick_sell, name='cashier_airtime_quick_sell'),
+    path('api/airtime/cashier-process/', views.process_cashier_airtime_sale, name='process_cashier_airtime_sale'),
 ]

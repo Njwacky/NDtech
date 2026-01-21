@@ -5,6 +5,89 @@
 
 {% block extra_css %}
 <link rel="stylesheet" href="{% static 'nano/airtime-modern.css' %}">
+<style>
+/* Enhanced Earthy Green Theme for Airtime Dashboard */
+
+/* Fix help guide text visibility */
+.help-card {
+    background: rgba(245, 245, 240, 0.95) !important;
+    backdrop-filter: blur(20px) !important;
+    border: 2px solid rgba(163, 177, 138, 0.3) !important;
+    color: #344e41 !important;
+}
+
+.help-header {
+    background: linear-gradient(135deg, #588157, #344e41) !important;
+    color: #f5f5f0 !important;
+}
+
+.help-header h3 {
+    color: #f5f5f0 !important;
+}
+
+.help-header i {
+    color: #a3b18a !important;
+}
+
+.help-content {
+    background: rgba(245, 245, 240, 0.9) !important;
+    color: #344e41 !important;
+}
+
+.help-item {
+    background: rgba(255, 255, 255, 0.8) !important;
+    border: 1px solid rgba(163, 177, 138, 0.2) !important;
+    color: #344e41 !important;
+}
+
+.help-item h4 {
+    color: #344e41 !important;
+}
+
+.help-item ul {
+    color: #344e41 !important;
+}
+
+.help-item li {
+    color: #344e41 !important;
+}
+
+.help-item li strong {
+    color: #588157 !important;
+}
+
+.tips-section {
+    background: rgba(255, 255, 255, 0.8) !important;
+    border: 1px solid rgba(163, 177, 138, 0.2) !important;
+    color: #344e41 !important;
+}
+
+.tips-header h4 {
+    color: #344e41 !important;
+}
+
+.tips-header i {
+    color: #588157 !important;
+}
+
+.tip-item {
+    color: #344e41 !important;
+}
+
+.tip-item i {
+    color: #588157 !important;
+}
+
+.help-close {
+    background: rgba(163, 177, 138, 0.2) !important;
+    color: #344e41 !important;
+}
+
+.help-close:hover {
+    background: rgba(163, 177, 138, 0.3) !important;
+    color: #2d3e35 !important;
+}
+</style>
 {% endblock %}
 
 {% block content %}
@@ -22,6 +105,10 @@
                 </div>
             </div>
             <div class="header-actions">
+                <a href="{% url 'cashier_airtime_quick_sell' %}" class="action-btn success" style="background: linear-gradient(135deg, #588157, #344e41);">
+                    <i class="fas fa-bolt"></i>
+                    <span>Quick Sell</span>
+                </a>
                 <button class="guide-btn" data-bs-toggle="collapse" data-bs-target="#dashboardHelp">
                     <i class="fas fa-question-circle"></i>
                     <span>Quick Guide</span>
@@ -56,10 +143,11 @@
                         </div>
                         <h4>For Cashiers</h4>
                         <ul>
-                            <li><strong>Sell Airtime:</strong> Click "Sell" button next to any product</li>
-                            <li><strong>Enter Details:</strong> Add customer phone number and quantity</li>
-                            <li><strong>Submit:</strong> Sale goes to manager for approval</li>
-                            <li><strong>Track:</strong> Monitor your pending sales status</li>
+                            <li><strong>Enhanced Interface:</strong> Navigate the new earthy green themed dashboard with modern glassmorphism design</li>
+                            <li><strong>Quick Sell:</strong> Use the enhanced Quick Sell button for instant airtime sales with custom amounts</li>
+                            <li><strong>Product Cards:</strong> View products with improved visual hierarchy and hover effects</li>
+                            <li><strong>Modern Forms:</strong> Experience enhanced input fields with smooth animations and focus states</li>
+                            <li><strong>Network Selection:</strong> Choose from beautifully styled network buttons with earthy green accents</li>
                         </ul>
                     </div>
                     <div class="help-item">
@@ -68,10 +156,11 @@
                         </div>
                         <h4>For Managers</h4>
                         <ul>
-                            <li><strong>Approve Sales:</strong> Review pending cashier sales</li>
-                            <li><strong>Manage Products:</strong> Add/edit airtime products</li>
-                            <li><strong>Update Stock:</strong> Maintain inventory levels</li>
-                            <li><strong>Handle Requests:</strong> Process cashier requests</li>
+                            <li><strong>Enhanced Dashboard:</strong> Manage airtime operations with new earthy green themed interface</li>
+                            <li><strong>Modern Sales Review:</strong> Approve/reject sales in beautifully styled cards with smooth animations</li>
+                            <li><strong>Product Management:</strong> Add/edit products with enhanced form controls and better UX</li>
+                            <li><strong>Visual Statistics:</strong> Monitor performance with gradient-styled stat cards and improved readability</li>
+                            <li><strong>Request Processing:</strong> Handle team requests through modern, responsive interface</li>
                         </ul>
                     </div>
                     <div class="help-item">
@@ -80,10 +169,10 @@
                         </div>
                         <h4>Quick Stats</h4>
                         <ul>
-                            <li><strong>Total Products:</strong> All active airtime items</li>
-                            <li><strong>Pending Sales:</strong> Awaiting your approval</li>
-                            <li><strong>Requests:</strong> Product/stock change requests</li>
-                            <li><strong>Your Role:</strong> Current permission level</li>
+                            <li><strong>Total Products:</strong> All active airtime items with enhanced visual display</li>
+                            <li><strong>Pending Sales:</strong> Awaiting approval with modern card-based layout</li>
+                            <li><strong>Requests:</strong> Product/stock requests with improved tracking interface</li>
+                            <li><strong>Your Role:</strong> Current permission level with earthy green themed indicators</li>
                         </ul>
                     </div>
                 </div>
@@ -94,20 +183,20 @@
                     </div>
                     <div class="tips-grid">
                         <div class="tip-item">
-                            <i class="fas fa-money-bill-wave"></i>
-                            <span>Set selling prices higher than face value for better margins</span>
+                            <i class="fas fa-palette"></i>
+                            <span>Enjoy the new earthy green theme with calming forest colors and modern glassmorphism effects</span>
                         </div>
                         <div class="tip-item">
                             <i class="fas fa-mobile"></i>
-                            <span>Use 10-15 digit phone numbers (no spaces or dashes)</span>
+                            <span>Use 10-15 digit phone numbers (no spaces or dashes) in enhanced form fields</span>
                         </div>
                         <div class="tip-item">
-                            <i class="fas fa-boxes"></i>
-                            <span>Monitor stock levels to avoid sales interruptions</span>
+                            <i class="fas fa-hand-pointer"></i>
+                            <span>Experience smooth hover animations and micro-interactions on all interactive elements</span>
                         </div>
                         <div class="tip-item">
                             <i class="fas fa-bolt"></i>
-                            <span>Keep approvals prompt for better customer service</span>
+                            <span>Quick Sell now features custom amount creation with real-time price calculation</span>
                         </div>
                     </div>
                 </div>
