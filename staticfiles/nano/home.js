@@ -72,7 +72,7 @@ function updateCart() {
                 ${item.isOnSale ? '<span class="cart-item-sale-badge">SALE</span>' : ''}
             </div>
             ${priceDisplay}
-            <button class="remove-btn" onclick="removeFromCart('${item.product}', ${item.price})">-</button>
+            <button class="cancel-btn" onclick="removeFromCart('${item.product}', ${item.price})" title="Remove item">⛔</button>
         `;
         cartItems.appendChild(div);
     });
@@ -101,7 +101,6 @@ function calculateChange() {
         changeDisplay.style.display = 'none';
     }
 }
-
 
 function clearCart() {
     cart = [];
@@ -508,9 +507,216 @@ function getScanStatusIcon(status) {
     }
 }
 
-// Initialize search when page loads
+// Export products to Excel
+function exportProducts() {
+    try {
+        // Create a temporary anchor element
+        const link = document.createElement('a');
+        link.href = '/export/products/excel/';
+        link.download = 'products_export.xlsx';
+        link.click();
+        
+        // Optional: Show success message
+        console.log('Export started successfully');
+    } catch (error) {
+        console.error('Error exporting products:', error);
+        alert('Error exporting products. Please try again.');
+    }
+}
+
+// Toggle shortcuts modal
+function toggleShortcuts() {
+    const modal = document.getElementById('shortcuts-modal');
+    console.log('Toggle shortcuts called, modal:', modal); // Debug log
+    if (modal) {
+        if (modal.style.display === 'none' || !modal.style.display) {
+            modal.style.display = 'flex';
+            // Prevent body scroll when modal is open
+            document.body.style.overflow = 'hidden';
+            console.log('Modal opened'); // Debug log
+        } else {
+            modal.style.display = 'none';
+            // Restore body scroll
+            document.body.style.overflow = '';
+            console.log('Modal closed'); // Debug log
+        }
+    } else {
+        console.error('Shortcuts modal not found'); // Debug log
+    }
+}
+
+// Keyboard shortcuts handler
+function setupKeyboardShortcuts() {
+    document.addEventListener('keydown', function(event) {
+        // Don't trigger shortcuts when typing in input fields
+        if (event.target.tagName === 'INPUT' || event.target.tagName === 'TEXTAREA') {
+            return;
+        }
+        
+        // Ctrl + C: Clear Cart
+        if (event.ctrlKey && event.key === 'c') {
+            event.preventDefault();
+            clearCart();
+        }
+        
+        // Ctrl + S: Save Order
+        if (event.ctrlKey && event.key === 's') {
+            event.preventDefault();
+            saveOrder();
+        }
+        
+        // Ctrl + F: Focus Search
+        if (event.ctrlKey && event.key === 'f') {
+            event.preventDefault();
+            const searchInput = document.getElementById('product-search');
+            if (searchInput) {
+                searchInput.focus();
+            }
+        }
+        
+        // Ctrl + B: Toggle Barcode Scanner
+        if (event.ctrlKey && event.key === 'b') {
+            event.preventDefault();
+            toggleBarcodeScan();
+        }
+        
+        // Escape: Close modals and clear search
+        if (event.key === 'Escape') {
+            const shortcutsModal = document.getElementById('shortcuts-modal');
+            if (shortcutsModal && shortcutsModal.style.display !== 'none') {
+                toggleShortcuts();
+            } else {
+                const searchInput = document.getElementById('product-search');
+                if (searchInput && searchInput.value) {
+                    searchInput.value = '';
+                    filterProducts('');
+                    const clearButton = document.getElementById('clear-search');
+                    if (clearButton) {
+                        clearButton.style.display = 'none';
+                    }
+                }
+            }
+        }
+    });
+    
+    // Special handling for Enter key on cart total
+    const cartTotal = document.getElementById('total');
+    if (cartTotal) {
+        cartTotal.addEventListener('keydown', function(event) {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                checkoutOrder();
+            }
+        });
+    }
+    
+    // Arrow key handling for cash received input
+    const cashReceived = document.getElementById('cash-received');
+    if (cashReceived) {
+        cashReceived.addEventListener('keydown', function(event) {
+            let currentValue = parseFloat(this.value) || 0;
+            let step = 1.00;
+            
+            if (event.shiftKey) {
+                step = 10.00; // Shift + arrow for larger steps
+            }
+            
+            if (event.key === 'ArrowUp') {
+                event.preventDefault();
+                this.value = (currentValue + step).toFixed(2);
+                calculateChange();
+            } else if (event.key === 'ArrowDown') {
+                event.preventDefault();
+                this.value = Math.max(0, currentValue - step).toFixed(2);
+                calculateChange();
+            }
+        });
+    }
+}
+
+// Close shortcuts modal when clicking outside
+document.addEventListener('click', function(event) {
+    const shortcutsModal = document.getElementById('shortcuts-modal');
+    if (shortcutsModal && shortcutsModal.style.display !== 'none') {
+        const modalContent = shortcutsModal.querySelector('.shortcuts-content');
+        const shortcutsButton = document.getElementById('shortcuts-btn');
+        if (!modalContent.contains(event.target) && event.target !== shortcutsButton && !shortcutsButton.contains(event.target)) {
+            toggleShortcuts();
+        }
+    }
+});
+
+// Initialize everything when page loads
 document.addEventListener('DOMContentLoaded', function() {
+    console.log('DOM Content Loaded - Setting up home page');
+    
     initializeSearch();
+    
+    // Initialize keyboard shortcuts
+    setupKeyboardShortcuts();
+    
+    // Set up shortcuts button with multiple approaches to ensure it works
+    const shortcutsButton = document.getElementById('shortcuts-btn');
+    console.log('Shortcuts button found:', shortcutsButton);
+    
+    if (shortcutsButton) {
+        // Create a wrapper function to handle all events
+        const handleShortcutClick = function(e) {
+            console.log('Shortcuts button click detected via:', e.type); // Debug log
+            e.preventDefault();
+            e.stopPropagation();
+            e.stopImmediatePropagation();
+            
+            // Visual feedback is already handled by inline events
+            toggleShortcuts();
+        };
+        
+        // Multiple event listeners for maximum compatibility
+        shortcutsButton.addEventListener('click', handleShortcutClick, true); // Capture phase
+        shortcutsButton.addEventListener('click', handleShortcutClick, false); // Bubble phase
+        
+        // Touch event support for mobile
+        shortcutsButton.addEventListener('touchend', handleShortcutClick, { passive: false });
+        
+        // Mouse events for desktop
+        shortcutsButton.addEventListener('mouseup', function(e) {
+            e.preventDefault();
+            handleShortcutClick.call(this, e);
+        }, { passive: false });
+        
+        // Also add backup click handler
+        shortcutsButton.onclick = function(e) {
+            console.log('Shortcuts button clicked via onclick'); // Debug log
+            handleShortcutClick.call(this, e);
+            return false;
+        };
+        
+        // Add keyboard support
+        shortcutsButton.setAttribute('tabindex', '0');
+        shortcutsButton.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                handleShortcutClick.call(this, e);
+            }
+        });
+        
+        console.log('Shortcuts button event listeners setup complete');
+        
+    } else {
+        console.error('Shortcuts button not found'); // Debug log
+        
+        // Retry after delay
+        setTimeout(() => {
+            const retryButton = document.getElementById('shortcuts-btn');
+            if (retryButton) {
+                console.log('Shortcuts button found on retry - setting up events');
+                // Trigger the setup again
+                location.reload();
+            } else {
+                console.error('Shortcuts button still not found after retry');
+            }
+        }, 2000);
+    }
     
     // Set up barcode scanner with mobile support
     const barcodeInput = document.getElementById('barcode-scan-input');
@@ -584,3 +790,25 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 });
+
+// Backup initialization - run after a delay to ensure everything is loaded
+setTimeout(function() {
+    console.log('Backup initialization running...');
+    const shortcutsButton = document.getElementById('shortcuts-btn');
+    if (shortcutsButton) {
+        console.log('Backup: Shortcuts button found, adding final backup handler');
+        // Add a final backup click handler as last resort
+        shortcutsButton.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            console.log('Backup: Shortcuts button clicked via final backup');
+            toggleShortcuts();
+        }, { capture: true, passive: false });
+        
+        // Also add a direct onclick as ultimate backup
+        shortcutsButton.setAttribute('onclick', 'toggleShortcuts(); return false;');
+        console.log('Backup: All event handlers attached');
+    } else {
+        console.error('Backup: Shortcuts button still not found');
+    }
+}, 1000);

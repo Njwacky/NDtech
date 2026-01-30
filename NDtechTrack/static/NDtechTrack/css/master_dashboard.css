@@ -1,0 +1,350 @@
+.dashboard-container {
+    padding: 20px;
+    max-width: 1600px;
+    margin: 0 auto;
+}
+
+.dashboard-header {
+    background: linear-gradient(135deg, #2c3e50 0%, #344e41 100%);
+    color: white;
+    padding: 30px;
+    border-radius: 15px;
+    margin-bottom: 30px;
+    text-align: center;
+}
+
+.dashboard-header h1 {
+    margin: 0 0 10px 0;
+    font-size: 2.5rem;
+    font-weight: 700;
+}
+
+.dashboard-header p {
+    margin: 0;
+    font-size: 1.1rem;
+    opacity: 0.9;
+}
+
+.alert-banner {
+    background: #f8d7da;
+    border-left: 5px solid #dc3545;
+    color: #721c24;
+    padding: 15px;
+    margin-bottom: 20px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.alert-banner.critical {
+    background: #dc3545;
+    color: white;
+}
+
+.alert-banner i {
+    font-size: 1.5rem;
+    margin-right: 10px;
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 25px;
+    margin-bottom: 40px;
+}
+
+.stat-card {
+    background: white;
+    padding: 25px;
+    border-radius: 15px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    border-left: 5px solid #2c3e50;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.stat-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+}
+
+.stat-card.critical {
+    border-left-color: #dc3545;
+}
+
+.stat-card.warning {
+    border-left-color: #ffc107;
+}
+
+.stat-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.stat-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #2c3e50;
+    margin: 0;
+}
+
+.stat-value {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #2c3e50;
+    margin-bottom: 5px;
+}
+
+.stat-label {
+    color: #666;
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.stat-trend {
+    font-size: 0.85rem;
+    margin-top: 10px;
+    padding: 5px 10px;
+    border-radius: 20px;
+    display: inline-block;
+}
+
+.stat-trend.critical {
+    background: #f8d7da;
+    color: #721c24;
+}
+
+.stat-trend.warning {
+    background: #fff3cd;
+    color: #856404;
+}
+
+.stat-trend.good {
+    background: #d4edda;
+    color: #155724;
+}
+
+.alert-indicator {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    width: 12px;
+    height: 12px;
+    background: #dc3545;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: bold;
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.1); opacity: 1; }
+    100% { transform: scale(1); opacity: 1; }
+}
+
+.recent-sections {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 30px;
+    margin-bottom: 40px;
+}
+
+@media (max-width: 968px) {
+    .recent-sections {
+        grid-template-columns: 1fr;
+    }
+}
+
+.section-card {
+    background: white;
+    border-radius: 15px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    overflow: hidden;
+}
+
+.section-header {
+    background: linear-gradient(135deg, #2c3e50 0%, #344e41 100%);
+    color: white;
+    padding: 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.section-title {
+    margin: 0;
+    font-size: 1.3rem;
+    font-weight: 600;
+}
+
+.section-link {
+    background: rgba(255,255,255,0.2);
+    color: white;
+    padding: 8px 15px;
+    border-radius: 20px;
+    text-decoration: none;
+    font-size: 0.9rem;
+    transition: all 0.3s ease;
+}
+
+.section-link:hover {
+    background: rgba(255,255,255,0.3);
+    transform: translateY(-2px);
+}
+
+.section-content {
+    padding: 20px;
+}
+
+.list-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 0;
+    border-bottom: 1px solid #eee;
+}
+
+.list-item:last-child {
+    border-bottom: none;
+}
+
+.item-info {
+    flex: 1;
+}
+
+.item-title {
+    font-weight: 600;
+    color: #2c3e50;
+    margin-bottom: 5px;
+}
+
+.item-subtitle {
+    color: #666;
+    font-size: 0.9rem;
+}
+
+.item-value {
+    font-weight: 600;
+    color: #2c3e50;
+    font-size: 1.1rem;
+}
+
+.error-item {
+    border-left: 3px solid #dc3545;
+    padding-left: 15px;
+}
+
+.quick-actions {
+    background: white;
+    border-radius: 15px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    padding: 30px;
+    display: flex;
+    gap: 15px;
+    flex-wrap: wrap;
+}
+
+.action-btn {
+    background: linear-gradient(135deg, #2c3e50 0%, #344e41 100%);
+    color: white;
+    padding: 12px 20px;
+    border: none;
+    border-radius: 8px;
+    text-decoration: none;
+    font-size: 0.9rem;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.action-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+}
+
+.action-btn.danger {
+    background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+}
+
+.action-btn.warning {
+    background: linear-gradient(135deg, #ffc107 0%, #e0a800 100%);
+}
+
+.action-btn.success {
+    background: linear-gradient(135deg, #28a745 0%, #218838 100%);
+}
+
+.health-score {
+    text-align: center;
+    padding: 20px;
+    background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+    color: white;
+    border-radius: 15px;
+    margin-bottom: 30px;
+}
+
+.health-score.excellent {
+    background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+}
+
+.health-score.good {
+    background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
+}
+
+.health-score.fair {
+    background: linear-gradient(135deg, #ffc107 0%, #e0a800 100%);
+}
+
+.health-score.poor {
+    background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+}
+
+.health-score-value {
+    font-size: 3rem;
+    font-weight: 700;
+    margin-bottom: 10px;
+}
+
+.health-score-label {
+    font-size: 1.2rem;
+    font-weight: 600;
+    margin-bottom: 5px;
+}
+
+.health-score-description {
+    font-size: 0.9rem;
+    opacity: 0.9;
+}
+
+@media (max-width: 768px) {
+    .dashboard-header h1 {
+        font-size: 2rem;
+    }
+    
+    .stats-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .recent-sections {
+        grid-template-columns: 1fr;
+    }
+    
+    .quick-actions {
+        flex-direction: column;
+    }
+    
+    .action-btn {
+        justify-content: center;
+    }
+}

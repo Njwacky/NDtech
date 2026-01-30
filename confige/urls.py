@@ -20,4 +20,5 @@ from django.urls import path,include
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', include('nano.urls')),
+    path('ndtechtrack/', include('NDtechTrack.urls')),
 ]

@@ -1,0 +1,637 @@
+/* Airtime Modular CSS - Different Approach */
+
+/* CSS Custom Properties for theming */
+:root {
+    --primary-gradient: linear-gradient(135deg, #3b82f6, #2563eb);
+    --primary-hover: linear-gradient(135deg, #2563eb, #1d4ed8);
+    --success-gradient: linear-gradient(135deg, #10b981, #059669);
+    --success-hover: linear-gradient(135deg, #059669, #047857);
+    --danger-gradient: linear-gradient(135deg, #ef4444, #dc2626);
+    --danger-hover: linear-gradient(135deg, #dc2626, #b91c1c);
+    --warning-gradient: linear-gradient(135deg, #f59e0b, #d97706);
+    --warning-hover: linear-gradient(135deg, #d97706, #b45309);
+    --info-gradient: linear-gradient(135deg, #06b6d4, #0891b2);
+    --info-hover: linear-gradient(135deg, #0891b2, #0e7490);
+    --secondary-gradient: linear-gradient(135deg, #6b7280, #4b5563);
+    --secondary-hover: linear-gradient(135deg, #4b5563, #374151);
+    
+    --bg-white: rgba(255, 255, 255, 0.95);
+    --bg-light: #f8f9fa;
+    --bg-dark: #2d3748;
+    --text-primary: #4a5568;
+    --text-muted: #6b7280;
+    --text-white: white;
+    --border-color: #e2e8f0;
+    --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.05);
+    --shadow-md: 0 8px 32px rgba(0, 0, 0, 0.1);
+    --shadow-lg: 0 12px 40px rgba(0, 0, 0, 0.15);
+    
+    --border-radius-sm: 0.375rem;
+    --border-radius: 0.5rem;
+    --border-radius-lg: 1rem;
+    
+    --transition: all 0.3s ease;
+    --transform-hover: translateY(-2px);
+    --transform-active: translateY(0) scale(0.95);
+}
+
+/* Base Layout */
+.airtime-container {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height: 100vh;
+    color: var(--text-primary);
+    padding: 2rem;
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+/* Navigation Override */
+.airtime-navbar {
+    background: var(--bg-white);
+    backdrop-filter: blur(10px);
+    box-shadow: var(--shadow-md);
+    padding: 1rem 2rem;
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.airtime-nav-brand h1 {
+    color: var(--text-primary);
+    font-size: 1.5rem;
+    font-weight: 700;
+}
+
+.airtime-nav-brand i {
+    color: #667eea;
+    margin-right: 0.5rem;
+}
+
+.airtime-nav-menu {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+}
+
+.airtime-nav-link {
+    display: flex;
+    align-items: center;
+    padding: 0.75rem 1rem;
+    color: var(--text-primary);
+    text-decoration: none;
+    border-radius: var(--border-radius);
+    transition: var(--transition);
+    font-weight: 500;
+    gap: 0.5rem;
+}
+
+.airtime-nav-link:hover {
+    background: #667eea;
+    color: var(--text-white);
+    transform: var(--transform-hover);
+    box-shadow: var(--shadow-sm);
+}
+
+.airtime-nav-link.active {
+    background: #667eea;
+    color: var(--text-white);
+}
+
+.airtime-nav-link.logout {
+    background: #e53e3e;
+    color: var(--text-white);
+}
+
+.airtime-nav-link.logout:hover {
+    background: #c53030;
+}
+
+/* Typography */
+.airtime-page-title {
+    color: var(--text-white);
+    font-size: 2rem;
+    font-weight: 700;
+    margin-bottom: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.airtime-page-title i {
+    color: #fbbf24;
+    font-size: 1.8rem;
+}
+
+/* Card Components */
+.airtime-card {
+    background: var(--bg-white);
+    backdrop-filter: blur(10px);
+    border: none;
+    border-radius: var(--border-radius-lg);
+    box-shadow: var(--shadow-md);
+    transition: var(--transition);
+    overflow: hidden;
+}
+
+.airtime-card:hover {
+    transform: var(--transform-hover);
+    box-shadow: var(--shadow-lg);
+}
+
+.airtime-card-header {
+    background: linear-gradient(135deg, var(--bg-light), var(--border-color));
+    border-bottom: 2px solid var(--border-color);
+    padding: 1.25rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    border-radius: var(--border-radius-lg) var(--border-radius-lg) 0 0;
+}
+
+.airtime-card-header h5 {
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 1.1rem;
+}
+
+.airtime-card-header i {
+    color: #667eea;
+}
+
+.airtime-card-body {
+    padding: 1.5rem;
+}
+
+/* Stats Cards */
+.airtime-stats-card {
+    background: var(--primary-gradient);
+    color: var(--text-white);
+    border: none;
+}
+
+.airtime-stats-card.warning {
+    background: var(--warning-gradient);
+}
+
+.airtime-stats-card.success {
+    background: var(--success-gradient);
+}
+
+.airtime-stats-card.info {
+    background: var(--info-gradient);
+}
+
+.airtime-stats-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+}
+
+.airtime-stats-value {
+    font-size: 1.8rem;
+    font-weight: 700;
+}
+
+/* Table Components */
+.airtime-table {
+    background: var(--bg-white);
+    border-radius: var(--border-radius);
+    overflow: hidden;
+    box-shadow: var(--shadow-sm);
+}
+
+.airtime-table th {
+    background: linear-gradient(135deg, var(--bg-light), var(--border-color));
+    color: var(--text-primary);
+    font-weight: 600;
+    border: none;
+    padding: 1rem;
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.airtime-table td {
+    padding: 1rem;
+    border-bottom: 1px solid var(--border-color);
+    vertical-align: middle;
+    color: var(--text-primary);
+}
+
+.airtime-table tbody tr:hover {
+    background: var(--bg-light);
+}
+
+.airtime-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+/* Badge Components */
+.airtime-badge {
+    font-size: 0.8rem;
+    font-weight: 600;
+    padding: 0.5rem 0.75rem;
+    border-radius: var(--border-radius);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.airtime-badge.mtn {
+    background: linear-gradient(135deg, #fbbf24, #f59e0b);
+    color: var(--text-white);
+}
+
+.airtime-badge.vodacom {
+    background: linear-gradient(135deg, #ef4444, #dc2626);
+    color: var(--text-white);
+}
+
+.airtime-badge.cellc {
+    background: linear-gradient(135deg, #10b981, #059669);
+    color: var(--text-white);
+}
+
+.airtime-badge.telkom {
+    background: linear-gradient(135deg, #3b82f6, #2563eb);
+    color: var(--text-white);
+}
+
+.airtime-badge.secondary {
+    background: linear-gradient(135deg, #6b7280, #4b5563);
+    color: var(--text-white);
+}
+
+.airtime-badge.warning {
+    background: var(--warning-gradient);
+    color: var(--text-white);
+}
+
+.airtime-badge.danger {
+    background: var(--danger-gradient);
+    color: var(--text-white);
+}
+
+.airtime-badge.success {
+    background: var(--success-gradient);
+    color: var(--text-white);
+}
+
+/* Button Components */
+.airtime-btn {
+    border-radius: var(--border-radius);
+    font-weight: 600;
+    transition: var(--transition);
+    border: none;
+    padding: 0.5rem 1rem;
+    font-size: 0.9rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.airtime-btn:hover {
+    transform: var(--transform-hover);
+    box-shadow: var(--shadow-sm);
+}
+
+.airtime-btn:active {
+    transform: var(--transform-active);
+}
+
+.airtime-btn.primary {
+    background: var(--primary-gradient);
+    color: var(--text-white);
+}
+
+.airtime-btn.primary:hover {
+    background: var(--primary-hover);
+}
+
+.airtime-btn.success {
+    background: var(--success-gradient);
+    color: var(--text-white);
+}
+
+.airtime-btn.success:hover {
+    background: var(--success-hover);
+}
+
+.airtime-btn.danger {
+    background: var(--danger-gradient);
+    color: var(--text-white);
+}
+
+.airtime-btn.danger:hover {
+    background: var(--danger-hover);
+}
+
+.airtime-btn.warning {
+    background: var(--warning-gradient);
+    color: var(--text-white);
+}
+
+.airtime-btn.warning:hover {
+    background: var(--warning-hover);
+}
+
+.airtime-btn.info {
+    background: var(--info-gradient);
+    color: var(--text-white);
+}
+
+.airtime-btn.info:hover {
+    background: var(--info-hover);
+}
+
+.airtime-btn.secondary {
+    background: var(--secondary-gradient);
+    color: var(--text-white);
+}
+
+.airtime-btn.secondary:hover {
+    background: var(--secondary-hover);
+}
+
+.airtime-btn.sm {
+    padding: 0.375rem 0.75rem;
+    font-size: 0.8rem;
+}
+
+.airtime-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.airtime-btn:disabled:hover {
+    transform: none;
+    box-shadow: none;
+}
+
+.airtime-btn.outline-warning {
+    background: transparent;
+    border: 2px solid #f59e0b;
+    color: #f59e0b;
+}
+
+.airtime-btn.outline-warning:hover {
+    background: var(--warning-gradient);
+    color: var(--text-white);
+}
+
+/* Form Components */
+.airtime-form-control {
+    border: 2px solid var(--border-color);
+    border-radius: var(--border-radius);
+    padding: 0.75rem 1rem;
+    font-size: 1rem;
+    transition: var(--transition);
+    background: var(--bg-white);
+    color: var(--text-primary);
+}
+
+.airtime-form-control:focus {
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    outline: none;
+}
+
+.airtime-form-select {
+    border: 2px solid var(--border-color);
+    border-radius: var(--border-radius);
+    padding: 0.75rem 1rem;
+    font-size: 1rem;
+    transition: var(--transition);
+    background: var(--bg-white);
+    color: var(--text-primary);
+}
+
+.airtime-form-select:focus {
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    outline: none;
+}
+
+.airtime-form-label {
+    color: var(--text-primary);
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    font-size: 0.9rem;
+}
+
+.airtime-form-control-plaintext {
+    background: var(--bg-light);
+    border: 2px solid var(--border-color);
+    border-radius: var(--border-radius);
+    padding: 0.75rem 1rem;
+    font-size: 1rem;
+    color: var(--text-primary);
+    min-height: 2.5rem;
+    display: flex;
+    align-items: center;
+}
+
+.airtime-form-text {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    margin-top: 0.25rem;
+}
+
+.airtime-fw-bold {
+    font-weight: 700;
+}
+
+/* Alert Components */
+.airtime-alert {
+    border: none;
+    border-radius: var(--border-radius);
+    padding: 1rem 1.5rem;
+    font-weight: 500;
+    backdrop-filter: blur(10px);
+}
+
+.airtime-alert.info {
+    background: rgba(59, 130, 246, 0.1);
+    color: #1e40af;
+    border: 2px solid rgba(59, 130, 246, 0.2);
+}
+
+.airtime-alert.warning {
+    background: rgba(245, 158, 11, 0.1);
+    color: #92400e;
+    border: 2px solid rgba(245, 158, 11, 0.2);
+}
+
+.airtime-alert.danger {
+    background: rgba(239, 68, 68, 0.1);
+    color: #991b1b;
+    border: 2px solid rgba(239, 68, 68, 0.2);
+}
+
+.airtime-alert.success {
+    background: rgba(16, 185, 129, 0.1);
+    color: #065f46;
+    border: 2px solid rgba(16, 185, 129, 0.2);
+}
+
+/* Modal Components */
+.airtime-modal {
+    backdrop-filter: blur(5px);
+}
+
+.airtime-modal-content {
+    border: none;
+    border-radius: var(--border-radius-lg);
+    box-shadow: var(--shadow-lg);
+    backdrop-filter: blur(10px);
+}
+
+.airtime-modal-header {
+    background: linear-gradient(135deg, var(--bg-light), var(--border-color));
+    border-bottom: 2px solid var(--border-color);
+    border-radius: var(--border-radius-lg) var(--border-radius-lg) 0 0;
+    padding: 1.25rem;
+}
+
+.airtime-modal-title {
+    color: var(--text-primary);
+    font-weight: 600;
+    font-size: 1.25rem;
+}
+
+.airtime-modal-body {
+    padding: 1.5rem;
+}
+
+.airtime-modal-footer {
+    background: linear-gradient(135deg, var(--bg-light), var(--border-color));
+    border-top: 2px solid var(--border-color);
+    border-radius: 0 0 var(--border-radius-lg) var(--border-radius-lg);
+    padding: 1rem 1.5rem;
+}
+
+/* Utility Classes */
+.airtime-d-flex {
+    display: flex;
+}
+
+.airtime-gap-2 {
+    gap: 0.5rem;
+}
+
+.airtime-gap-3 {
+    gap: 0.75rem;
+}
+
+.airtime-float-end {
+    float: right;
+}
+
+.airtime-table-borderless {
+    border: none;
+}
+
+.airtime-table-borderless td {
+    border-bottom: 1px solid var(--border-color);
+    padding: 0.75rem 1rem;
+}
+
+.airtime-pagination {
+    display: flex;
+    list-style: none;
+    padding: 0;
+    margin: 1rem 0;
+    border-radius: var(--border-radius);
+}
+
+.airtime-page-item {
+    margin: 0 0.25rem;
+}
+
+.airtime-page-link {
+    display: block;
+    padding: 0.5rem 0.75rem;
+    background: var(--bg-white);
+    border: 2px solid var(--border-color);
+    border-radius: var(--border-radius);
+    color: var(--text-primary);
+    text-decoration: none;
+    transition: var(--transition);
+}
+
+.airtime-page-link:hover {
+    background: #667eea;
+    color: var(--text-white);
+    border-color: #667eea;
+}
+
+.airtime-page-item.active .airtime-page-link {
+    background: #667eea;
+    color: var(--text-white);
+    border-color: #667eea;
+}
+
+.airtime-justify-center {
+    justify-content: center;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .airtime-container {
+        padding: 1rem;
+    }
+    
+    .airtime-page-title {
+        font-size: 1.5rem;
+    }
+    
+    .airtime-card-body {
+        padding: 1rem;
+    }
+    
+    .airtime-table {
+        font-size: 0.8rem;
+    }
+    
+    .airtime-table th {
+        padding: 0.75rem 0.5rem;
+    }
+    
+    .airtime-table td {
+        padding: 0.75rem 0.5rem;
+    }
+    
+    .airtime-btn.sm {
+        padding: 0.25rem 0.5rem;
+        font-size: 0.75rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .airtime-container {
+        padding: 0.5rem;
+    }
+    
+    .airtime-card-header {
+        padding: 1rem;
+    }
+    
+    .airtime-card-body {
+        padding: 0.75rem;
+    }
+    
+    .airtime-btn {
+        padding: 0.375rem 0.75rem;
+        font-size: 0.8rem;
+    }
+    
+    .airtime-table {
+        font-size: 0.7rem;
+    }
+}

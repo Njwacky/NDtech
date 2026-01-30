@@ -5,6 +5,69 @@
 
 {% block extra_css %}
 <link rel="stylesheet" href="{% static 'nano/airtime-modern.css' %}">
+<style>
+/* Status Toggle Button Styles */
+.status-toggle-btn {
+    background: rgba(255, 255, 255, 0.9) !important;
+    border: 2px solid rgba(163, 177, 138, 0.3) !important;
+    border-radius: 2rem !important;
+    padding: 0.5rem 1rem !important;
+    cursor: pointer !important;
+    transition: all 0.3s ease !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 0.5rem !important;
+    font-size: 0.85rem !important;
+    font-weight: 600 !important;
+    color: #344e41 !important;
+    backdrop-filter: blur(10px) !important;
+}
+
+.status-toggle-btn:hover {
+    transform: translateY(-2px) !important;
+    box-shadow: 0 4px 15px rgba(52, 78, 65, 0.2) !important;
+}
+
+.status-toggle-btn.active {
+    background: linear-gradient(135deg, #588157, #344e41) !important;
+    color: white !important;
+    border-color: #588157 !important;
+}
+
+.status-toggle-btn.inactive {
+    background: linear-gradient(135deg, #6b7280, #4b5563) !important;
+    color: white !important;
+    border-color: #6b7280 !important;
+}
+
+.status-toggle-btn.active:hover {
+    background: linear-gradient(135deg, #344e41, #2d3e35) !important;
+    box-shadow: 0 4px 15px rgba(88, 129, 87, 0.4) !important;
+}
+
+.status-toggle-btn.inactive:hover {
+    background: linear-gradient(135deg, #4b5563, #374151) !important;
+    box-shadow: 0 4px 15px rgba(107, 114, 128, 0.4) !important;
+}
+
+.status-toggle-btn i {
+    font-size: 0.9rem !important;
+}
+
+.status-toggle-btn.loading {
+    pointer-events: none !important;
+    opacity: 0.7 !important;
+}
+
+.status-toggle-btn.loading i {
+    animation: spin 1s linear infinite !important;
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+</style>
 {% endblock %}
 
 {% block content %}
@@ -99,8 +162,8 @@
         </div>
     </div>
 
-    <!-- Add Product Form -->
-    <section class="form-section">
+    <!-- Add Airtime Product (Using Quick Sell Interface) -->
+    <section class="quick-sell-section">
         <div class="section-header">
             <div class="section-title">
                 <div class="section-icon">
@@ -108,179 +171,7 @@
                 </div>
                 <div>
                     <h2>Add Airtime Product</h2>
-                    <p>Create new airtime products for your inventory</p>
-                </div>
-            </div>
-        </div>
-        
-        <div class="form-container">
-            <form method="post" class="modern-form">
-                {% csrf_token %}
-                <div class="form-grid">
-                    <div class="form-group">
-                        <label for="name" class="form-label">Product Name</label>
-                        <div class="input-group">
-                            <span class="input-icon">
-                                <i class="fas fa-tag"></i>
-                            </span>
-                            <input type="text" class="form-control" id="name" name="name" 
-                                   placeholder="e.g., Vodacom R50 Airtime" required style="text-transform: uppercase;">
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label for="network" class="form-label">Network</label>
-                        <div class="input-group">
-                            <span class="input-icon">
-                                <i class="fas fa-broadcast-tower"></i>
-                            </span>
-                            <select class="form-control" id="network" name="network" required>
-                                <option value="">Select Network</option>
-                                <option value="vodacom">Vodacom</option>
-                                <option value="mtn">MTN</option>
-                                <option value="telkom">Telkom</option>
-                                <option value="cell_c">Cell C</option>
-                                <option value="rain">Rain</option>
-                                <option value="blu">BLU</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label for="airtime_type" class="form-label">Airtime Type</label>
-                        <div class="input-group">
-                            <span class="input-icon">
-                                <i class="fas fa-list"></i>
-                            </span>
-                            <select class="form-control" id="airtime_type" name="airtime_type" required>
-                                <option value="">Select Type</option>
-                                <option value="airtime">Airtime</option>
-                                <option value="data">Data</option>
-                                <option value="sms_bundle">SMS Bundle</option>
-                                <option value="combo">Combo</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label for="value" class="form-label">Value (R)</label>
-                        <div class="input-group">
-                            <span class="input-icon">
-                                <i class="fas fa-money-bill"></i>
-                            </span>
-                            <input type="number" class="form-control" id="value" name="value" 
-                                   step="0.01" min="0.01" placeholder="50.00" required>
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label for="price" class="form-label">Selling Price (R)</label>
-                        <div class="input-group">
-                            <span class="input-icon">
-                                <i class="fas fa-cash-register"></i>
-                            </span>
-                            <input type="number" class="form-control" id="price" name="price" 
-                                   step="0.01" min="0.01" placeholder="55.00" required>
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label for="stock" class="form-label">Initial Stock</label>
-                        <div class="input-group">
-                            <span class="input-icon">
-                                <i class="fas fa-boxes"></i>
-                            </span>
-                            <input type="number" class="form-control" id="stock" name="stock" 
-                                   min="0" placeholder="100" required>
-                        </div>
-                    </div>
-                    <div class="form-group full-width">
-                        <label for="description" class="form-label">Description (Optional)</label>
-                        <div class="input-group">
-                            <span class="input-icon">
-                                <i class="fas fa-align-left"></i>
-                            </span>
-                            <textarea class="form-control" id="description" name="description" 
-                                      rows="3" placeholder="Add product details..."></textarea>
-                        </div>
-                    </div>
-                </div>
-                <div class="form-actions">
-                    <input type="hidden" name="mode" value="add_product">
-                    <button type="submit" class="action-btn primary">
-                        <i class="fas fa-plus"></i>
-                        <span>Add Product</span>
-                    </button>
-                    <a href="{% url 'airtime_dashboard' %}" class="action-btn secondary">
-                        <i class="fas fa-arrow-left"></i>
-                        <span>Back to Dashboard</span>
-                    </a>
-                </div>
-            </form>
-        </div>
-    </section>
-
-    <!-- Update Stock Form -->
-    <section class="form-section">
-        <div class="section-header">
-            <div class="section-title">
-                <div class="section-icon warning">
-                    <i class="fas fa-boxes"></i>
-                </div>
-                <div>
-                    <h2>Update Stock</h2>
-                    <p>Add inventory to existing products</p>
-                </div>
-            </div>
-        </div>
-        
-        <div class="form-container">
-            <form method="post" class="modern-form">
-                {% csrf_token %}
-                <div class="form-grid">
-                    <div class="form-group">
-                        <label for="update_product_id" class="form-label">Select Product</label>
-                        <div class="input-group">
-                            <span class="input-icon">
-                                <i class="fas fa-search"></i>
-                            </span>
-                            <select class="form-control" id="update_product_id" name="product_id" required>
-                                <option value="">Select Product</option>
-                                {% for product in airtime_products %}
-                                    <option value="{{ product.id }}">
-                                        {{ product.get_display_name }} (Current Stock: {{ product.stock }})
-                                    </option>
-                                {% endfor %}
-                            </select>
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label for="quantity" class="form-label">Quantity to Add</label>
-                        <div class="input-group">
-                            <span class="input-icon">
-                                <i class="fas fa-plus-circle"></i>
-                            </span>
-                            <input type="number" class="form-control" id="quantity" name="quantity" 
-                                   min="1" placeholder="10" required>
-                        </div>
-                    </div>
-                </div>
-                <div class="form-actions">
-                    <input type="hidden" name="mode" value="update_stock">
-                    <button type="submit" class="action-btn success">
-                        <i class="fas fa-plus"></i>
-                        <span>Update Stock</span>
-                    </button>
-                </div>
-            </form>
-        </div>
-    </section>
-
-    <!-- Quick Airtime Selling -->
-    <section class="quick-sell-section">
-        <div class="section-header">
-            <div class="section-title">
-                <div class="section-icon">
-                    <i class="fas fa-bolt"></i>
-                </div>
-                <div>
-                    <h2>Quick Airtime Selling</h2>
-                    <p>Sell airtime instantly with templates or custom amounts</p>
+                    <p>Add airtime products to your inventory using quick templates or custom amounts</p>
                 </div>
             </div>
         </div>
@@ -411,13 +302,13 @@
                 </div>
             </div>
 
-            <!-- Customer Details -->
-            <div class="customer-details" id="customerDetails" style="display: none;">
-                <h3>Customer Details</h3>
-                <div class="customer-form">
+            <!-- Product Details -->
+            <div class="product-details" id="productDetails" style="display: none;">
+                <h3>Product Details</h3>
+                <div class="product-form">
                     <div class="form-group">
-                        <label>Customer Phone Number</label>
-                        <input type="tel" id="customerPhone" placeholder="Enter phone number" required>
+                        <label>Initial Stock Quantity</label>
+                        <input type="number" id="initialStock" min="0" placeholder="Enter stock quantity" required>
                     </div>
                     <div class="selected-product">
                         <h4>Selected Product</h4>
@@ -435,7 +326,7 @@
                                 <span id="selectedAmount">-</span>
                             </div>
                             <div class="summary-item total">
-                                <span>Total Price:</span>
+                                <span>Selling Price:</span>
                                 <span id="selectedPrice">-</span>
                             </div>
                         </div>
@@ -445,13 +336,69 @@
                             <i class="fas fa-arrow-left"></i>
                             Back
                         </button>
-                        <button class="action-btn success" id="processQuickSell">
-                            <i class="fas fa-shopping-cart"></i>
-                            Process Sale
+                        <button class="action-btn success" id="addToInventory">
+                            <i class="fas fa-plus"></i>
+                            Add to Inventory
                         </button>
                     </div>
                 </div>
             </div>
+        </div>
+    </section>
+
+    <!-- Update Stock Form -->
+    <section class="form-section">
+        <div class="section-header">
+            <div class="section-title">
+                <div class="section-icon warning">
+                    <i class="fas fa-boxes"></i>
+                </div>
+                <div>
+                    <h2>Update Stock</h2>
+                    <p>Add inventory to existing products</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="form-container">
+            <form method="post" class="modern-form">
+                {% csrf_token %}
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="update_product_id" class="form-label">Select Product</label>
+                        <div class="input-group">
+                            <span class="input-icon">
+                                <i class="fas fa-search"></i>
+                            </span>
+                            <select class="form-control" id="update_product_id" name="product_id" required>
+                                <option value="">Select Product</option>
+                                {% for product in airtime_products %}
+                                    <option value="{{ product.id }}">
+                                        {{ product.get_display_name }} (Current Stock: {{ product.stock }})
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="quantity" class="form-label">Quantity to Add</label>
+                        <div class="input-group">
+                            <span class="input-icon">
+                                <i class="fas fa-plus-circle"></i>
+                            </span>
+                            <input type="number" class="form-control" id="quantity" name="quantity" 
+                                   min="1" placeholder="10" required>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-actions">
+                    <input type="hidden" name="mode" value="update_stock">
+                    <button type="submit" class="action-btn success">
+                        <i class="fas fa-plus"></i>
+                        <span>Update Stock</span>
+                    </button>
+                </div>
+            </form>
         </div>
     </section>
 
@@ -482,7 +429,9 @@
                                 <div class="network-badge {{ product.network }}">
                                     {{ product.get_network_display }}
                                 </div>
-                                <div class="product-status {% if product.is_active %}active{% else %}inactive{% endif %}">
+                                <button class="status-toggle-btn {% if product.is_active %}active{% else %}inactive{% endif %}" 
+                                        data-product-id="{{ product.id }}" 
+                                        data-current-status="{% if product.is_active %}active{% else %}inactive{% endif %}">
                                     {% if product.is_active %}
                                         <i class="fas fa-check-circle"></i>
                                         <span>Active</span>
@@ -490,7 +439,7 @@
                                         <i class="fas fa-pause-circle"></i>
                                         <span>Inactive</span>
                                     {% endif %}
-                                </div>
+                                </button>
                             </div>
                             <div class="product-body">
                                 <h3 class="product-name">{{ product.name }}</h3>
@@ -568,7 +517,7 @@ $(document).ready(function() {
         selectedType = $(this).data('type');
         selectedPrice = parseFloat($(this).find('.price').text().replace('R', ''));
         
-        showCustomerDetails();
+        showProductDetails();
     });
 
     // Custom amount calculation
@@ -601,13 +550,13 @@ $(document).ready(function() {
         selectedType = type;
         selectedPrice = totalPrice;
         
-        showCustomerDetails();
+        showProductDetails();
     });
 
-    // Show customer details
-    function showCustomerDetails() {
+    // Show product details
+    function showProductDetails() {
         $('#amountSelector').fadeOut(300);
-        $('#customerDetails').fadeIn(300);
+        $('#productDetails').fadeIn(300);
         
         // Update summary
         $('#selectedNetwork').text(selectedNetwork.charAt(0).toUpperCase() + selectedNetwork.slice(1));
@@ -615,82 +564,81 @@ $(document).ready(function() {
         $('#selectedAmount').text('R' + selectedAmount.toFixed(2));
         $('#selectedPrice').text('R' + selectedPrice.toFixed(2));
         
-        // Scroll to customer details
+        // Scroll to product details
         $('html, body').animate({
-            scrollTop: $('#customerDetails').offset().top - 20
+            scrollTop: $('#productDetails').offset().top - 20
         }, 500);
         
-        // Focus on phone input
-        $('#customerPhone').focus();
+        // Focus on stock input
+        $('#initialStock').focus();
     }
 
     // Back to amount selection
     $('#backToAmount').click(function() {
-        $('#customerDetails').fadeOut(300);
+        $('#productDetails').fadeOut(300);
         $('#amountSelector').fadeIn(300);
     });
 
-    // Process quick sell
-    $('#processQuickSell').click(function() {
-        const customerPhone = $('#customerPhone').val().trim();
+    // Add to inventory
+    $('#addToInventory').click(function() {
+        const initialStock = parseInt($('#initialStock').val()) || 0;
         
         // Validation
-        if (!customerPhone) {
-            showNotification('Please enter customer phone number', 'warning');
-            $('#customerPhone').focus();
-            return;
-        }
-        
-        if (!/^[0-9]{10,15}$/.test(customerPhone)) {
-            showNotification('Please enter a valid phone number (10-15 digits)', 'warning');
-            $('#customerPhone').focus();
+        if (initialStock < 0) {
+            showNotification('Stock quantity cannot be negative', 'warning');
+            $('#initialStock').focus();
             return;
         }
         
         if (!selectedNetwork || !selectedAmount || !selectedType || !selectedPrice) {
-            showNotification('Please complete the selection', 'warning');
+            showNotification('Please complete selection', 'warning');
             return;
         }
         
         const button = $(this);
-        button.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Processing...');
+        button.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Adding...');
         
         // Create product name
         const productName = `${selectedNetwork.charAt(0).toUpperCase() + selectedNetwork.slice(1)} R${selectedAmount} ${selectedType.charAt(0).toUpperCase() + selectedType.slice(1)}`;
         
+        // Create form data for product creation
+        const formData = new FormData();
+        formData.append('name', productName);
+        formData.append('network', selectedNetwork);
+        formData.append('airtime_type', selectedType);
+        formData.append('value', selectedAmount);
+        formData.append('price', selectedPrice);
+        formData.append('stock', initialStock);
+        formData.append('mode', 'add_product');
+        formData.append('csrfmiddlewaretoken', getCookie('csrftoken'));
+        
         $.ajax({
-            url: '{% url "process_quick_airtime_sale" %}',
+            url: '{% url "airtime_management" %}',
             method: 'POST',
+            data: formData,
+            processData: false,
+            contentType: false,
             headers: {
-                'X-CSRFToken': getCookie('csrftoken')
+                'X-Requested-With': 'XMLHttpRequest'
             },
-            data: JSON.stringify({
-                network: selectedNetwork,
-                amount: selectedAmount,
-                type: selectedType,
-                price: selectedPrice,
-                customer_phone: customerPhone,
-                product_name: productName
-            }),
-            contentType: 'application/json',
             success: function(response) {
                 if (response.success) {
                     showNotification(response.message, 'success');
                     resetQuickSellForm();
                     setTimeout(() => location.reload(), 1500);
                 } else {
-                    showNotification('Error: ' + response.error, 'error');
+                    showNotification(response.error || 'Error adding product. Please check your input.', 'error');
                 }
             },
             error: function(xhr, status, error) {
-                let errorMessage = 'Error processing airtime sale. Please try again.';
+                let errorMessage = 'Error adding product. Please try again.';
                 if (xhr.responseJSON && xhr.responseJSON.error) {
                     errorMessage = 'Error: ' + xhr.responseJSON.error;
                 }
                 showNotification(errorMessage, 'error');
             },
             complete: function() {
-                button.prop('disabled', false).html('<i class="fas fa-shopping-cart"></i> Process Sale');
+                button.prop('disabled', false).html('<i class="fas fa-plus"></i> Add to Inventory');
             }
         });
     });
@@ -698,8 +646,8 @@ $(document).ready(function() {
     // Reset form
     function resetQuickSellForm() {
         $('.network-btn, .template-btn').removeClass('selected');
-        $('#customerDetails, #amountSelector').hide();
-        $('#customerPhone, #customAmount').val('');
+        $('#productDetails, #amountSelector').hide();
+        $('#initialStock, #customAmount').val('');
         $('#calculatedPrice').text('R0.00');
         selectedNetwork = null;
         selectedAmount = null;
@@ -747,12 +695,75 @@ $(document).ready(function() {
     // Keyboard navigation
     $(document).keydown(function(e) {
         if (e.key === 'Escape') {
-            if ($('#customerDetails').is(':visible')) {
+            if ($('#productDetails').is(':visible')) {
                 $('#backToAmount').click();
             } else if ($('#amountSelector').is(':visible')) {
                 resetQuickSellForm();
             }
         }
+    });
+
+    // Status toggle functionality
+    $('.status-toggle-btn').click(function() {
+        const button = $(this);
+        const productId = button.data('product-id');
+        const currentStatus = button.data('current-status');
+        const newStatus = currentStatus === 'active' ? 'inactive' : 'active';
+        
+        // Add loading state
+        button.addClass('loading');
+        const originalHtml = button.html();
+        button.html('<i class="fas fa-spinner fa-spin"></i> <span>Updating...</span>');
+        
+        // Create form data
+        const formData = new FormData();
+        formData.append('product_id', productId);
+        formData.append('status', newStatus);
+        formData.append('mode', 'toggle_status');
+        formData.append('csrfmiddlewaretoken', getCookie('csrftoken'));
+        
+        $.ajax({
+            url: '{% url "airtime_management" %}',
+            method: 'POST',
+            data: formData,
+            processData: false,
+            contentType: false,
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            success: function(response) {
+                if (response.success) {
+                    // Update button appearance
+                    button.removeClass('active inactive').addClass(newStatus);
+                    button.data('current-status', newStatus);
+                    
+                    // Update button content
+                    if (newStatus === 'active') {
+                        button.html('<i class="fas fa-check-circle"></i> <span>Active</span>');
+                    } else {
+                        button.html('<i class="fas fa-pause-circle"></i> <span>Inactive</span>');
+                    }
+                    
+                    showNotification(response.message, 'success');
+                } else {
+                    // Restore original button state
+                    button.html(originalHtml);
+                    showNotification(response.error || 'Error updating status. Please try again.', 'error');
+                }
+            },
+            error: function(xhr, status, error) {
+                // Restore original button state
+                button.html(originalHtml);
+                let errorMessage = 'Error updating status. Please try again.';
+                if (xhr.responseJSON && xhr.responseJSON.error) {
+                    errorMessage = 'Error: ' + xhr.responseJSON.error;
+                }
+                showNotification(errorMessage, 'error');
+            },
+            complete: function() {
+                button.removeClass('loading');
+            }
+        });
     });
 
     // CSRF token function

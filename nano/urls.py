@@ -111,5 +111,7 @@ urlpatterns = [
     path('airtime/requests/<int:request_id>/reject/', views.reject_airtime_request, name='reject_airtime_request'),
     path('airtime/process-quick/', views.process_quick_airtime_sale, name='process_quick_airtime_sale'),
     path('airtime/cashier-quick-sell/', views.cashier_airtime_quick_sell, name='cashier_airtime_quick_sell'),
+    path('airtime/history-review/', views.airtime_history_review, name='airtime_history_review'),
+    path('airtime/verify-phone/<int:sale_id>/', views.verify_airtime_phone, name='verify_airtime_phone'),
     path('api/airtime/cashier-process/', views.process_cashier_airtime_sale, name='process_cashier_airtime_sale'),
 ]

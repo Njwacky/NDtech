@@ -22,7 +22,12 @@ function toggleMode(mode) {
     // Update toggle buttons
     const toggleBtns = document.querySelectorAll('.toggle-btn');
     toggleBtns.forEach(btn => btn.classList.remove('active'));
-    event.target.classList.add('active');
+    
+    // Find the clicked button
+    const clickedBtn = event.target.closest('.toggle-btn');
+    if (clickedBtn) {
+        clickedBtn.classList.add('active');
+    }
     
     // Update form sections
     const sections = document.querySelectorAll('.form-section');
@@ -32,9 +37,79 @@ function toggleMode(mode) {
         document.getElementById('add_stock_section').classList.add('active');
     } else if (mode === 'add_product') {
         document.getElementById('add_product_section').classList.add('active');
+    } else if (mode === 'import_products') {
+        document.getElementById('import_products_section').classList.add('active');
+        setupFileUpload();
     } else if (mode === 'manage_items') {
         document.getElementById('manage_items_section').classList.add('active');
     }
+}
+
+// Handle file upload for import
+function setupFileUpload() {
+    const fileInput = document.getElementById('file');
+    const fileUploadInfo = document.querySelector('.file-upload-info');
+    
+    if (fileInput && fileUploadInfo) {
+        fileInput.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                fileUploadInfo.innerHTML = `
+                    <i class="fas fa-file-check"></i>
+                    <span>${file.name}</span>
+                    <small>Size: ${formatFileSize(file.size)}</small>
+                `;
+                fileUploadInfo.style.borderColor = '#059669';
+                fileUploadInfo.style.background = '#f0fdf4';
+            } else {
+                // Reset display when file is cleared
+                fileUploadInfo.innerHTML = `
+                    <i class="fas fa-cloud-upload-alt"></i>
+                    <span>Choose a file or drag and drop</span>
+                    <small>Supported formats: CSV, Excel (.xlsx, .xls)</small>
+                `;
+                fileUploadInfo.style.borderColor = '#667eea';
+                fileUploadInfo.style.background = '#f8fafc';
+            }
+        });
+        
+        // Handle drag and drop
+        fileUploadInfo.addEventListener('dragover', function(e) {
+            e.preventDefault();
+            fileUploadInfo.style.borderColor = '#059669';
+            fileUploadInfo.style.background = '#f0fdf4';
+        });
+        
+        fileUploadInfo.addEventListener('dragleave', function(e) {
+            e.preventDefault();
+            fileUploadInfo.style.borderColor = '#667eea';
+            fileUploadInfo.style.background = '#f8fafc';
+        });
+        
+        fileUploadInfo.addEventListener('drop', function(e) {
+            e.preventDefault();
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                fileInput.files = files;
+                const event = new Event('change', { bubbles: true });
+                fileInput.dispatchEvent(event);
+            }
+        });
+        
+        // Make the file upload area clickable
+        fileUploadInfo.addEventListener('click', function() {
+            fileInput.click();
+        });
+    }
+}
+
+// Format file size
+function formatFileSize(bytes) {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
 }
 
 // Go to Manage Sales page
@@ -274,7 +349,7 @@ function validateProductName(input) {
     });
     
     if (duplicateFound) {
-        nameError.textContent = `Product "${name}" already exists,please use a different name.`;
+        nameError.textContent = `Product "${name}" already exists, please use a different name.`;
         nameError.style.display = 'block';
         input.classList.add('error');
         return false;
@@ -325,18 +400,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
-    // Validate form before submission
-    const addProductForm = document.getElementById('addProductForm');
-    if (addProductForm) {
-        addProductForm.addEventListener('submit', function(e) {
-            const nameInput = document.getElementById('name');
-            if (!validateProductName(nameInput)) {
-                e.preventDefault();
-                nameInput.focus();
-            }
-        });
-    }
-    
     // Set up barcode scanner auto-focus
     const barcodeInput = document.getElementById('barcode-input');
     if (barcodeInput) {
@@ -360,6 +423,108 @@ window.onclick = function(event) {
     }
 }
 
+// Export products to Excel
+function exportProducts() {
+    try {
+        // Create a temporary anchor element to trigger download
+        const link = document.createElement('a');
+        link.href = '/export/products/excel/';
+        link.download = 'products_export.xlsx';
+        link.click();
+        
+        // Optional: Show success message
+        console.log('Export started successfully');
+        
+        // Show a brief success notification
+        showNotification('Export started successfully! Download will begin shortly.', 'success');
+        
+    } catch (error) {
+        console.error('Error exporting products:', error);
+        showNotification('Error exporting products. Please try again.', 'error');
+    }
+}
+
+// Show notification message
+function showNotification(message, type = 'info') {
+    // Create notification element
+    const notification = document.createElement('div');
+    notification.className = `notification ${type}`;
+    notification.innerHTML = `
+        <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-triangle' : 'info-circle'}"></i>
+        <span>${message}</span>
+        <button class="notification-close" onclick="this.parentElement.remove()">
+            <i class="fas fa-times"></i>
+        </button>
+    `;
+    
+    // Add notification styles if not already present
+    if (!document.querySelector('#notification-styles')) {
+        const style = document.createElement('style');
+        style.id = 'notification-styles';
+        style.textContent = `
+            .notification {
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                padding: 15px 20px;
+                border-radius: 8px;
+                color: white;
+                font-weight: 500;
+                z-index: 9999;
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                max-width: 400px;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+                animation: slideIn 0.3s ease-out;
+            }
+            .notification.success {
+                background: linear-gradient(135deg, #10b981, #059669);
+            }
+            .notification.error {
+                background: linear-gradient(135deg, #ef4444, #dc2626);
+            }
+            .notification.info {
+                background: linear-gradient(135deg, #3b82f6, #2563eb);
+            }
+            .notification-close {
+                background: none;
+                border: none;
+                color: white;
+                cursor: pointer;
+                padding: 0;
+                margin-left: auto;
+                opacity: 0.8;
+                transition: opacity 0.2s;
+            }
+            .notification-close:hover {
+                opacity: 1;
+            }
+            @keyframes slideIn {
+                from {
+                    transform: translateX(100%);
+                    opacity: 0;
+                }
+                to {
+                    transform: translateX(0);
+                    opacity: 1;
+                }
+            }
+        `;
+        document.head.appendChild(style);
+    }
+    
+    // Add to page
+    document.body.appendChild(notification);
+    
+    // Auto-remove after 5 seconds
+    setTimeout(() => {
+        if (notification.parentElement) {
+            notification.remove();
+        }
+    }, 5000);
+}
+
 // Keyboard shortcuts
 document.addEventListener('keydown', function(event) {
     // Escape key closes modal
@@ -374,5 +539,11 @@ document.addEventListener('keydown', function(event) {
         if (searchBox && document.getElementById('manage_items_section').classList.contains('active')) {
             searchBox.focus();
         }
+    }
+    
+    // Ctrl+E triggers export
+    if (event.ctrlKey && event.key === 'e') {
+        event.preventDefault();
+        exportProducts();
     }
 });

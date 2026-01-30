@@ -5,6 +5,151 @@
     box-sizing: border-box;
 }
 
+/* Global Mobile Font Size Optimizations */
+@media (max-width: 768px) {
+    body {
+        font-size: 0.9rem !important;
+    }
+    
+    h1 {
+        font-size: 1.5rem !important;
+    }
+    
+    h2 {
+        font-size: 1.3rem !important;
+    }
+    
+    h3 {
+        font-size: 1.1rem !important;
+    }
+    
+    h4 {
+        font-size: 1rem !important;
+    }
+    
+    h5 {
+        font-size: 0.9rem !important;
+    }
+    
+    h6 {
+        font-size: 0.85rem !important;
+    }
+    
+    .btn {
+        font-size: 0.85rem !important;
+        padding: 0.5rem 1rem !important;
+    }
+    
+    .form-control {
+        font-size: 0.85rem !important;
+        padding: 0.5rem !important;
+    }
+    
+    .form-label {
+        font-size: 0.8rem !important;
+    }
+    
+    .card {
+        font-size: 0.85rem !important;
+    }
+    
+    .table {
+        font-size: 0.8rem !important;
+    }
+    
+    .badge {
+        font-size: 0.7rem !important;
+    }
+    
+    .alert {
+        font-size: 0.8rem !important;
+    }
+    
+    .navbar {
+        font-size: 0.85rem !important;
+    }
+    
+    .navbar-brand {
+        font-size: 0.9rem !important;
+    }
+    
+    .nav-link {
+        font-size: 0.8rem !important;
+    }
+}
+
+@media (max-width: 480px) {
+    body {
+        font-size: 0.85rem !important;
+    }
+    
+    h1 {
+        font-size: 1.3rem !important;
+    }
+    
+    h2 {
+        font-size: 1.1rem !important;
+    }
+    
+    h3 {
+        font-size: 0.95rem !important;
+    }
+    
+    h4 {
+        font-size: 0.9rem !important;
+    }
+    
+    h5 {
+        font-size: 0.85rem !important;
+    }
+    
+    h6 {
+        font-size: 0.8rem !important;
+    }
+    
+    .btn {
+        font-size: 0.8rem !important;
+        padding: 0.4rem 0.75rem !important;
+    }
+    
+    .form-control {
+        font-size: 0.8rem !important;
+        padding: 0.4rem !important;
+    }
+    
+    .form-label {
+        font-size: 0.75rem !important;
+    }
+    
+    .card {
+        font-size: 0.8rem !important;
+    }
+    
+    .table {
+        font-size: 0.75rem !important;
+    }
+    
+    .badge {
+        font-size: 0.65rem !important;
+    }
+    
+    .alert {
+        font-size: 0.75rem !important;
+    }
+    
+    .navbar {
+        font-size: 0.8rem !important;
+    }
+    
+    .navbar-brand {
+        font-size: 0.85rem !important;
+    }
+    
+    .nav-link {
+        font-size: 0.75rem !important;
+    }
+}
+
 /* Home page specific styles */
 body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif !important;
@@ -445,7 +590,7 @@ body::before {
 
 /* Products Section */
 .products-section {
-    background: rgba(255, 255, 255, 0.95);
+    background:linear-gradient(135deg, #10b981, #10533e);
     backdrop-filter: blur(10px);
     border-radius: 1rem;
     padding: 2rem;
@@ -453,7 +598,7 @@ body::before {
 }
 
 .products-section h2 {
-    color: #4a5568;
+    color: yellowgreen;
     margin-bottom: 1.5rem;
     font-size: 1.5rem;
     display: flex;
@@ -692,8 +837,8 @@ body::before {
 }
 
 .product-card {
-    background: linear-gradient(135deg, #f6f9fc 0%, #e9ecef 100%);
-    border: 2px solid #e2e8f0;
+    background: rgb(25, 71, 7);
+    border: 2px solid yellowgreen;
     border-radius: 0.75rem;
     padding: 1.5rem;
     cursor: pointer;
@@ -705,7 +850,7 @@ body::before {
 
 .product-card.on-sale {
     border-color: #f6ad55;
-    background: linear-gradient(135deg, #fffaf0 0%, #fed7aa 100%);
+    background: rgb(19, 134, 28);
 }
 
 .sale-badge {
@@ -742,7 +887,7 @@ body::before {
     top: 45px;
     right: 10px;
     background: #4a5568;
-    color: white;
+    color: rgb(216, 110, 110);
     padding: 0.25rem 0.5rem;
     border-radius: 0.25rem;
     font-size: 0.7rem;
@@ -765,7 +910,7 @@ body::before {
 }
 
 .product-info h3 {
-    color: #2d3748;
+    color: #ffffff;
     font-size: 1rem;
     font-weight: 600;
     margin-bottom: 0.75rem;
@@ -779,7 +924,7 @@ body::before {
 .product-price span {
     font-weight: 700;
     font-size: 1.1rem;
-    color: #2d3748;
+    color: #ffffff;
 }
 
 .original-price {
@@ -805,7 +950,7 @@ body::before {
 
 /* Cart Section */
 .cart-section {
-    background: rgba(255, 255, 255, 0.95);
+    background: rgba(5, 75, 15, 0.95);
     backdrop-filter: blur(10px);
     border-radius: 1rem;
     padding: 2rem;
@@ -825,20 +970,20 @@ body::before {
 }
 
 .cart-section h2 i {
-    color: #667eea;
+    color: #f3f3f300;
 }
 
 /* Customer Information Section */
 .customer-section {
     margin-bottom: 2rem;
     padding: 1.5rem;
-    background: #f8f9fa;
+    background: rgb(9, 109, 47);
     border-radius: 0.75rem;
-    border: 2px solid #e2e8f0;
+    border: 2px solid #d6c90d;
 }
 
 .customer-section h3 {
-    color: #4a5568;
+    color:yellowgreen;
     font-size: 1.1rem;
     margin-bottom: 1rem;
     display: flex;
@@ -860,7 +1005,7 @@ body::before {
 
 .customer-label {
     display: block;
-    color: #4a5568;
+    color: yellowgreen;
     font-weight: 600;
     margin-bottom: 0.5rem;
     font-size: 0.9rem;
@@ -895,25 +1040,28 @@ body::before {
 .payment-section {
     margin-bottom: 2rem;
     padding: 1.5rem;
-    background: #f8f9fa;
-    border-radius: 0.75rem;
-    border: 2px solid #e2e8f0;
+    background: rgb(9, 109, 47);
+    border: solid;
+    border-color: yellowgreen;
+    border-radius: 0.77rem;
+    color: #e0de34;
 }
 
 .payment-input-group {
     margin-bottom: 1rem;
+
 }
 
 .payment-label {
     display: block;
-    color: #4a5568;
+    color: yellowgreen;
     font-weight: 600;
     margin-bottom: 0.5rem;
     font-size: 0.9rem;
 }
 
 .payment-label i {
-    color: #667eea;
+    color:yellowgreen;
     margin-right: 0.5rem;
 }
 
@@ -921,6 +1069,8 @@ body::before {
     position: relative;
     display: flex;
     align-items: center;
+   
+    
 }
 
 .currency-symbol {
@@ -955,7 +1105,7 @@ body::before {
 }
 
 .change-display {
-    background: linear-gradient(135deg, #d1fae5, #a7f3d0);
+    background: rgb(13, 100, 42);
     border: 2px solid #10b981;
     border-radius: 0.75rem;
     padding: 1rem;
@@ -966,7 +1116,7 @@ body::before {
     display: flex;
     align-items: center;
     gap: 0.5rem;
-    color: #065f46;
+    color: #dab71cda;
     font-weight: 700;
     font-size: 1.1rem;
 }
@@ -977,9 +1127,9 @@ body::before {
 
 /* Cart Container */
 .cart-container {
-    background: white;
+    background: rgb(9, 109, 47);
     border-radius: 0.75rem;
-    border: 2px solid #e2e8f0;
+    border: 2px solid #cee40a;
     overflow: hidden;
 }
 
@@ -995,7 +1145,7 @@ body::before {
     justify-content: space-between;
     align-items: center;
     padding: 0.75rem;
-    border-bottom: 1px solid #e2e8f0;
+    border-bottom: 1px solid #3066ad;
     transition: background-color 0.2s ease;
     position: relative;
 }
@@ -1187,7 +1337,7 @@ body::before {
 }
 
 .cart-summary {
-    background: linear-gradient(135deg, #667eea, #764ba2);
+    background: rgb(12, 66, 5);
     padding: 1.5rem;
     text-align: center;
     cursor: pointer;
@@ -1195,7 +1345,7 @@ body::before {
 }
 
 .cart-summary:hover {
-    background: linear-gradient(135deg, #5a67d8, #6b46c1);
+    background: rgb(9, 105, 68);
     transform: translateY(-2px);
     box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
 }
@@ -1294,6 +1444,7 @@ body::before {
     
     .product-card {
         padding: 1rem;
+        
     }
     
     .barcode-scan-container {
@@ -1313,12 +1464,12 @@ body::before {
 }
 
 ::-webkit-scrollbar-track {
-    background: #f1f1f1;
+    background: #cabe0c;
     border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb {
-    background: #cbd5e0;
+    background: #146b23;
     border-radius: 4px;
 }
 

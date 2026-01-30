@@ -4,229 +4,533 @@
 {% block title %}UPC Lookup - NDtech{% endblock %}
 
 {% block extra_css %}
+<link rel="stylesheet" href="{% static 'nano/home.css' %}">
 <style>
-.upc-container {
-    max-width: 800px;
-    margin: 0 auto;
-    padding: 20px;
-}
+    /* Modern Mobile-First UPC Lookup Design */
+    * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+    }
+    
+    body {
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        color: #2d3748;
+        line-height: 1.6;
+    }
+    
+    .upc-container {
+        max-width: 100%;
+        margin: 0 auto;
+        padding: 1rem;
+        min-height: 100vh;
+    }
+    
+    /* Mobile Header */
+    .mobile-header {
+        background: (rgb(5, 58, 27));
+        color: white;
+        padding: 1.5rem 1rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+        position: sticky;
+        top: 0;
+        z-index: 100;
+    }
+    
+    .mobile-title {
+        font-size: 1.1rem;
+        font-weight: 700;
+        flex: 1;
+    }
+    
+    .mobile-actions {
+        display: flex;
+        gap: 0.5rem;
+    }
+    
+    .mobile-btn {
+        background: rgba(255, 255, 255, 0.15);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        color: white;
+        padding: 0.5rem 0.75rem;
+        border-radius: 0.5rem;
+        text-decoration: none;
+        font-size: 0.8rem;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        flex: 1;
+        text-align: center;
+        min-width: 60px;
+    }
+    
+    .mobile-btn:hover {
+        background: rgba(255, 255, 255, 0.25);
+        transform: translateY(-1px);
+    }
+    
+    .mobile-btn i {
+        margin-right: 0.5rem;
+    }
+    
+    /* Desktop Header - Hide on Mobile */
+    .desktop-header {
+        display: none;
+    }
+    
+    /* Scanner Section */
+    .scanner-section {
+        background: white;
+        border-radius: 1rem;
+        padding: 2rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 2px 15px rgba(0, 0, 0, 0.1);
+        text-align: center;
+    }
+    
+    .scanner-title {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin-bottom: 1rem;
+        color: #2d3748;
+        font-size: 1rem;
+        font-weight: 700;
+    }
+    
+    .scanner-title i {
+        color: #667eea;
+        font-size: 1.3rem;
+    }
+    
+    /* Input Section */
+    .input-section {
+        margin-bottom: 2rem;
+    }
+    
+    .input-group {
+        position: relative;
+        margin-bottom: 1.5rem;
+    }
+    
+    .upc-input {
+        width: 100%;
+        padding: 0.75rem;
+        font-size: 0.9rem;
+        border: 2px solid #e2e8f0;
+        border-radius: 0.75rem;
+        background: white;
+        transition: all 0.3s ease;
+        box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
+    }
+    
+    .upc-input:focus {
+        outline: none;
+        border-color: #667eea;
+        box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.25);
+        background: rgba(255, 255, 255, 0.05);
+    }
+    
+    .upc-input.valid {
+        border-color: #28a745;
+        background: rgba(40, 167, 69, 0.05);
+    }
+    
+    .upc-input.invalid {
+        border-color: #dc3545;
+        background: rgba(220, 53, 69, 0.05);
+        animation: shake 0.5s;
+    }
+    
+    @keyframes shake {
+        0%, 100% { transform: translateX(0); }
+        25% { transform: translateX(-5px); }
+        50% { transform: translateX(5px); }
+        75% { transform: translateX(-5px); }
+        100% { transform: translateX(0); }
+    }
+    
+    .scan-btn {
+        background: linear-gradient(135deg, #667eea, #764ba2);
+        color: white;
+        border: none;
+        padding: 0.75rem 1.5rem;
+        border-radius: 0.75rem;
+        font-size: 0.9rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        width: 100%;
+        margin-top: 0.75rem;
+        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+    }
+    
+    .scan-btn:hover {
+        background: linear-gradient(135deg, #5a6b3, #4c8c20);
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(90, 103, 80, 0.4);
+    }
+    
+    .scan-btn i {
+        margin-right: 0.5rem;
+    }
+    
+    /* Quick Actions */
+    .quick-actions {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1rem;
+        margin-bottom: 2rem;
+    }
+    
+    .quick-action-btn {
+        background: white;
+        border: 2px solid #e2e8f0;
+        border-radius: 0.75rem;
+        padding: 1rem;
+        text-align: center;
+        text-decoration: none;
+        font-weight: 600;
+        color: #2d3748;
+        transition: all 0.3s ease;
+        cursor: pointer;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.5rem;
+        min-height: 60px;
+        font-size: 0.8rem;
+    }
+    
+    .quick-action-btn:hover {
+        background: #f8f9fa;
+        border-color: #667eea;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.2);
+    }
+    
+    .quick-action-btn i {
+        font-size: 1.2rem;
+        margin-bottom: 0.25rem;
+        color: #667eea;
+    }
+    
+    /* Product Result */
+    .product-result {
+        background: white;
+        border-radius: 1rem;
+        padding: 2rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+        border-left: 5px solid #667eea;
+        animation: slideIn 0.3s ease;
+    }
+    
+    @keyframes slideIn {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    
+    .product-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 1.5rem;
+        padding-bottom: 1rem;
+        border-bottom: 1px solid #e2e8f0;
+    }
+    
+    .product-title {
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: #2d3748;
+        flex: 1;
+        line-height: 1.4;
+    }
+    
+    .product-source {
+        background: #667eea;
+        color: white;
+        padding: 0.25rem 0.75rem;
+        border-radius: 1rem;
+        font-size: 0.8rem;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    
+    .product-image {
+        width: 100px;
+        height: 100px;
+        object-fit: cover;
+        border-radius: 0.5rem;
+        margin-bottom: 1rem;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+    
+    .product-info {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+    
+    .product-info-item {
+        background: #f8f9fa;
+        border-radius: 0.5rem;
+        padding: 1rem;
+        border-left: 3px solid #e2e8f0;
+    }
+    
+    .product-info-label {
+        font-size: 0.75rem;
+        color: #718096;
+        margin-bottom: 0.25rem;
+        font-weight: 600;
+    }
+    
+    .product-info-value {
+        font-size: 0.85rem;
+        color: #2d3748;
+        font-weight: 600;
+        word-break: break-word;
+    }
+    
+    .product-actions {
+        display: flex;
+        gap: 0.75rem;
+        margin-top: 1.5rem;
+    }
+    
+    .action-btn {
+        padding: 0.5rem 1rem;
+        border: none;
+        border-radius: 0.5rem;
+        font-size: 0.8rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        text-decoration: none;
+        flex: 1;
+        text-align: center;
+    }
+    
+    .btn-primary {
+        background: linear-gradient(135deg, #667eea, #764ba2);
+        color: white;
+    }
+    
+    .btn-success {
+        background: linear-gradient(135deg, #28a745, #218838);
+        color: white;
+    }
+    
+    .btn-warning {
+        background: linear-gradient(135deg, #ffc107, #e0a800);
+        color: #212529;
+    }
+    
+    .action-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    }
+    
+    .action-btn i {
+        margin-right: 0.5rem;
+    }
+    
+    /* Loading State */
+    .loading-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.8);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 1000;
+    }
+    
+    .loading-content {
+        background: white;
+        border-radius: 1rem;
+        padding: 2rem;
+        text-align: center;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+        max-width: 400px;
+    }
+    
+    .loading-spinner {
+        border: 4px solid #f3f3f3;
+        border-top: 4px solid #007bff;
+        border-radius: 50%;
+        width: 50px;
+        height: 50px;
+        animation: spin 1s linear infinite;
+        margin: 0 auto 15px;
+    }
+    
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+    
+    /* Alert Messages */
+    .alert {
+        padding: 1rem;
+        border-radius: 0.75rem;
+        margin-bottom: 1rem;
+        border-left: 4px solid #667eea;
+        background: white;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        animation: slideIn 0.3s ease;
+    }
+    
+    .alert h4 {
+        margin: 0 0 0.25rem 0;
+        color: #2d3748;
+        font-size: 0.9rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
 
-.upc-scanner-section {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
-    padding: 30px;
-    border-radius: 15px;
-    margin-bottom: 30px;
-    text-align: center;
-}
-
-.upc-input-group {
-    display: flex;
-    gap: 10px;
-    margin-top: 20px;
-}
-
-.upc-input {
-    flex: 1;
-    padding: 15px;
-    border: none;
-    border-radius: 10px;
-    font-size: 16px;
-    background: rgba(255, 255, 255, 0.9);
-}
-
-.upc-btn {
-    padding: 15px 30px;
-    background: #28a745;
-    color: white;
-    border: none;
-    border-radius: 10px;
-    font-size: 16px;
-    cursor: pointer;
-    transition: all 0.3s ease;
-}
-
-.upc-btn:hover {
-    background: #218838;
-    transform: translateY(-2px);
-}
-
-.product-result {
-    background: white;
-    border-radius: 15px;
-    padding: 25px;
-    margin-bottom: 20px;
-    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-    border-left: 5px solid #28a745;
-}
-
-.product-image {
-    max-width: 200px;
-    max-height: 200px;
-    object-fit: contain;
-    border-radius: 10px;
-    margin-bottom: 15px;
-}
-
-.product-info {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 15px;
-    margin-bottom: 20px;
-}
-
-.product-info-item {
-    padding: 10px;
-    background: #f8f9fa;
-    border-radius: 8px;
-}
-
-.product-info-label {
-    font-weight: bold;
-    color: #495057;
-    margin-bottom: 5px;
-}
-
-.product-info-value {
-    color: #212529;
-    font-size: 14px;
-}
-
-.action-buttons {
-    display: flex;
-    gap: 15px;
-    margin-top: 20px;
-}
-
-.action-btn {
-    padding: 12px 25px;
-    border: none;
-    border-radius: 8px;
-    font-size: 14px;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    text-decoration: none;
-    display: inline-block;
-    text-align: center;
-}
-
-.btn-primary {
-    background: #007bff;
-    color: white;
-}
-
-.btn-primary:hover {
-    background: #0056b3;
-}
-
-.btn-success {
-    background: #28a745;
-    color: white;
-}
-
-.btn-success:hover {
-    background: #218838;
-}
-
-.btn-warning {
-    background: #ffc107;
-    color: #212529;
-}
-
-.btn-warning:hover {
-    background: #e0a800;
-}
-
-.create-product-form {
-    background: #f8f9fa;
-    padding: 20px;
-    border-radius: 10px;
-    margin-top: 20px;
-}
-
-.form-group {
-    margin-bottom: 15px;
-}
-
-.form-label {
-    display: block;
-    margin-bottom: 5px;
-    font-weight: bold;
-    color: #495057;
-}
-
-.form-control {
-    width: 100%;
-    padding: 10px;
-    border: 1px solid #ced4da;
-    border-radius: 5px;
-    font-size: 14px;
-}
-
-.form-control:focus {
-    outline: none;
-    border-color: #007bff;
-    box-shadow: 0 0 0 2px rgba(0,123,255,0.25);
-}
-
-.alert {
-    padding: 15px;
-    border-radius: 8px;
-    margin-bottom: 20px;
-}
-
-.alert-info {
-    background: #d1ecf1;
-    color: #0c5460;
-    border: 1px solid #bee5eb;
-}
-
-.alert-warning {
-    background: #fff3cd;
-    color: #856404;
-    border: 1px solid #ffeaa7;
-}
-
-.loading {
-    display: none;
-    text-align: center;
-    padding: 20px;
-}
-
-.spinner {
-    border: 4px solid #f3f3f3;
-    border-top: 4px solid #007bff;
-    border-radius: 50%;
-    width: 40px;
-    height: 40px;
-    animation: spin 1s linear infinite;
-    margin: 0 auto 15px;
-}
-
-@keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
-}
-
-.existing-product-notice {
-    background: #fff3cd;
-    border: 1px solid #ffeaa7;
-    padding: 15px;
-    border-radius: 8px;
-    margin-bottom: 20px;
-}
-
-.barcode-display {
-    font-family: 'Courier New', monospace;
-    font-size: 18px;
-    font-weight: bold;
-    color: #007bff;
-    background: #e7f3ff;
-    padding: 10px;
-    border-radius: 5px;
-    text-align: center;
-    margin: 10px 0;
-}
+    .alert-info {
+        background: #116b0e;
+        border-left: 4px solid #0c5460;
+    }
+    
+    .alert-warning {
+        background: #fff3cd;
+        border-left: 4px solid #ffc107;
+    }
+    
+    .alert-danger {
+        background: #f8d7da;
+        border-left: 4px solid #dc3545;
+    }
+    
+    /* Responsive Design */
+    @media (max-width: 768px) {
+        .upc-container {
+            padding: 0.75rem;
+        }
+        
+        .scanner-section {
+            padding: 1.5rem;
+        }
+        
+        .quick-actions {
+            grid-template-columns: 1fr;
+            gap: 0.75rem;
+        }
+        
+        .product-info {
+            grid-template-columns: 1fr;
+            gap: 0.75rem;
+        }
+        
+        .product-image {
+            width: 80px;
+            height: 80px;
+        }
+    }
+    
+    @media (max-width: 480px) {
+        .mobile-title {
+            font-size: 0.9rem;
+        }
+        
+        .mobile-actions {
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+        
+        .mobile-btn {
+            min-width: 100px;
+            padding: 0.5rem 0.75rem;
+            font-size: 0.75rem;
+        }
+        
+        .scan-btn {
+            padding: 0.5rem 1rem;
+            font-size: 0.8rem;
+        }
+        
+        .product-result {
+            padding: 1rem;
+            margin-bottom: 1rem;
+        }
+        
+        .product-header {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 0.5rem;
+        }
+        
+        .product-title {
+            font-size: 0.95rem;
+        }
+        
+        .product-info {
+            grid-template-columns: 1fr;
+            gap: 0.5rem;
+        }
+        
+        .product-image {
+            width: 50px;
+            height: 50px;
+        }
+        
+        .product-info-label {
+            font-size: 0.7rem;
+        }
+        
+        .product-info-value {
+            font-size: 0.75rem;
+        }
+        
+        .action-btn {
+            padding: 0.4rem 0.75rem;
+            font-size: 0.75rem;
+        }
+        
+        .scanner-title {
+            font-size: 0.9rem;
+        }
+        
+        .upc-input {
+            padding: 0.6rem;
+            font-size: 0.8rem;
+        }
+        
+        .alert h4 {
+            font-size: 0.8rem;
+        }
+    }
+    
+    /* Print Styles */
+    @media print {
+        .mobile-header, .scanner-section, .quick-actions {
+            display: none;
+        }
+        
+        .product-result {
+            box-shadow: none;
+            border: 1px solid #e2e8f0;
+        }
+    }
 </style>
 {% endblock %}
 
@@ -470,6 +774,40 @@
         </div>
     {% endif %}
 
+    <!-- Mobile Header -->
+    <div class="mobile-header">
+        <div class="mobile-header-content">
+            <div class="mobile-title">UPC Product Lookup</div>
+            <div class="mobile-actions">
+                <button onclick="window.history.back()" class="mobile-btn">
+                    <i class="fas fa-arrow-left"></i>
+                    <span>Back</span>
+                </button>
+                <button onclick="toggleCamera()" class="mobile-btn">
+                    <i class="fas fa-camera"></i>
+                    <span>Camera</span>
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Desktop Header -->
+    <div class="desktop-header">
+        <div class="header-content">
+            <h1 class="page-title">UPC Product Lookup</h1>
+            <div class="header-actions">
+                <button onclick="window.history.back()" class="action-btn">
+                    <i class="fas fa-arrow-left"></i>
+                    <span>Back to Dashboard</span>
+                </button>
+                <button onclick="toggleCamera()" class="action-btn">
+                    <i class="fas fa-camera"></i>
+                    <span>Toggle Camera</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
     <div class="alert alert-info">
         <h4><i class="fas fa-info-circle"></i> How to Use</h4>
         <ul>
@@ -485,74 +823,105 @@
 
 {% block extra_js %}
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    const upcForm = document.getElementById('upcForm');
-    const upcInput = document.getElementById('upcInput');
-    const loadingIndicator = document.getElementById('loadingIndicator');
+    // Enhanced JavaScript functionality
+    let isCameraActive = false;
+    let currentStream = null;
     
-    // Handle form submission
-    upcForm.addEventListener('submit', function(e) {
-        const upcCode = upcInput.value.trim();
+    // Toggle camera functionality
+    function toggleCamera() {
+        const cameraBtn = document.querySelector('[onclick*="toggleCamera()"]');
+        const scannerSection = document.querySelector('.scanner-section');
         
-        if (!upcCode) {
-            e.preventDefault();
-            alert('Please enter a UPC/EAN barcode');
-            return;
+        if (isCameraActive) {
+            // Stop camera
+            if (currentStream) {
+                currentStream.getTracks().forEach(track => track.stop());
+                currentStream = null;
+            }
+            
+            // Hide camera, show scanner
+            scannerSection.style.display = 'block';
+            cameraBtn.innerHTML = '<i class="fas fa-camera"></i><span>Camera</span>';
+            cameraBtn.classList.remove('btn-primary');
+            cameraBtn.classList.add('btn-warning');
+            isCameraActive = false;
+        } else {
+            // Start camera
+            navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
+                .then(function(stream) {
+                    currentStream = stream;
+                    
+                    // Show camera feed, hide scanner
+                    scannerSection.style.display = 'none';
+                    cameraBtn.innerHTML = '<i class="fas fa-stop"></i><span>Stop Camera</span>';
+                    cameraBtn.classList.remove('btn-warning');
+                    cameraBtn.classList.add('btn-primary');
+                    isCameraActive = true;
+                    
+                    // Display camera feed
+                    const videoElement = document.createElement('video');
+                    videoElement.id = 'cameraFeed';
+                    videoElement.autoplay = true;
+                    videoElement.style.width = '100%';
+                    videoElement.style.height = '200px';
+                    videoElement.style.border = '2px solid #667eea';
+                    videoElement.style.borderRadius = '8px';
+                    
+                    // Insert video before scanner section
+                    scannerSection.parentNode.insertBefore(videoElement, scannerSection);
+                })
+                .catch(function(error) {
+                    console.error('Camera access denied:', error);
+                    alert('Camera access denied. Please check browser permissions.');
+                    // Fallback to scanner mode
+                    scannerSection.style.display = 'block';
+                    cameraBtn.innerHTML = '<i class="fas fa-camera"></i><span>Camera</span>';
+                    cameraBtn.classList.remove('btn-primary');
+                    cameraBtn.classList.add('btn-warning');
+                    isCameraActive = false;
+                });
         }
+    }
+    
+    // Enhanced form submission with better validation
+    function validateUPC(code) {
+        const cleanedCode = code.replace(/[^\d]/g, '');
+        const isValidLength = cleanedCode.length >= 8 && cleanedCode.length <= 14;
         
-        // Clean the input (remove spaces, hyphens)
-        upcInput.value = upcCode.replace(/[\s-]/g, '');
+        const hasValidChars = /^\d+$/.test(cleanedCode);
         
-        // Show loading indicator
-        loadingIndicator.style.display = 'block';
+        return {
+            isValid: isValidLength && !hasValidChars,
+            message: isValidLength ? 'Valid UPC/EAN code' : 'UPC/EAN codes must be 8-14 digits',
+            cleanedCode: cleanedCode
+        };
+    }
+    
+    // Show loading state
+    function showLoading(show = true) {
+        const loadingIndicator = document.getElementById('loadingIndicator');
+        const form = document.getElementById('upcForm');
         
-        // Hide loading indicator after a delay (in case of slow API)
-        setTimeout(() => {
+        if (show) {
+            loadingIndicator.style.display = 'flex';
+            form.style.display = 'none';
+        } else {
             loadingIndicator.style.display = 'none';
-        }, 10000);
-    });
-    
-    // Auto-focus on the input field
-    upcInput.focus();
-    
-    // Support barcode scanner input (usually ends with Enter key)
-    upcInput.addEventListener('keypress', function(e) {
-        if (e.key === 'Enter') {
-            // Small delay to allow scanner to complete input
-            setTimeout(() => {
-                upcForm.dispatchEvent(new Event('submit'));
-            }, 100);
+            form.style.display = 'block';
         }
-    });
+    }
     
-    // Format the barcode as user types
-    upcInput.addEventListener('input', function(e) {
-        // Remove non-digit characters except for demonstration purposes
-        let value = e.target.value.replace(/[^\d]/g, '');
-        
-        // You can add formatting logic here if needed
-        // For example, add spaces for better readability
-        if (value.length > 0) {
-            // Keep the cleaned value
-            e.target.value = value;
-        }
-    });
-    
-    // Quick lookup with AJAX (optional enhancement)
+    // Enhanced lookup with debouncing
     let lookupTimeout;
-    upcInput.addEventListener('input', function(e) {
+    function performLookup(upcCode) {
         clearTimeout(lookupTimeout);
-        const value = e.target.value.trim();
         
-        // Only trigger lookup if we have a complete barcode length
-        if (value.length >= 8 && value.length <= 14) {
-            lookupTimeout = setTimeout(() => {
-                // You could implement AJAX lookup here for better UX
-                // For now, we'll stick with form submission
-            }, 500);
-        }
-    });
-    
+        const validation = validateUPC(upcCode);
+        
+        if (!validation.isValid) {
+            showAlert(validation.message, 'warning');
+            const upcInput = document.getElementById('upcInput');
+            upcInput.classList.add('invalid');
     // Add keyboard shortcuts
     document.addEventListener('keydown', function(e) {
         // Ctrl/Cmd + K to focus on UPC input

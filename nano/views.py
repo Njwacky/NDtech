@@ -169,6 +169,7 @@ def sign_in(request):
     return render(request, 'nano/sign_in.html')
 
 def logout_view(request):
+    
     logout(request)
     return redirect('register')
 
@@ -212,6 +213,7 @@ def forgot_password(request):
                     }
                 )
                 notifications_created.append(notification.id)
+
 
                 # Send FCM notification
                 send_fcm_notification_to_user(admin_user, notification.title, notification.message)
@@ -1778,13 +1780,47 @@ def warehouse_import(request):
             else:  # Excel file
                 df = pd.read_excel(file)
 
-            # Validate required columns
-            required_columns = ['product_name', 'price']
-            missing_columns = [col for col in required_columns if col not in df.columns]
-
-            if missing_columns:
-                messages.error(request, f'Missing required columns: {", ".join(missing_columns)}')
+            # Validate required columns - support both naming conventions
+            required_columns_options = [
+                ['Product Name', 'Price'],  # Warehouse format
+                ['name', 'price']           # Product format
+            ]
+            
+            valid_columns = None
+            for required_columns in required_columns_options:
+                missing_columns = [col for col in required_columns if col not in df.columns]
+                if not missing_columns:
+                    valid_columns = required_columns
+                    break
+            
+            if not valid_columns:
+                # Show both expected formats in error message
+                messages.error(request, (
+                    'Missing required columns. Please use one of these formats:<br>'
+                    '<strong>Warehouse Format:</strong> Product Name, Price<br>'
+                    '<strong>Product Format:</strong> name, price<br>'
+                    'You can use the sample CSV files as templates.'
+                ))
                 return redirect('warehouse_import')
+            
+            # Map column names to standard names for processing
+            column_mapping = {}
+            if valid_columns == ['name', 'price']:
+                column_mapping = {
+                    'name': 'Product Name',
+                    'price': 'Price',
+                    'category': 'Category',
+                    'stock': 'Stock',
+                    'barcode': 'Barcode',
+                    'sku': 'SKU',
+                    'supplier': 'Supplier',
+                    'status': 'Status',
+                    'description': 'Description'
+                }
+            
+            # Apply column mapping if needed
+            if column_mapping:
+                df = df.rename(columns=column_mapping)
 
             # Process each row
             imported_count = 0
@@ -1793,12 +1829,15 @@ def warehouse_import(request):
             for index, row in df.iterrows():
                 try:
                     # Clean and validate data
-                    product_name = str(row['product_name']).strip()
-                    price = float(row['price'])
-                    barcode = str(row.get('barcode', '')).strip() if 'barcode' in row and pd.notna(row['barcode']) else None
-                    category = str(row.get('category', '')).strip() if 'category' in row and pd.notna(row['category']) else None
-                    stock_quantity = int(row['stock_quantity']) if 'stock_quantity' in row and pd.notna(row['stock_quantity']) else None
-                    unit_size = str(row.get('unit_size', '')).strip() if 'unit_size' in row and pd.notna(row['unit_size']) else None
+                    product_name = str(row['Product Name']).strip()
+                    price = float(row['Price'])
+                    barcode = str(row.get('Barcode', '')).strip() if 'Barcode' in row and pd.notna(row['Barcode']) else None
+                    category = str(row.get('Category', '')).strip() if 'Category' in row and pd.notna(row['Category']) else None
+                    stock_quantity = int(row['Stock']) if 'Stock' in row and pd.notna(row['Stock']) else None
+                    sku = str(row.get('SKU', '')).strip() if 'SKU' in row and pd.notna(row['SKU']) else None
+                    supplier = str(row.get('Supplier', '')).strip() if 'Supplier' in row and pd.notna(row['Supplier']) else None
+                    status = str(row.get('Status', '')).strip() if 'Status' in row and pd.notna(row['Status']) else None
+                    description = str(row.get('Description', '')).strip() if 'Description' in row and pd.notna(row['Description']) else None
 
                     if product_name and price > 0:
                         # Create or update warehouse price
@@ -1810,7 +1849,10 @@ def warehouse_import(request):
                                 'price': price,
                                 'category': category,
                                 'stock_quantity': stock_quantity,
-                                'unit_size': unit_size,
+                                'sku': sku,
+                                'supplier': supplier,
+                                'status': status,
+                                'description': description,
                                 'imported_by': request.user,
                                 'file_name': file.name
                             }
@@ -2455,6 +2497,167 @@ def cashier_airtime_quick_sell(request):
     })
 
 @login_required
+def airtime_history_review(request):
+    """Review airtime transaction history with phone verification"""
+    # Allow all authenticated users to review their own sales
+    # Managers can see all sales
+    
+    user_role = getattr(request.user.userprofile, 'role', 'cashier') if hasattr(request.user, 'userprofile') else 'cashier'
+    is_manager = user_role in ['admin', 'manager', 'superuser']
+    
+    # Get filter parameters
+    date_from = request.GET.get('date_from', '')
+    date_to = request.GET.get('date_to', '')
+    phone_filter = request.GET.get('phone', '')
+    network_filter = request.GET.get('network', '')
+    
+    # Build query
+    sales = AirtimeSale.objects.all()
+    
+    # For cashiers, only show their own sales
+    if not is_manager:
+        sales = sales.filter(requested_by=request.user)
+    
+    # Apply filters
+    if date_from:
+        try:
+            date_from_obj = timezone.datetime.strptime(date_from, '%Y-%m-%d').date()
+            sales = sales.filter(created_at__date__gte=date_from_obj)
+        except ValueError:
+            pass
+    
+    if date_to:
+        try:
+            date_to_obj = timezone.datetime.strptime(date_to, '%Y-%m-%d').date()
+            sales = sales.filter(created_at__date__lte=date_to_obj)
+        except ValueError:
+            pass
+    
+    if phone_filter:
+        sales = sales.filter(customer_phone__icontains=phone_filter)
+    
+    if network_filter:
+        sales = sales.filter(airtime_product__network=network_filter)
+    
+    # Order by most recent
+    sales = sales.order_by('-created_at')
+    
+    # Generate demo phone numbers for verification (random 12-digit numbers)
+    demo_phone_numbers = []
+    for sale in sales[:10]:  # Generate for first 10 sales
+        import random
+        # Generate random 12-digit number starting with same first 3 digits as original
+        original_phone = sale.customer_phone
+        if len(original_phone) >= 3:
+            prefix = original_phone[:3]
+            random_suffix = ''.join([str(random.randint(0, 9)) for _ in range(9)])
+            demo_number = prefix + random_suffix
+            demo_phone_numbers.append({
+                'sale_id': sale.id,
+                'original_phone': original_phone,
+                'demo_phone': demo_number
+            })
+    
+    # Get statistics
+    total_sales = sales.count()
+    total_revenue = sales.aggregate(total=Sum('total_price'))['total'] or 0
+    
+    # Pagination
+    paginator = Paginator(sales, 20)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
+    return render(request, 'nano/airtime_history_review.html', {
+        'sales': page_obj,
+        'is_paginated': page_obj.has_other_pages(),
+        'page_obj': page_obj,
+        'user_role': user_role,
+        'is_manager': is_manager,
+        'demo_phone_numbers': demo_phone_numbers,
+        'total_sales': total_sales,
+        'total_revenue': total_revenue,
+        'date_from': date_from,
+        'date_to': date_to,
+        'phone_filter': phone_filter,
+        'network_filter': network_filter
+    })
+
+@login_required
+def verify_airtime_phone(request, sale_id):
+    """Verify customer phone number for airtime sale"""
+    # Get the airtime sale
+    try:
+        airtime_sale = AirtimeSale.objects.get(id=sale_id)
+        
+        # Check permissions - users can only verify their own sales unless they're managers
+        user_role = getattr(request.user.userprofile, 'role', 'cashier') if hasattr(request.user, 'userprofile') else 'cashier'
+        is_manager = user_role in ['admin', 'manager', 'superuser']
+        
+        if not is_manager and airtime_sale.requested_by != request.user:
+            return JsonResponse({'success': False, 'error': 'Permission denied'})
+        
+        if request.method == 'POST':
+            try:
+                data = json.loads(request.body)
+                confirmed_phone = data.get('confirmed_phone', '').strip()
+                customer_confirmed = data.get('customer_confirmed', False)
+                
+                if not confirmed_phone:
+                    return JsonResponse({'success': False, 'error': 'Phone number is required'})
+                
+                # Validate phone number format
+                phone_regex = r'^[0-9]{10,15}$'
+                if not re.match(phone_regex, confirmed_phone):
+                    return JsonResponse({'success': False, 'error': 'Please enter a valid phone number (10-15 digits)'})
+                
+                # Update the airtime sale with verified phone number
+                airtime_sale.customer_phone = confirmed_phone
+                airtime_sale.save()
+                
+                # Create verification record (you could create a separate model for this)
+                verification_data = {
+                    'original_phone': airtime_sale.customer_phone,
+                    'confirmed_phone': confirmed_phone,
+                    'customer_confirmed': customer_confirmed,
+                    'verified_by': request.user.username,
+                    'verified_at': timezone.now().strftime('%Y-%m-%d %H:%M:%S')
+                }
+                
+                # Store verification data in approval notes for now
+                existing_notes = airtime_sale.approval_notes or ''
+                verification_note = f"PHONE_VERIFICATION: {verification_data}"
+                airtime_sale.approval_notes = existing_notes + '\n' + verification_note if existing_notes else verification_note
+                airtime_sale.save()
+                
+                return JsonResponse({
+                    'success': True,
+                    'message': 'Phone number verified successfully',
+                    'verified_phone': confirmed_phone,
+                    'verification_data': verification_data
+                })
+                
+            except json.JSONDecodeError:
+                return JsonResponse({'success': False, 'error': 'Invalid data format'})
+            except Exception as e:
+                return JsonResponse({'success': False, 'error': str(e)})
+        
+        # GET request - return sale details for verification
+        return JsonResponse({
+            'success': True,
+            'sale': {
+                'id': airtime_sale.id,
+                'customer_phone': airtime_sale.customer_phone,
+                'airtime_product': airtime_sale.airtime_product.name,
+                'total_price': float(airtime_sale.total_price),
+                'created_at': airtime_sale.created_at.strftime('%Y-%m-%d %H:%M:%S'),
+                'voucher_code': airtime_sale.voucher_code
+            }
+        })
+        
+    except AirtimeSale.DoesNotExist:
+        return JsonResponse({'success': False, 'error': 'Airtime sale not found'})
+
+@login_required
 def process_cashier_airtime_sale(request):
     """Process cashier airtime quick sell"""
     if request.method == 'POST':
@@ -2605,6 +2808,25 @@ def process_cashier_airtime_sale(request):
 def airtime_dashboard(request):
     """Airtime dashboard with separate functionality"""
     # Allow all authenticated users
+    
+    # Check if this is an AJAX request for products
+    if request.GET.get('fetch_products') == 'true':
+        airtime_products = AirtimeProduct.objects.filter(is_active=True).order_by('network', 'airtime_type', 'value')
+        
+        products_data = []
+        for product in airtime_products:
+            products_data.append({
+                'id': product.id,
+                'name': product.name,
+                'network': product.network,
+                'airtime_type': product.airtime_type,
+                'value': product.value,
+                'price': float(product.price),
+                'stock': product.stock
+            })
+        
+        return JsonResponse({'products': products_data})
+    
     airtime_products = AirtimeProduct.objects.filter(is_active=True).order_by('network', 'airtime_type', 'value')
 
     # Get user role to determine permissions
@@ -2641,10 +2863,13 @@ def airtime_management(request):
             airtime_type = request.POST.get('airtime_type', '')
             value_str = request.POST.get('value', '').strip()
             price_str = request.POST.get('price', '').strip()
-            description = request.POST.get('description', '').strip()
             stock_str = request.POST.get('stock', '').strip()
 
             errors = {}
+            '''❌ Missing required columns. 
+            Please use one of these formats:<br><strong>Warehouse Format:</strong> Product Name,
+            Price<br><strong>Product Format:</strong> name, 
+            price<br>You can use the sample CSV files as templates.'''
 
             if not name:
                 errors['name'] = 'Product name is required'
@@ -2694,6 +2919,9 @@ def airtime_management(request):
             if errors:
                 for field, error in errors.items():
                     messages.error(request, error)
+                # Return JSON response for AJAX requests from quick sell interface
+                if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                    return JsonResponse({'success': False, 'error': 'Please fix the validation errors'})
             else:
                 # Create airtime product
                 airtime_product = AirtimeProduct.objects.create(
@@ -2706,7 +2934,12 @@ def airtime_management(request):
                     stock=stock
                 )
                 messages.success(request, f'Airtime product "{name}" added successfully!')
-                return redirect('airtime_management')
+                
+                # Return JSON response for AJAX requests from quick sell interface
+                if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                    return JsonResponse({'success': True, 'message': f'Product "{name}" added successfully!'})
+                else:
+                    return redirect('airtime_management')
 
         elif mode == 'update_stock':
             product_id = request.POST.get('product_id')
@@ -2738,6 +2971,47 @@ def airtime_management(request):
                 messages.error(request, 'Airtime product not found')
 
             return redirect('airtime_management')
+
+        elif mode == 'toggle_status':
+            product_id = request.POST.get('product_id')
+            status = request.POST.get('status', '')
+
+            if not product_id:
+                error_msg = 'Product ID is required'
+                if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                    return JsonResponse({'success': False, 'error': error_msg})
+                else:
+                    messages.error(request, error_msg)
+                    return redirect('airtime_management')
+
+            if status not in ['active', 'inactive']:
+                error_msg = 'Invalid status'
+                if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                    return JsonResponse({'success': False, 'error': error_msg})
+                else:
+                    messages.error(request, error_msg)
+                    return redirect('airtime_management')
+
+            try:
+                product = AirtimeProduct.objects.get(id=product_id)
+                old_status = 'active' if product.is_active else 'inactive'
+                product.is_active = (status == 'active')
+                product.save()
+                
+                success_msg = f'Product "{product.get_display_name()}" status changed from {old_status} to {status}'
+                if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                    return JsonResponse({'success': True, 'message': success_msg})
+                else:
+                    messages.success(request, success_msg)
+                    return redirect('airtime_management')
+                    
+            except AirtimeProduct.DoesNotExist:
+                error_msg = 'Airtime product not found'
+                if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                    return JsonResponse({'success': False, 'error': error_msg})
+                else:
+                    messages.error(request, error_msg)
+                    return redirect('airtime_management')
 
     airtime_products = AirtimeProduct.objects.all().order_by('network', 'airtime_type', 'value')
     return render(request, 'nano/airtime_management.html', {

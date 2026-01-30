@@ -14,60 +14,62 @@
     {% if users %}
         <form method="post" action="{% url 'bulk_delete_users' %}" class="manage-users-form">
             {% csrf_token %}
-            <table class="users-table">
-                <thead>
-                    <tr>
-                        <th class="checkbox-cell">Select</th>
-                        <th>Username</th>
-                        <th>Email</th>
-                        <th>Role</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for user in users %}
-                    <tr{% if user.id == request.user.id %} class="current-user"{% endif %}>
-                        <td class="checkbox-cell">
-                            {% if user.id != request.user.id %}
-                                <input type="checkbox" name="user_ids" value="{{ user.id }}">
-                            {% else %}
-                                <span class="self-delete-protected" title="You cannot delete yourself">
-                                    <i class="fas fa-shield-alt"></i>
-                                </span>
-                            {% endif %}
-                        </td>
-                        <td>
-                            {{ user.username }}
-                            {% if user.id == request.user.id %}
-                                <span class="current-user-badge">(You)</span>
-                            {% endif %}
-                        </td>
-                        <td>{{ user.email }}</td>
-                        <td>
-                            <span class="role-badge role-{{ user.userprofile.role }}">
-                                {{ user.userprofile.role|title }}
-                            </span>
-                        </td>
-                        <td>
-                            <div class="action-links">
-                                <a href="{% url 'edit_user' user.id %}" class="edit">
-                                    <i class="fas fa-edit"></i> Edit
-                                </a>
+            <div class="users-table-wrapper">
+                <table class="users-table">
+                    <thead>
+                        <tr>
+                            <th class="checkbox-cell">Select</th>
+                            <th>Username</th>
+                            <th>Email</th>
+                            <th>Role</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for user in users %}
+                        <tr{% if user.id == request.user.id %} class="current-user"{% endif %}>
+                            <td class="checkbox-cell">
                                 {% if user.id != request.user.id %}
-                                    <a href="{% url 'delete_user' user.id %}" class="delete">
-                                        <i class="fas fa-trash"></i> Delete
-                                    </a>
+                                    <input type="checkbox" name="user_ids" value="{{ user.id }}">
                                 {% else %}
-                                    <span class="delete-protected" title="You cannot delete yourself">
-                                        <i class="fas fa-trash-slash"></i> Cannot Delete
+                                    <span class="self-delete-protected" title="You cannot delete yourself">
+                                        <i class="fas fa-shield-alt"></i>
                                     </span>
                                 {% endif %}
-                            </div>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+                            </td>
+                            <td>
+                                {{ user.username }}
+                                {% if user.id == request.user.id %}
+                                    <span class="current-user-badge">(You)</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ user.email }}</td>
+                            <td>
+                                <span class="role-badge role-{{ user.userprofile.role }}">
+                                    {{ user.userprofile.role|title }}
+                                </span>
+                            </td>
+                            <td>
+                                <div class="action-links">
+                                    <a href="{% url 'edit_user' user.id %}" class="edit">
+                                        <i class="fas fa-edit"></i><span class="action-text"> Edit</span>
+                                    </a>
+                                    {% if user.id != request.user.id %}
+                                        <a href="{% url 'delete_user' user.id %}" class="delete">
+                                            <i class="fas fa-trash"></i><span class="action-text"> Delete</span>
+                                        </a>
+                                    {% else %}
+                                        <span class="delete-protected" title="You cannot delete yourself">
+                                            <i class="fas fa-trash-slash"></i><span class="action-text"> Cannot Delete</span>
+                                        </span>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
             <button type="submit" class="btn-delete-selected" onclick="return confirm('Are you sure you want to delete the selected users?')">
                 <i class="fas fa-trash"></i> Delete Selected
             </button>

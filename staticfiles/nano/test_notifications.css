@@ -16,14 +16,14 @@
 
 .test-section h3 {
     margin-top: 0;
-    color: #333;
-    border-bottom: 2px solid #007bff;
+    color: #344e41;
+    border-bottom: 2px solid #588157;
     padding-bottom: 10px;
 }
 
 .test-button {
-    background: #007bff;
-    color: white;
+    background: #588157;
+    color: #f5f5f0;
     border: none;
     padding: 10px 20px;
     border-radius: 5px;
@@ -34,33 +34,34 @@
 }
 
 .test-button:hover {
-    background: #0056b3;
+    background: #344e41;
     transform: translateY(-1px);
 }
 
 .test-button.success {
-    background: #28a745;
+    background: #588157;
 }
 
 .test-button.success:hover {
-    background: #218838;
+    background: #344e41;
 }
 
 .test-button.warning {
-    background: #ffc107;
-    color: #000;
+    background: #a3b18a;
+    color: #f5f5f0;
 }
 
 .test-button.warning:hover {
-    background: #e0a800;
+    background: #588157;
 }
 
 .test-button.danger {
-    background: #dc3545;
+    background: #6c757d;
+    color: #f5f5f0;
 }
 
 .test-button.danger:hover {
-    background: #c82333;
+    background: #545b62;
 }
 
 .test-result {
@@ -72,26 +73,26 @@
 }
 
 .test-result.success {
-    background: #d4edda;
-    color: #155724;
-    border: 1px solid #c3e6cb;
+    background: #d1fae5;
+    color: #065f46;
+    border: 1px solid #588157;
 }
 
 .test-result.error {
-    background: #f8d7da;
-    color: #721c24;
-    border: 1px solid #f5c6cb;
+    background: #f5f5f0;
+    color: #344e41;
+    border: 1px solid #a3b18a;
 }
 
 .test-result.info {
-    background: #d1ecf1;
-    color: #0c5460;
-    border: 1px solid #bee5eb;
+    background: #f5f5f0;
+    color: #344e41;
+    border: 1px solid #588157;
 }
 
 .debug-info {
-    background: #f8f9fa;
-    border: 1px solid #dee2e6;
+    background: #f5f5f0;
+    border: 1px solid #dad7cd;
     border-radius: 5px;
     padding: 15px;
     margin: 10px 0;
@@ -99,7 +100,7 @@
 
 .debug-info h4 {
     margin-top: 0;
-    color: #495057;
+    color: #344e41;
 }
 
 .debug-info pre {
@@ -119,15 +120,16 @@
 }
 
 .status-indicator.online {
-    background: #28a745;
+    background: #588157;
 }
 
 .status-indicator.offline {
-    background: #dc3545;
+    background: #a3b18a;
 }
 
 .status-indicator.pending {
-    background: #ffc107;
+    background: #dad7cd;
+    color: #344e41;
 }
 
 .grid {

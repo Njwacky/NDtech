@@ -11,71 +11,14 @@ document.addEventListener('DOMContentLoaded', function() {
         return null;
     }
 
-    // Checkout order function
+    // Checkout order function - redirect to order details page
     window.checkoutOrder = function(orderId) {
-        if (confirm('Process checkout for this order?')) {
-            showLoadingState(orderId, 'checking out');
-            
-            // Get the order total from the table
-            const row = document.querySelector(`tr:has(button[onclick*="${orderId}"])`);
-            const totalCell = row ? row.cells[3].textContent : 'R0';
-            const total = totalCell.replace(/[^0-9.-]/g, '');
-            
-            fetch(`/pending_orders/${orderId}/checkout/`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRFToken': getCSRFToken()
-                }
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    alert(`Order checked out successfully!\nTotal: ${totalCell}\n${data.message}`);
-                    showSuccessMessage('Order checked out successfully!');
-                    setTimeout(() => {
-                        location.reload();
-                    }, 1000);
-                } else {
-                    throw new Error(data.error || 'Failed to checkout order');
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                showErrorMessage(`Failed to checkout order: ${error.message}`);
-                hideLoadingState(orderId);
-            });
-        }
+        window.location.href = `/order_details/${orderId}`;
     };
 
-    // Complete order function
+    // Complete order function - redirect to order details page with completion intent
     window.completeOrder = function(orderId) {
-        if (confirm('Mark this order as completed?')) {
-            showLoadingState(orderId, 'completing');
-            
-            fetch(`/pending_orders/${orderId}/complete/`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRFToken': getCSRFToken()
-                }
-            })
-            .then(response => {
-                if (response.ok) {
-                    showSuccessMessage('Order completed successfully!');
-                    setTimeout(() => {
-                        location.reload();
-                    }, 1000);
-                } else {
-                    throw new Error('Failed to complete order');
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                showErrorMessage('Failed to complete order. Please try again.');
-                hideLoadingState(orderId);
-            });
-        }
+        window.location.href = `/order_details/${orderId}`;
     };
 
     // Cancel order function

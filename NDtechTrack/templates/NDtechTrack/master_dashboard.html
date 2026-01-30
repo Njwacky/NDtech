@@ -1,0 +1,589 @@
+{% extends 'nano/base.html' %}
+{% load static %}
+
+{% block title %}System Health Dashboard - NDtechTrack{% endblock %}
+
+{% block extra_css %}
+<style>
+.dashboard-container {
+    padding: 20px;
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+/* Back Button */
+.back-button {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: linear-gradient(135deg, #a3b18a 0%, #588157 100%);
+    color: white;
+    padding: 10px 20px;
+    border-radius: 8px;
+    text-decoration: none;
+    font-weight: 500;
+    margin-bottom: 20px;
+    transition: all 0.3s ease;
+}
+
+.back-button:hover {
+    background: linear-gradient(135deg, #588157 0%, #344e41 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(88, 129, 87, 0.3);
+}
+
+.dashboard-header {
+    background: linear-gradient(135deg, #588157 0%, #344e41 100%);
+    color: white;
+    padding: 30px;
+    border-radius: 15px;
+    margin-bottom: 30px;
+    text-align: center;
+    position: relative;
+}
+
+.dashboard-header h1 {
+    margin: 0 0 10px 0;
+    font-size: 2.5rem;
+    font-weight: 700;
+}
+
+.dashboard-header p {
+    margin: 0;
+    font-size: 1.1rem;
+    opacity: 0.9;
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 25px;
+    margin-bottom: 40px;
+}
+
+.stat-card {
+    background: white;
+    padding: 25px;
+    border-radius: 15px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    border-left: 5px solid #588157;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.stat-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+}
+
+.stat-card.errors {
+    border-left-color: #dc3545;
+}
+
+.stat-card.users {
+    border-left-color: #007bff;
+}
+
+.stat-card.devices {
+    border-left-color: #28a745;
+}
+
+.stat-card.notifications {
+    border-left-color: #ffc107;
+}
+
+.stat-card.food {
+    border-left-color: #fd7e14;
+}
+
+.stat-card.system {
+    border-left-color: #6f42c1;
+}
+
+.stat-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.stat-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #2c3e50;
+    margin: 0;
+}
+
+.stat-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+}
+
+.stat-icon.errors { background: #f8d7da; color: #dc3545; }
+.stat-icon.users { background: #d1ecf1; color: #007bff; }
+.stat-icon.devices { background: #d4edda; color: #28a745; }
+.stat-icon.notifications { background: #fff3cd; color: #ffc107; }
+.stat-icon.food { background: #ffe5d0; color: #fd7e14; }
+.stat-icon.system { background: #e2d9f3; color: #6f42c1; }
+
+.stat-value {
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: #2c3e50;
+    margin-bottom: 5px;
+}
+
+.stat-label {
+    color: #666;
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.stat-change {
+    font-size: 0.85rem;
+    margin-top: 10px;
+    padding: 5px 10px;
+    border-radius: 20px;
+    display: inline-block;
+}
+
+.stat-change.critical {
+    background: #f8d7da;
+    color: #721c24;
+}
+
+.stat-change.warning {
+    background: #fff3cd;
+    color: #856404;
+}
+
+.stat-change.good {
+    background: #d4edda;
+    color: #155724;
+}
+
+.recent-sections {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 30px;
+    margin-bottom: 40px;
+}
+
+@media (max-width: 968px) {
+    .recent-sections {
+        grid-template-columns: 1fr;
+    }
+}
+
+.section-card {
+    background: white;
+    border-radius: 15px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    overflow: hidden;
+}
+
+.section-header {
+    background: linear-gradient(135deg, #a3b18a 0%, #588157 100%);
+    color: white;
+    padding: 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.section-title {
+    margin: 0;
+    font-size: 1.3rem;
+    font-weight: 600;
+}
+
+.section-link {
+    background: rgba(255,255,255,0.2);
+    color: white;
+    padding: 8px 15px;
+    border-radius: 20px;
+    text-decoration: none;
+    font-size: 0.9rem;
+    transition: all 0.3s ease;
+}
+
+.section-link:hover {
+    background: rgba(255,255,255,0.3);
+    transform: translateY(-2px);
+}
+
+.section-content {
+    padding: 20px;
+}
+
+.list-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 0;
+    border-bottom: 1px solid #eee;
+}
+
+.list-item:last-child {
+    border-bottom: none;
+}
+
+.item-info {
+    flex: 1;
+}
+
+.item-title {
+    font-weight: 600;
+    color: #2c3e50;
+    margin-bottom: 5px;
+}
+
+.item-subtitle {
+    color: #666;
+    font-size: 0.9rem;
+}
+
+.item-value {
+    font-weight: 600;
+    color: #588157;
+    font-size: 1.1rem;
+}
+
+.error-item {
+    border-left: 3px solid #dc3545;
+    padding-left: 15px;
+}
+
+.error-item.high {
+    border-left-color: #dc3545;
+}
+
+.error-item.medium {
+    border-left-color: #ffc107;
+}
+
+.error-item.low {
+    border-left-color: #28a745;
+}
+
+.user-item {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.user-avatar {
+    width: 40px;
+    height: 40px;
+    background: linear-gradient(135deg, #588157 0%, #344e41 100%);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: 600;
+}
+
+.device-item {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.device-icon {
+    width: 40px;
+    height: 40px;
+    background: #f8f9fa;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #588157;
+}
+
+.notification-item {
+    border-left: 3px solid #ffc107;
+    padding-left: 15px;
+}
+
+.quick-actions {
+    background: white;
+    border-radius: 15px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    padding: 30px;
+}
+
+.quick-actions h2 {
+    margin: 0 0 20px 0;
+    color: #2c3e50;
+    font-size: 1.5rem;
+}
+
+.actions-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+}
+
+.action-btn {
+    background: linear-gradient(135deg, #588157 0%, #344e41 100%);
+    color: white;
+    padding: 15px 20px;
+    border: none;
+    border-radius: 10px;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 0.95rem;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.action-btn:hover {
+    background: linear-gradient(135deg, #344e41 0%, #588157 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(88, 129, 87, 0.3);
+}
+
+.action-btn i {
+    font-size: 1.1rem;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 40px;
+    color: #666;
+}
+
+.empty-state i {
+    font-size: 3rem;
+    color: #ddd;
+    margin-bottom: 15px;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-container">
+    <!-- Back Button -->
+    <a href="/" class="back-button">
+        <i class="fas fa-arrow-left"></i>
+        Back to Home
+    </a>
+
+    <!-- Dashboard Header -->
+    <div class="dashboard-header">
+        <div style="position: absolute; top: 20px; left: 20px;">
+            <a href="/" class="back-button" style="background: rgba(255,255,255,0.2); backdrop-filter: blur(10px);">
+                <i class="fas fa-arrow-left"></i>
+                Back
+            </a>
+        </div>
+        <h1><i class="fas fa-heartbeat"></i> System Health Dashboard</h1>
+        <p>Real-time monitoring of errors, performance, user activity, and notifications</p>
+    </div>
+
+    <!-- Stats Grid -->
+    <div class="stats-grid">
+        <!-- Error Overview -->
+        <div class="stat-card errors">
+            <div class="stat-header">
+                <h3 class="stat-title">Error Overview</h3>
+                <div class="stat-icon errors">
+                    <i class="fas fa-exclamation-triangle"></i>
+                </div>
+            </div>
+            <div class="stat-value">{{ total_errors }}</div>
+            <div class="stat-label">Total Errors</div>
+            <div class="stat-value">{{ unresolved_errors }}</div>
+            <div class="stat-label">Unresolved</div>
+            {% if critical_errors > 0 %}
+            <div class="stat-change critical">
+                <i class="fas fa-exclamation-circle"></i> {{ critical_errors }} Critical
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- User Activity -->
+        <div class="stat-card users">
+            <div class="stat-header">
+                <h3 class="stat-title">User Activity</h3>
+                <div class="stat-icon users">
+                    <i class="fas fa-users"></i>
+                </div>
+            </div>
+            <div class="stat-value">{{ active_users_24h }}</div>
+            <div class="stat-label">Active Users (24h)</div>
+            <div class="stat-change good">
+                <i class="fas fa-chart-line"></i> Last 24 hours
+            </div>
+        </div>
+
+        <!-- Device Connections -->
+        <div class="stat-card devices">
+            <div class="stat-header">
+                <h3 class="stat-title">Device Connections</h3>
+                <div class="stat-icon devices">
+                    <i class="fas fa-mobile-alt"></i>
+                </div>
+            </div>
+            <div class="stat-value">{{ active_devices }}</div>
+            <div class="stat-label">Active Devices</div>
+            <div class="stat-change good">
+                <i class="fas fa-wifi"></i> Currently Online
+            </div>
+        </div>
+
+        <!-- Notification Center -->
+        <div class="stat-card notifications">
+            <div class="stat-header">
+                <h3 class="stat-title">Notification Center</h3>
+                <div class="stat-icon notifications">
+                    <i class="fas fa-bell"></i>
+                </div>
+            </div>
+            <div class="stat-value">{{ pending_notifications }}</div>
+            <div class="stat-label">Pending Alerts</div>
+            {% if pending_notifications > 0 %}
+            <div class="stat-change warning">
+                <i class="fas fa-clock"></i> Action Required
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Food Ordering -->
+        <div class="stat-card food">
+            <div class="stat-header">
+                <h3 class="stat-title">Food Ordering</h3>
+                <div class="stat-icon food">
+                    <i class="fas fa-utensils"></i>
+                </div>
+            </div>
+            <div class="stat-value">{{ food_pending }}</div>
+            <div class="stat-label">Pending Orders</div>
+            <div class="stat-value">{{ food_delivered_today }}</div>
+            <div class="stat-label">Delivered Today</div>
+        </div>
+
+        <!-- System Performance -->
+        <div class="stat-card system">
+            <div class="stat-header">
+                <h3 class="stat-title">System Performance</h3>
+                <div class="stat-icon system">
+                    <i class="fas fa-server"></i>
+                </div>
+            </div>
+            <div class="stat-value">{{ db_status }}</div>
+            <div class="stat-label">Database Status</div>
+            <div class="stat-change good">
+                <i class="fas fa-check-circle"></i> All Systems Operational
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Sections -->
+    <div class="recent-sections">
+        <!-- Recent Errors -->
+        <div class="section-card">
+            <div class="section-header">
+                <h3 class="section-title">Recent Errors</h3>
+                <a href="/tracking/errors/" class="section-link">View All</a>
+            </div>
+            <div class="section-content">
+                {% for error in recent_errors %}
+                <div class="list-item error-item {{ error.severity }}">
+                    <div class="item-info">
+                        <div class="item-title">{{ error.error_message|truncatechars:60 }}</div>
+                        <div class="item-subtitle">
+                            {{ error.get_error_type_display }} • {{ error.created_at|timesince }} ago
+                        </div>
+                    </div>
+                    <div class="item-value">
+                        {{ error.get_severity_display|upper }}
+                    </div>
+                </div>
+                {% empty %}
+                <div class="empty-state">
+                    <i class="fas fa-check-circle"></i>
+                    <p>No recent errors</p>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Recent User Activity -->
+        <div class="section-card">
+            <div class="section-header">
+                <h3 class="section-title">Recent User Activity</h3>
+                <a href="/tracking/activities/" class="section-link">View All</a>
+            </div>
+            <div class="section-content">
+                {% for activity in recent_logins %}
+                <div class="list-item">
+                    <div class="item-info">
+                        <div class="user-item">
+                            <div class="user-avatar">
+                                {{ activity.user.username|first|upper }}
+                            </div>
+                            <div>
+                                <div class="item-title">{{ activity.user.username }}</div>
+                                <div class="item-subtitle">
+                                    {{ activity.get_activity_type_display }} • {{ activity.created_at|timesince }} ago
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="item-value">
+                        {{ activity.get_activity_type_display }}
+                    </div>
+                </div>
+                {% empty %}
+                <div class="empty-state">
+                    <i class="fas fa-users"></i>
+                    <p>No recent activity</p>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="quick-actions">
+        <h2><i class="fas fa-bolt"></i> Quick Actions</h2>
+        <div class="actions-grid">
+            <a href="/tracking/errors/?status=unresolved" class="action-btn">
+                <i class="fas fa-exclamation-triangle"></i>
+                Resolve Errors
+            </a>
+            <a href="/notifications/" class="action-btn">
+                <i class="fas fa-bell"></i>
+                View Notifications
+            </a>
+            <a href="/manage_users/" class="action-btn">
+                <i class="fas fa-users-cog"></i>
+                Manage Users
+            </a>
+            <a href="/tracking/devices/" class="action-btn">
+                <i class="fas fa-mobile-alt"></i>
+                Device Tracking
+            </a>
+            <a href="/warehouse/export/prices/" class="action-btn">
+                <i class="fas fa-download"></i>
+                Export Reports
+            </a>
+            <a href="/tracking/" class="action-btn">
+                <i class="fas fa-chart-line"></i>
+                Tracking Dashboard
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

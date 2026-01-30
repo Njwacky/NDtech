@@ -1,0 +1,6 @@
+Product Name,Price,Category,Stock,SKU,Supplier,Status,Description
+Test Product 1,15.99,Beverages,100,TEST001,Supplier A,active,Test beverage product
+Test Product 2,25.50,Bakery,50,TEST002,Supplier B,active,Test bakery product
+Test Product 3,12.75,Snacks,200,TEST003,Supplier C,active,Test snack product
+Test Product 4,28.00,Dairy,30,TEST004,Supplier D,active,Test dairy product
+Test Product 5,45.99,Grains,25,TEST005,Supplier E,active,Test grain product

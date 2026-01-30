@@ -24,7 +24,8 @@ DEBUG = config('DJANGO_DEBUG', default=True, cast=bool)
 
 # ALLOWED_HOSTS configuration
 if DEBUG:
-    ALLOWED_HOSTS = config('DJANGO_ALLOWED_HOSTS', default='localhost,127.0.0.1').split(',')
+    # Also add for mobile using ipconfig
+    ALLOWED_HOSTS = config('DJANGO_ALLOWED_HOSTS', default='localhost,127.0.0.1,172.20.48.1,10.39.110.47').split(',')
 else:
     # Production - Explicitly allow the specific Render.com domain
     ALLOWED_HOSTS = config('DJANGO_ALLOWED_HOSTS', default='ndtechpos.onrender.com,.onrender.com').split(',')
@@ -36,7 +37,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'nano','food_ordering',
+    'nano','food_ordering','NDtechTrack',
 ]
 
 MIDDLEWARE = [
@@ -85,6 +86,11 @@ DATABASES = {
         'NAME': BASE_DIR / 'db.sqlite3',
     }
 }
+
+# Custom authentication backend
+AUTHENTICATION_BACKENDS = [
+    'nano.authentication.UserProfileBackend',
+]
 
 # Password validation
 # https://docs.djangoproject.com/en/5.2/ref/settings/#auth-password-validators
