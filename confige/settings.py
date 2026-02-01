@@ -22,6 +22,10 @@ SECRET_KEY = config('DJANGO_SECRET_KEY')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = config('DJANGO_DEBUG', default=True, cast=bool)
 
+# Developer Mode Settings
+DEVELOPER_MODE = config('DEVELOPER_MODE', default=DEBUG, cast=bool)
+AUDIT_DASHBOARD_DEV_ONLY = config('AUDIT_DASHBOARD_DEV_ONLY', default=True, cast=bool)
+
 # ALLOWED_HOSTS configuration
 if DEBUG:
     # Also add for mobile using ipconfig
@@ -61,6 +65,8 @@ MIDDLEWARE = [
     'nano.middleware.ThreadLocalMiddleware',
     'nano.middleware.SecurityAuditMiddleware',
     'nano.middleware.DataModificationMiddleware',
+    # Developer access middleware for audit dashboard
+    'nano.middleware_developer_access.DeveloperAccessMiddleware',
 ]
 
 ROOT_URLCONF = 'confige.urls'

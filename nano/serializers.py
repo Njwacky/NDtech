@@ -4,10 +4,12 @@ API serializers for NDtech POS system
 
 from rest_framework import serializers
 from django.contrib.auth.models import User
+from django.utils import timezone
 from .models import (
     UserProfile, Product, Notification, ErrorLog, SecurityAuditLog,
     FCMToken, AirtimeProduct, AirtimeSale, WarehousePrice, PriceComparison,
-    DataModificationLog, AdminActionLog, APICallLog, SensitiveDataAccessLog
+    DataModificationLog, AdminActionLog, APICallLog, SensitiveDataAccessLog, 
+    PendingOrder, CompletedOrder
 )
 
 
@@ -171,16 +173,16 @@ class PriceComparisonSerializer(serializers.ModelSerializer):
 class DataModificationLogSerializer(serializers.ModelSerializer):
     """Serializer for DataModificationLog model"""
     username = serializers.CharField(source='user.username', read_only=True)
-    changed_fields_list = serializers.ListField(source='get_changed_fields_display', read_only=True)
+    changed_fields_display = serializers.ListField(read_only=True)
     
     class Meta:
         model = DataModificationLog
         fields = ['id', 'user', 'username', 'action_type', 'sensitivity',
                  'content_type', 'object_id', 'object_repr', 'changed_fields',
-                 'changed_fields_list', 'ip_address', 'user_agent', 'request_method',
-                 'request_url', 'old_values', 'new_values', 'reason', 'batch_id',
-                 'created_at']
-        read_only_fields = ['id', 'created_at']
+                 'changed_fields_display', 'ip_address', 'user_agent',
+                 'request_method', 'request_url', 'old_values', 'new_values',
+                 'reason', 'batch_id', 'created_at']
+        read_only_fields = ['id', 'created_at', 'changed_fields_display']
 
 
 class AdminActionLogSerializer(serializers.ModelSerializer):
@@ -193,7 +195,7 @@ class AdminActionLogSerializer(serializers.ModelSerializer):
                  'object_id', 'object_repr', 'action_message', 'change_message',
                  'ip_address', 'user_agent', 'affected_objects', 'total_affected',
                  'request_data', 'created_at']
-        read_only_fields = ['id', 'created_at']
+        read_only_fields = ['id', 'created_at', 'total_affected']
 
 
 class APICallLogSerializer(serializers.ModelSerializer):
@@ -207,8 +209,8 @@ class APICallLogSerializer(serializers.ModelSerializer):
         fields = ['id', 'user', 'username', 'endpoint_type', 'method', 'endpoint',
                  'view_name', 'request_headers', 'request_body', 'query_params',
                  'status_code', 'status', 'response_headers', 'response_body',
-                 'duration_ms', 'db_query_count', 'memory_usage_mb', 'ip_address',
-                 'user_agent', 'api_key_used', 'authentication_method',
+                 'duration_ms', 'db_query_count', 'memory_usage_mb',
+                 'ip_address', 'user_agent', 'api_key_used', 'authentication_method',
                  'is_suspicious', 'security_flags', 'is_slow_request',
                  'has_security_concerns', 'created_at']
         read_only_fields = ['id', 'created_at', 'is_slow_request', 'has_security_concerns']
@@ -227,3 +229,211 @@ class SensitiveDataAccessLogSerializer(serializers.ModelSerializer):
                  'access_reason', 'legal_basis', 'is_bulk_access', 'total_records',
                  'expires_at', 'requires_review', 'created_at']
         read_only_fields = ['id', 'created_at', 'requires_review']
+
+
+class PendingOrderSerializer(serializers.ModelSerializer):
+    """Serializer for PendingOrder model"""
+    username = serializers.CharField(source='user.username', read_only=True)
+    
+    class Meta:
+        model = PendingOrder
+        fields = ['id', 'customer_name', 'customer_phone', 'items', 'total',
+                 'created_at', 'status', 'user', 'username']
+        read_only_fields = ['id', 'created_at', 'user', 'username']
+
+
+class CompletedOrderSerializer(serializers.ModelSerializer):
+    """Serializer for CompletedOrder model with field-level encryption for customer PII"""
+    processed_by_username = serializers.CharField(source='processed_by.username', read_only=True)
+    
+    # Encrypted fields - these will handle decryption automatically
+    customer_name_decrypted = serializers.SerializerMethodField()
+    customer_phone_decrypted = serializers.SerializerMethodField()
+    customer_email_decrypted = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = CompletedOrder
+        fields = ['id', 'customer_name', 'customer_name_encrypted', 'customer_name_decrypted',
+                 'customer_phone', 'customer_phone_encrypted', 'customer_phone_decrypted',
+                 'customer_email', 'customer_email_encrypted', 'customer_email_decrypted',
+                 'items', 'total', 'cash_received', 'change_given', 'payment_method',
+                 'completed_at', 'processed_by', 'processed_by_username']
+        read_only_fields = ['id', 'completed_at', 'processed_by', 'processed_by_username',
+                          'customer_name_encrypted', 'customer_phone_encrypted', 
+                          'customer_email_encrypted']
+    
+    def get_customer_name_decrypted(self, obj):
+        """Get decrypted customer name"""
+        try:
+            return obj.get_customer_name()
+        except Exception:
+            return '[Encrypted]'
+    
+    def get_customer_phone_decrypted(self, obj):
+        """Get decrypted customer phone"""
+        try:
+            return obj.get_customer_phone()
+        except Exception:
+            return '[Encrypted]'
+    
+    def get_customer_email_decrypted(self, obj):
+        """Get decrypted customer email"""
+        try:
+            return obj.get_customer_email()
+        except Exception:
+            return '[Encrypted]'
+    
+    def create(self, validated_data):
+        """Create completed order with encrypted customer data"""
+        # Extract customer data for encryption
+        customer_name = validated_data.pop('customer_name', '')
+        customer_phone = validated_data.pop('customer_phone', '')
+        customer_email = validated_data.pop('customer_email', '')
+        
+        # Create the order instance
+        order = CompletedOrder(**validated_data)
+        
+        # Set and encrypt customer PII
+        order.set_customer_name(customer_name)
+        order.set_customer_phone(customer_phone)
+        order.set_customer_email(customer_email)
+        
+        order.save()
+        
+        # Log sensitive data access
+        self._log_sensitive_data_access(order, 'create')
+        
+        return order
+    
+    def update(self, instance, validated_data):
+        """Update completed order with encrypted customer data"""
+        # Handle customer data updates with encryption
+        if 'customer_name' in validated_data:
+            instance.set_customer_name(validated_data.pop('customer_name'))
+        
+        if 'customer_phone' in validated_data:
+            instance.set_customer_phone(validated_data.pop('customer_phone'))
+        
+        if 'customer_email' in validated_data:
+            instance.set_customer_email(validated_data.pop('customer_email'))
+        
+        # Update other fields
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+        
+        instance.save()
+        
+        # Log sensitive data access
+        self._log_sensitive_data_access(instance, 'update')
+        
+        return instance
+    
+    def _log_sensitive_data_access(self, order, action_type):
+        """Log access to sensitive customer data"""
+        try:
+            from django.contrib.auth.models import AnonymousUser
+            request = self.context.get('request')
+            if not request or not hasattr(request, 'user'):
+                return
+            
+            user = request.user
+            if user.is_anonymous:
+                return
+            
+            # Log the access
+            SensitiveDataAccessLog.objects.create(
+                user=user,
+                data_type='personal_info',
+                access_type=action_type,
+                content_type='CompletedOrder',
+                object_id=order.id,
+                object_repr=str(order),
+                sensitive_fields=['customer_name', 'customer_phone', 'customer_email'],
+                ip_address=self._get_client_ip(request),
+                user_agent=request.META.get('HTTP_USER_AGENT', ''),
+                request_url=request.build_absolute_uri(),
+                access_reason=f'Order {action_type} operation',
+                legal_basis='legitimate_interest'
+            )
+        except Exception as e:
+            # Don't let logging errors break the main functionality
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.error(f"Failed to log sensitive data access: {e}")
+    
+    def _get_client_ip(self, request):
+        """Get client IP address from request"""
+        x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+        if x_forwarded_for:
+            ip = x_forwarded_for.split(',')[0]
+        else:
+            ip = request.META.get('REMOTE_ADDR')
+        return ip
+
+
+# Public-facing serializers with limited data exposure
+class PublicCompletedOrderSerializer(serializers.ModelSerializer):
+    """Public serializer for CompletedOrder with limited data exposure"""
+    
+    class Meta:
+        model = CompletedOrder
+        fields = ['id', 'items', 'total', 'cash_received', 'change_given',
+                 'payment_method', 'completed_at']
+        read_only_fields = ['id', 'completed_at']
+
+
+class CustomerDataExportSerializer(serializers.Serializer):
+    """Serializer for secure customer data export with encryption"""
+    
+    def to_representation(self, instance):
+        """Export customer data with encryption and audit logging"""
+        if not isinstance(instance, CompletedOrder):
+            return {}
+        
+        try:
+            # Log the export
+            request = self.context.get('request')
+            if request and hasattr(request, 'user') and not request.user.is_anonymous:
+                SensitiveDataAccessLog.objects.create(
+                    user=request.user,
+                    data_type='personal_info',
+                    access_type='export',
+                    content_type='CompletedOrder',
+                    object_id=instance.id,
+                    object_repr=str(instance),
+                    sensitive_fields=['customer_name', 'customer_phone', 'customer_email'],
+                    ip_address=self._get_client_ip(request),
+                    user_agent=request.META.get('HTTP_USER_AGENT', ''),
+                    request_url=request.build_absolute_uri(),
+                    access_reason='Customer data export',
+                    legal_basis='legitimate_interest'
+                )
+            
+            # Return encrypted data
+            return {
+                'id': instance.id,
+                'customer_name': instance.customer_name_encrypted or '[No Data]',
+                'customer_phone': instance.customer_phone_encrypted or '[No Data]',
+                'customer_email': instance.customer_email_encrypted or '[No Data]',
+                'items': instance.items,
+                'total': str(instance.total),
+                'payment_method': instance.payment_method,
+                'completed_at': instance.completed_at.isoformat() if instance.completed_at else None,
+                'export_timestamp': timezone.now().isoformat(),
+                'data_encrypted': True
+            }
+            
+        except Exception as e:
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.error(f"Failed to export customer data: {e}")
+            return {'error': 'Export failed', 'id': instance.id}
+    
+    def _get_client_ip(self, request):
+        """Get client IP address from request"""
+        x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+        if x_forwarded_for:
+            ip = x_forwarded_for.split(',')[0]
+        else:
+            ip = request.META.get('REMOTE_ADDR')
+        return ip

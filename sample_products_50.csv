@@ -1,0 +1,51 @@
+name,sku,barcode,category,price,cost,stock,description,brand,unit,weight,tax_rate,is_active
+CrunchCo Classic Salted Chips 100g,PROD001,100000000001,snacks_chips,2.49,1.20,150,Classic salted potato chips,CrunchCo,pcs,0.1,0.07,TRUE
+ClearSpring Still Water 500ml,PROD002,100000000002,cold_drinks,1.49,0.60,200,500ml bottled still water,ClearSpring,bottle,0.5,0.00,TRUE
+ChocoMax Milk Chocolate Bar 45g,PROD003,100000000003,sweets_treats,3.99,2.00,80,Milk chocolate bar,ChocoMax,pcs,0.045,0.12,TRUE
+FarmFresh Full Cream Milk 1L,PROD004,100000000004,dairy_eggs,2.99,1.50,60,1L full cream milk,FarmFresh,carton,1.0,0.05,TRUE
+DailyBake White Bread Loaf 700g,PROD005,100000000005,bread_baked,1.99,0.80,120,Fresh white bread loaf,DailyBake,loaf,0.7,0.05,TRUE
+Orchard Red Apple (each),PROD006,100000000006,staple_foods,0.99,0.30,300,Fresh red apple (each),Orchard,ea,0.18,0.00,TRUE
+TropiFruit Cavendish Banana (each),PROD007,100000000007,staple_foods,1.29,0.40,180,Fresh banana (each),TropiFruit,ea,0.12,0.00,TRUE
+FizzUp Classic Cola 330ml,PROD008,100000000008,cold_drinks,2.49,1.10,90,330ml carbonated cola,FizzUp,can,0.33,0.10,TRUE
+Nutty Salted Peanuts 150g,PROD009,100000000009,snacks_chips,1.79,0.70,140,Salted roasted peanuts,Nutty,bag,0.15,0.07,TRUE
+FreshHome All-Purpose Cleaner 750ml,PROD010,100000000010,household_items,5.99,3.00,50,Multi-surface cleaner,FreshHome,bottle,0.75,0.00,TRUE
+Silky Smooth Shampoo 250ml,PROD011,100000000011,personal_care,4.49,2.10,75,Nourishing shampoo 250ml,Silky,bottle,0.25,0.00,TRUE
+DailyBake Butter Croissant,PROD012,100000000012,bread_baked,0.99,0.40,200,Fresh butter croissant,DailyBake,pcs,0.06,0.05,TRUE
+GoodDairy Greek Yogurt 500g,PROD013,100000000013,dairy_eggs,3.49,1.70,65,Thick Greek-style yogurt,GoodDairy,tub,0.5,0.05,TRUE
+NatureBite Honey & Oats Granola Bar,PROD014,100000000014,sweets_treats,2.99,1.40,95,Granola snack bar,NatureBite,pcs,0.07,0.07,TRUE
+CitrusCo Pure Orange Juice 1L,PROD015,100000000015,cold_drinks,6.99,4.00,40,cold-pressed orange juice,CitrusCo,carton,1.0,0.00,TRUE
+Orchard Seedless Grapes 500g,PROD016,100000000016,staple_foods,2.49,1.00,110,Seedless table grapes,Orchard,pack,0.5,0.00,TRUE
+QuickBake Margherita Pizza 350g,PROD017,100000000017,frozen_goods,7.99,4.50,30,Ready-to-bake frozen pizza,QuickBake,box,0.35,0.05,TRUE
+Crispy Rice Crackers 120g,PROD018,100000000018,snacks_chips,1.29,0.55,160,Light rice crackers,Crispy,bag,0.12,0.07,TRUE
+SoftWipe Paper Towels 2-roll,PROD019,100000000019,household_items,3.99,1.80,85,Two-roll paper towel pack,SoftWipe,pack,0.4,0.00,TRUE
+DailyBake Blueberry Muffins (2-pack),PROD020,100000000020,bread_baked,2.49,1.00,70,Fresh blueberry muffins,DailyBake,pack,0.2,0.05,TRUE
+SmilePro Fluoride Toothpaste 100ml,PROD021,100000000021,personal_care,2.99,1.20,95,Toothpaste with fluoride,SmilePro,tube,0.1,0.00,TRUE
+Boost Energy Drink 250ml,PROD022,100000000022,cold_drinks,0.89,0.30,250,250ml energy drink,Boost,can,0.25,0.10,TRUE
+CitrusCo Navel Orange (each),PROD023,100000000023,staple_foods,1.99,0.80,140,Fresh navel orange,CitrusCo,ea,0.18,0.00,TRUE
+FarmFresh Salted Butter 250g,PROD024,100000000024,dairy_eggs,2.19,1.00,130,Salted dairy butter,FarmFresh,pack,0.25,0.05,TRUE
+Nutty Trail Mix 200g,PROD025,100000000025,snacks_chips,4.99,2.50,60,Mixed nuts & dried fruit,Nutty,bag,0.3,0.07,TRUE
+DailyBake Sourdough Loaf 800g,PROD026,100000000026,bread_baked,3.49,1.60,55,Handmade sourdough loaf,DailyBake,loaf,0.8,0.05,TRUE
+GreenFarm Frozen Mixed Veg 400g,PROD027,100000000027,frozen_goods,2.99,1.30,95,Frozen mixed vegetables,GreenFarm,bag,0.4,0.05,TRUE
+BakeHouse Chocolate Chip Cookies 6-pack,PROD028,100000000028,sweets_treats,1.49,0.60,180,Chocolate chip cookies,BakeHouse,pack,0.15,0.07,TRUE
+CleanMax Liquid Laundry Detergent 2L,PROD029,100000000029,household_items,8.99,5.00,25,Concentrated laundry liquid,CleanMax,bottle,2.0,0.00,TRUE
+RoastHouse Premium Coffee Beans 500g,PROD030,100000000030,basic_groceries,12.99,8.00,15,Arabica coffee beans,RoastHouse,bag,0.5,0.10,TRUE
+SafeHands Hand Sanitizer 250ml,PROD031,100000000031,personal_care,6.49,3.20,40,Alcohol-based sanitizer,SafeHands,bottle,0.25,0.00,TRUE
+Orchard Strawberries 250g,PROD032,100000000032,staple_foods,3.29,1.40,90,Fresh strawberries,Orchard,pack,0.25,0.00,TRUE
+MovieSnack Microwave Popcorn 100g,PROD033,100000000033,snacks_chips,2.19,0.90,170,Microwave popcorn,MovieSnack,bag,0.12,0.07,TRUE
+DailyBake Plain Bagel,PROD034,100000000034,bread_baked,1.69,0.70,210,Fresh plain bagel,DailyBake,pcs,0.08,0.05,TRUE
+GoodDairy Mature Cheddar 200g,PROD035,100000000035,dairy_eggs,5.49,2.80,45,Mature cheddar cheese,GoodDairy,pack,0.2,0.05,TRUE
+CleanHome Kitchen Sponges (3),PROD036,100000000036,household_items,3.29,1.50,100,Pack of 3 cleaning sponges,CleanHome,pack,0.12,0.00,TRUE
+MeatTreat Beef Jerky 50g,PROD037,100000000037,snacks_chips,2.59,1.10,125,Smoked beef jerky,MeatTreat,pack,0.05,0.07,TRUE
+TeaTime Green Tea Bags 100,PROD038,100000000038,basic_groceries,9.99,6.00,35,Green tea bags box,TeaTime,box,0.25,0.00,TRUE
+Orchard Hass Avocado (each),PROD039,100000000039,staple_foods,4.99,2.50,60,Fresh hass avocado,Orchard,ea,0.2,0.00,TRUE
+DailyBake Chocolate Donut,PROD040,100000000040,bread_baked,2.29,1.00,150,Chocolate glazed donut,DailyBake,pcs,0.09,0.05,TRUE
+GlowSkin Day Moisturizer 50ml,PROD041,100000000041,personal_care,7.99,4.00,30,Lightweight face moisturizer,GlowSkin,tube,0.05,0.00,TRUE
+SpiceIt Salsa Dip Mild 250g,PROD042,100000000042,sweets_treats,3.19,1.50,110,Tomato salsa dip,SpiceIt,jar,0.3,0.07,TRUE
+HomeFit Vacuum Cleaner Bags x10,PROD043,100000000043,household_items,14.99,8.50,20,Vacuum cleaner replacement bags,HomeFit,pack,0.2,0.00,TRUE
+HealthyHarvest Extra Virgin Olive Oil 1L,PROD044,100000000044,basic_groceries,15.99,9.00,18,Extra virgin olive oil,HealthyHarvest,bottle,1.0,0.00,TRUE
+GreenFarm English Cucumber (each),PROD045,100000000045,staple_foods,2.79,1.10,130,Fresh cucumber,GreenFarm,ea,0.3,0.00,TRUE
+FarmFresh Chocolate Flavoured Milk 250ml,PROD046,100000000046,dairy_eggs,1.59,0.70,160,Chocolate milk drink,FarmFresh,bottle,0.25,0.05,TRUE
+CrunchCo Mini Pretzels 120g,PROD047,100000000047,snacks_chips,2.89,1.30,95,Mini salted pretzels,CrunchCo,bag,0.1,0.07,TRUE
+DailyBake Banana Bread Loaf 500g,PROD048,100000000048,bread_baked,4.59,2.20,50,Banana loaf cake,DailyBake,loaf,0.5,0.05,TRUE
+ClearView Window Cleaner 750ml,PROD049,100000000049,household_items,6.49,3.20,70,Glass cleaner spray,ClearView,bottle,0.75,0.00,TRUE
+Nutty Gourmet Mixed Nuts 300g,PROD050,100000000050,snacks_chips,5.99,3.00,40,Gourmet mixed nuts,Nutty,jar,0.3,0.07,TRUE

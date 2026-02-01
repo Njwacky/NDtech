@@ -498,12 +498,22 @@ def log_data_modification(sender, instance, **kwargs):
                 request_method = request.method
                 request_url = request.get_full_path()
 
+            # Handle case where instance.pk might be a string (for session objects)
+            object_id = None
+            if instance.pk:
+                try:
+                    object_id = int(instance.pk)
+                except (ValueError, TypeError):
+                    # For non-integer primary keys (like session IDs), store as None
+                    # and include the actual ID in object_repr
+                    object_id = None
+
             DataModificationLog.objects.create(
                 user=user,
                 action_type='update',
                 sensitivity=sensitivity,
                 content_type=sender.__name__,
-                object_id=instance.pk,
+                object_id=object_id,
                 object_repr=str(instance)[:200],
                 changed_fields=changed_fields,
                 ip_address=ip_address,
@@ -563,10 +573,13 @@ def log_data_creation(sender, instance, created, **kwargs):
 
         # Handle case where instance.pk might be a string (for session objects)
         object_id = None
-        try:
-            object_id = int(instance.pk) if instance.pk else None
-        except (ValueError, TypeError):
-            object_id = None
+        if instance.pk:
+            try:
+                object_id = int(instance.pk)
+            except (ValueError, TypeError):
+                # For non-integer primary keys (like session IDs), store as None
+                # and include the actual ID in object_repr
+                object_id = None
 
         DataModificationLog.objects.create(
             user=user,
@@ -623,12 +636,22 @@ def log_data_deletion(sender, instance, **kwargs):
             request_method = request.method
             request_url = request.get_full_path()
 
+        # Handle case where instance.pk might be a string (for session objects)
+        object_id = None
+        if instance.pk:
+            try:
+                object_id = int(instance.pk)
+            except (ValueError, TypeError):
+                # For non-integer primary keys (like session IDs), store as None
+                # and include the actual ID in object_repr
+                object_id = None
+
         DataModificationLog.objects.create(
             user=user,
             action_type='delete',
             sensitivity=sensitivity,
             content_type=sender.__name__,
-            object_id=instance.pk,
+            object_id=object_id,
             object_repr=str(instance)[:200],
             ip_address=ip_address,
             user_agent=user_agent or '',

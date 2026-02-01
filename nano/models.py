@@ -145,7 +145,11 @@ class CompletedOrder(models.Model):
         ('mobile', 'Mobile Payment'),
     ]
     customer_name = models.CharField(max_length=100)
+    customer_name_encrypted = models.TextField(blank=True, null=True)
     customer_phone = models.CharField(max_length=15)
+    customer_phone_encrypted = models.TextField(blank=True, null=True)
+    customer_email = models.EmailField(blank=True, null=True)
+    customer_email_encrypted = models.TextField(blank=True, null=True)
     items = models.JSONField()  # Store cart items as JSON
     total = models.DecimalField(max_digits=10, decimal_places=2)
     cash_received = models.DecimalField(max_digits=10, decimal_places=2)
@@ -156,6 +160,57 @@ class CompletedOrder(models.Model):
 
     def __str__(self):
         return f"Completed Order for {self.customer_name} - R{self.total}"
+    
+    def get_customer_name(self):
+        """Get decrypted customer name"""
+        from confige.encryption import decrypt_sensitive_value
+        if self.customer_name_encrypted:
+            return decrypt_sensitive_value(self.customer_name_encrypted, 'customer_name')
+        return self.customer_name or ''
+    
+    def set_customer_name(self, name):
+        """Set and encrypt customer name"""
+        from confige.encryption import encrypt_sensitive_value
+        if name:
+            self.customer_name_encrypted = encrypt_sensitive_value(name, 'customer_name')
+            self.customer_name = ''
+        else:
+            self.customer_name = name
+            self.customer_name_encrypted = None
+    
+    def get_customer_phone(self):
+        """Get decrypted customer phone"""
+        from confige.encryption import decrypt_sensitive_value
+        if self.customer_phone_encrypted:
+            return decrypt_sensitive_value(self.customer_phone_encrypted, 'customer_phone')
+        return self.customer_phone or ''
+    
+    def set_customer_phone(self, phone):
+        """Set and encrypt customer phone"""
+        from confige.encryption import encrypt_sensitive_value
+        if phone:
+            self.customer_phone_encrypted = encrypt_sensitive_value(phone, 'customer_phone')
+            self.customer_phone = ''
+        else:
+            self.customer_phone = phone
+            self.customer_phone_encrypted = None
+    
+    def get_customer_email(self):
+        """Get decrypted customer email"""
+        from confige.encryption import decrypt_sensitive_value
+        if self.customer_email_encrypted:
+            return decrypt_sensitive_value(self.customer_email_encrypted, 'customer_email')
+        return self.customer_email or ''
+    
+    def set_customer_email(self, email):
+        """Set and encrypt customer email"""
+        from confige.encryption import encrypt_sensitive_value
+        if email:
+            self.customer_email_encrypted = encrypt_sensitive_value(email, 'customer_email')
+            self.customer_email = ''
+        else:
+            self.customer_email = email
+            self.customer_email_encrypted = None
 
 class WarehousePrice(models.Model):
     """Store warehouse price data for comparison"""

@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Access Denied - Audit Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .container {
+            background: white;
+            padding: 2rem;
+            border-radius: 12px;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            max-width: 500px;
+            width: 90%;
+        }
+        
+        .lock-icon {
+            font-size: 4rem;
+            color: #e74c3c;
+            margin-bottom: 1rem;
+        }
+        
+        h1 {
+            color: #2c3e50;
+            margin-bottom: 1rem;
+            font-size: 1.8rem;
+            font-weight: 600;
+        }
+        
+        .message {
+            color: #6c757d;
+            margin-bottom: 1.5rem;
+            font-size: 1.1rem;
+            line-height: 1.5;
+        }
+        
+        .info-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+            text-align: left;
+        }
+        
+        .info-item {
+            padding: 0.75rem;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border-left: 4px solid #e9ecef;
+        }
+        
+        .info-label {
+            font-weight: 600;
+            color: #495057;
+            margin-bottom: 0.25rem;
+            font-size: 0.9rem;
+        }
+        
+        .info-value {
+            color: #6c757d;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+        }
+        
+        .status {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+        }
+        
+        .status.dev-enabled {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .status.dev-disabled {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        
+        .help-text {
+            font-size: 0.9rem;
+            color: #6c757d;
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 1px solid #e9ecef;
+        }
+        
+        .back-link {
+            display: inline-block;
+            padding: 0.75rem 1.5rem;
+            background: #007bff;
+            color: white;
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: 500;
+            margin-top: 1rem;
+            transition: background-color 0.2s;
+        }
+        
+        .back-link:hover {
+            background: #0056b3;
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                padding: 1.5rem;
+                margin: 1rem;
+            }
+            
+            .info-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            h1 {
+                font-size: 1.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="lock-icon">🔒</div>
+        <h1>Access Denied</h1>
+        <p class="message">
+            The audit dashboard is restricted to developer mode only.
+        </p>
+        
+        <div class="info-grid">
+            <div class="info-item">
+                <div class="info-label">Current User:</div>
+                <div class="info-value">{{ current_user }}</div>
+            </div>
+            <div class="info-item">
+                <div class="info-label">Request IP:</div>
+                <div class="info-value">{{ request_ip }}</div>
+            </div>
+            <div class="info-item">
+                <div class="info-label">Developer Mode:</div>
+                <div class="info-value">
+                    {% if developer_mode %}
+                        <span class="status dev-enabled">ENABLED</span>
+                    {% else %}
+                        <span class="status dev-disabled">DISABLED</span>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="info-item">
+                <div class="info-label">Audit Dashboard Dev Only:</div>
+                <div class="info-value">
+                    {% if audit_dashboard_dev_only %}
+                        <span class="status dev-enabled">ENABLED</span>
+                    {% else %}
+                        <span class="status dev-disabled">DISABLED</span>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <div class="help-text">
+            <strong>To access the audit dashboard:</strong><br>
+            1. Set <code>DEVELOPER_MODE=True</code> in your environment variables<br>
+            2. Set <code>AUDIT_DASHBOARD_DEV_ONLY=False</code> to disable this restriction<br>
+            3. Or ensure you have admin/superuser privileges<br>
+            4. Restart the application after changing settings
+        </div>
+        
+        <a href="/" class="back-link">← Back to Home</a>
+    </div>
+</body>
+</html>
