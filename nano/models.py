@@ -592,3 +592,334 @@ class AirtimeRequest(models.Model):
     
     def __str__(self):
         return f"{self.title} - {self.requested_by.username} ({self.get_status_display()})"
+
+# Audit Logging Models
+
+class SecurityAuditLog(models.Model):
+    """Track security-related events"""
+    EVENT_TYPES = [
+        ('login_success', 'Login Success'),
+        ('login_failed', 'Login Failed'),
+        ('logout', 'Logout'),
+        ('password_change', 'Password Change'),
+        ('password_reset', 'Password Reset'),
+        ('account_locked', 'Account Locked'),
+        ('account_unlocked', 'Account Unlocked'),
+        ('permission_change', 'Permission Change'),
+        ('role_change', 'Role Change'),
+        ('2fa_enabled', '2FA Enabled'),
+        ('2fa_disabled', '2FA Disabled'),
+        ('2fa_failed', '2FA Failed'),
+        ('suspicious_activity', 'Suspicious Activity'),
+        ('brute_force_detected', 'Brute Force Detected'),
+        ('session_hijack', 'Session Hijack Attempt'),
+    ]
+    
+    SEVERITY_LEVELS = [
+        ('info', 'Information'),
+        ('warning', 'Warning'),
+        ('error', 'Error'),
+        ('critical', 'Critical'),
+    ]
+    
+    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='security_logs')
+    event_type = models.CharField(max_length=30, choices=EVENT_TYPES)
+    severity = models.CharField(max_length=10, choices=SEVERITY_LEVELS, default='info')
+    
+    # Event details
+    description = models.TextField()
+    ip_address = models.GenericIPAddressField(null=True, blank=True)
+    user_agent = models.TextField(blank=True)
+    username_attempted = models.CharField(max_length=150, blank=True, help_text="Username used in login attempt")
+    
+    # Geographic info
+    country = models.CharField(max_length=100, blank=True)
+    city = models.CharField(max_length=100, blank=True)
+    
+    # Additional context
+    session_key = models.CharField(max_length=40, blank=True)
+    request_data = models.JSONField(default=dict)
+    response_data = models.JSONField(default=dict)
+    
+    # Detection info
+    detection_method = models.CharField(max_length=50, blank=True, help_text="How this event was detected")
+    confidence_score = models.DecimalField(max_digits=3, decimal_places=2, null=True, blank=True)
+    
+    # Resolution
+    is_resolved = models.BooleanField(default=False)
+    resolved_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='resolved_security_logs')
+    resolved_at = models.DateTimeField(null=True, blank=True)
+    resolution_notes = models.TextField(blank=True)
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['event_type', 'severity', 'created_at']),
+            models.Index(fields=['user', 'created_at']),
+            models.Index(fields=['ip_address', 'created_at']),
+            models.Index(fields=['is_resolved', 'created_at']),
+        ]
+    
+    def __str__(self):
+        user_info = self.user.username if self.user else self.username_attempted or 'Unknown'
+        return f"{self.get_event_type_display()} - {user_info} - {self.created_at}"
+    
+    def requires_immediate_attention(self):
+        """Check if this event requires immediate attention"""
+        return self.severity in ['error', 'critical'] or self.event_type in [
+            'account_locked', 'brute_force_detected', 'session_hijack'
+        ]
+
+class DataModificationLog(models.Model):
+    """Track all modifications to sensitive data"""
+    ACTION_TYPES = [
+        ('create', 'Create'),
+        ('update', 'Update'),
+        ('delete', 'Delete'),
+        ('bulk_create', 'Bulk Create'),
+        ('bulk_update', 'Bulk Update'),
+        ('bulk_delete', 'Bulk Delete'),
+    ]
+    
+    SENSITIVITY_LEVELS = [
+        ('low', 'Low'),
+        ('medium', 'Medium'),
+        ('high', 'High'),
+        ('critical', 'Critical'),
+    ]
+    
+    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='data_modification_logs')
+    action_type = models.CharField(max_length=15, choices=ACTION_TYPES)
+    sensitivity = models.CharField(max_length=10, choices=SENSITIVITY_LEVELS, default='medium')
+    
+    # Object information
+    content_type = models.CharField(max_length=100)  # Model name
+    object_id = models.PositiveIntegerField(null=True, blank=True)
+    object_repr = models.CharField(max_length=200, blank=True)
+    
+    # Field changes (for updates)
+    changed_fields = models.JSONField(default=dict, help_text="Fields that were changed with old/new values")
+    
+    # Request context
+    ip_address = models.GenericIPAddressField(null=True, blank=True)
+    user_agent = models.TextField(blank=True, default='')
+    request_method = models.CharField(max_length=10, blank=True, default='')
+    request_url = models.URLField(blank=True, default='')
+    
+    # Data before and after
+    old_values = models.JSONField(default=dict, help_text="Object state before modification")
+    new_values = models.JSONField(default=dict, help_text="Object state after modification")
+    
+    # Additional context
+    reason = models.TextField(blank=True, help_text="Reason for modification")
+    batch_id = models.CharField(max_length=50, blank=True, help_text="ID for batch operations")
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['content_type', 'action_type', 'created_at']),
+            models.Index(fields=['user', 'created_at']),
+            models.Index(fields=['sensitivity', 'created_at']),
+            models.Index(fields=['batch_id', 'created_at']),
+        ]
+    
+    def __str__(self):
+        user_info = self.user.username if self.user else 'System'
+        return f"{self.get_action_type_display()} {self.content_type} - {user_info}"
+    
+    def get_changed_fields_display(self):
+        """Get human-readable list of changed fields"""
+        return list(self.changed_fields.keys())
+
+class AdminActionLog(models.Model):
+    """Track all actions performed in Django admin"""
+    ACTION_TYPES = [
+        ('add', 'Add'),
+        ('change', 'Change'),
+        ('delete', 'Delete'),
+        ('view', 'View'),
+        ('bulk_action', 'Bulk Action'),
+        ('export', 'Export'),
+        ('import', 'Import'),
+    ]
+    
+    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='admin_logs')
+    action_type = models.CharField(max_length=15, choices=ACTION_TYPES)
+    
+    # Object information
+    content_type = models.CharField(max_length=100)  # Model name
+    object_id = models.PositiveIntegerField(null=True, blank=True)
+    object_repr = models.CharField(max_length=200)
+    
+    # Action details
+    action_message = models.TextField(blank=True)
+    change_message = models.TextField(blank=True)  # Django's built-in change message
+    
+    # Request context
+    ip_address = models.GenericIPAddressField(null=True, blank=True)
+    user_agent = models.TextField(blank=True)
+    
+    # Bulk action info
+    affected_objects = models.JSONField(default=list, help_text="List of affected object IDs for bulk actions")
+    total_affected = models.PositiveIntegerField(default=0)
+    
+    # Additional data
+    request_data = models.JSONField(default=dict)
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['action_type', 'content_type', 'created_at']),
+            models.Index(fields=['user', 'created_at']),
+            models.Index(fields=['content_type', 'created_at']),
+        ]
+    
+    def __str__(self):
+        user_info = self.user.username if self.user else 'System'
+        return f"{self.get_action_type_display()} {self.content_type} - {user_info}"
+
+class APICallLog(models.Model):
+    """Track API calls for security and analytics"""
+    ENDPOINT_TYPES = [
+        ('rest', 'REST API'),
+        ('graphql', 'GraphQL'),
+        ('internal', 'Internal API'),
+        ('third_party', 'Third Party API'),
+    ]
+    
+    STATUS_CHOICES = [
+        ('success', 'Success'),
+        ('error', 'Error'),
+        ('timeout', 'Timeout'),
+        ('rate_limited', 'Rate Limited'),
+        ('unauthorized', 'Unauthorized'),
+        ('forbidden', 'Forbidden'),
+    ]
+    
+    # Request information
+    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='api_logs')
+    endpoint_type = models.CharField(max_length=15, choices=ENDPOINT_TYPES)
+    method = models.CharField(max_length=10)  # GET, POST, PUT, DELETE, etc.
+    endpoint = models.URLField()
+    view_name = models.CharField(max_length=100, blank=True)
+    
+    # Request details
+    request_headers = models.JSONField(default=dict)
+    request_body = models.TextField(blank=True)
+    query_params = models.JSONField(default=dict)
+    
+    # Response details
+    status_code = models.PositiveIntegerField()
+    status = models.CharField(max_length=15, choices=STATUS_CHOICES)
+    response_headers = models.JSONField(default=dict)
+    response_body = models.TextField(blank=True)
+    
+    # Performance metrics
+    duration_ms = models.PositiveIntegerField(null=True, blank=True)
+    db_query_count = models.PositiveIntegerField(default=0)
+    memory_usage_mb = models.DecimalField(max_digits=8, decimal_places=2, null=True, blank=True)
+    
+    # Security context
+    ip_address = models.GenericIPAddressField(null=True, blank=True)
+    user_agent = models.TextField(blank=True)
+    api_key_used = models.CharField(max_length=100, blank=True)
+    authentication_method = models.CharField(max_length=50, blank=True)
+    
+    # Security events
+    is_suspicious = models.BooleanField(default=False)
+    security_flags = models.JSONField(default=list, help_text="List of security concerns detected")
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['endpoint', 'method', 'created_at']),
+            models.Index(fields=['user', 'created_at']),
+            models.Index(fields=['status_code', 'created_at']),
+            models.Index(fields=['is_suspicious', 'created_at']),
+            models.Index(fields=['duration_ms', 'created_at']),
+        ]
+    
+    def __str__(self):
+        return f"{self.method} {self.endpoint} - {self.status_code} ({self.duration_ms}ms)"
+    
+    def is_slow_request(self):
+        """Check if request was unusually slow (> 2 seconds)"""
+        return self.duration_ms and self.duration_ms > 2000
+    
+    def has_security_concerns(self):
+        """Check if there are any security concerns"""
+        return self.is_suspicious or len(self.security_flags) > 0
+
+class SensitiveDataAccessLog(models.Model):
+    """Track access to sensitive data fields"""
+    DATA_TYPES = [
+        ('personal_info', 'Personal Information'),
+        ('financial_data', 'Financial Data'),
+        ('health_data', 'Health Data'),
+        ('contact_info', 'Contact Information'),
+        ('authentication_data', 'Authentication Data'),
+        ('location_data', 'Location Data'),
+        ('communication_data', 'Communication Data'),
+    ]
+    
+    ACCESS_TYPES = [
+        ('view', 'View'),
+        ('export', 'Export'),
+        ('print', 'Print'),
+        ('download', 'Download'),
+        ('share', 'Share'),
+    ]
+    
+    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='sensitive_data_logs')
+    data_type = models.CharField(max_length=20, choices=DATA_TYPES)
+    access_type = models.CharField(max_length=10, choices=ACCESS_TYPES)
+    
+    # Data accessed
+    content_type = models.CharField(max_length=100)  # Model name
+    object_id = models.PositiveIntegerField(null=True, blank=True)
+    object_repr = models.CharField(max_length=200)
+    sensitive_fields = models.JSONField(default=list, help_text="List of sensitive fields accessed")
+    
+    # Access context
+    ip_address = models.GenericIPAddressField(null=True, blank=True)
+    user_agent = models.TextField(blank=True)
+    request_url = models.URLField(blank=True)
+    session_key = models.CharField(max_length=40, blank=True)
+    
+    # Justification
+    access_reason = models.TextField(blank=True, help_text="Reason for accessing sensitive data")
+    legal_basis = models.CharField(max_length=100, blank=True, help_text="Legal basis for access")
+    
+    # Bulk access
+    is_bulk_access = models.BooleanField(default=False)
+    total_records = models.PositiveIntegerField(default=1)
+    
+    # Data retention
+    expires_at = models.DateTimeField(null=True, blank=True, help_text="When this log should be deleted")
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['data_type', 'access_type', 'created_at']),
+            models.Index(fields=['user', 'created_at']),
+            models.Index(fields=['content_type', 'created_at']),
+            models.Index(fields=['is_bulk_access', 'created_at']),
+        ]
+    
+    def __str__(self):
+        user_info = self.user.username if self.user else 'System'
+        return f"{self.get_access_type_display()} {self.get_data_type_display()} - {user_info}"
+    
+    def requires_review(self):
+        """Check if this access requires review"""
+        return self.is_bulk_access or self.total_records > 100

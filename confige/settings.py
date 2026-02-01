@@ -37,6 +37,9 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'rest_framework',
+    'drf_spectacular',
+    'django_filters',
     'nano','food_ordering','NDtechTrack',
 ]
 
@@ -49,6 +52,15 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    # Enhanced security middleware (order is important)
+    'nano.enhanced_security_middleware.PrivacyComplianceMiddleware',
+    'nano.enhanced_security_middleware.EnhancedSecurityMiddleware',
+    'nano.enhanced_security_middleware.SensitiveDataMaskingMiddleware',
+    'nano.enhanced_security_middleware.DataRetentionMiddleware',
+    # Original audit logging middleware
+    'nano.middleware.ThreadLocalMiddleware',
+    'nano.middleware.SecurityAuditMiddleware',
+    'nano.middleware.DataModificationMiddleware',
 ]
 
 ROOT_URLCONF = 'confige.urls'
@@ -193,6 +205,10 @@ LOGGING = {
             'format': '{levelname} {asctime} {module} {process:d} {thread:d} {message}',
             'style': '{',
         },
+        'audit': {
+            'format': '{asctime} {levelname} {module} {message}',
+            'style': '{',
+        },
     },
     'handlers': {
         'file': {
@@ -206,6 +222,18 @@ LOGGING = {
             'class': 'logging.StreamHandler',
             'formatter': 'verbose',
         },
+        'audit_file': {
+            'level': 'INFO',
+            'class': 'logging.FileHandler',
+            'filename': BASE_DIR / 'security_audit.log',
+            'formatter': 'audit',
+        },
+        'security_file': {
+            'level': 'WARNING',
+            'class': 'logging.FileHandler',
+            'filename': BASE_DIR / 'security_events.log',
+            'formatter': 'audit',
+        },
     },
     'loggers': {
         'nano.fcm_service': {
@@ -217,5 +245,192 @@ LOGGING = {
             'handlers': ['console'],
             'level': config('LOG_LEVEL', default='INFO'),
         },
+        'security_audit': {
+            'handlers': ['audit_file', 'console'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+        'nano.middleware': {
+            'handlers': ['audit_file', 'console'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+    },
+}
+
+# Audit Logging Settings
+AUDIT_LOGGING = {
+    'ENABLE_SECURITY_LOGGING': True,
+    'ENABLE_DATA_MODIFICATION_LOGGING': True,
+    'ENABLE_API_LOGGING': True,
+    'ENABLE_SENSITIVE_DATA_LOGGING': True,
+    'LOG_ANONYMOUS_REQUESTS': False,
+    'MAX_REQUEST_BODY_SIZE': 10000,  # Maximum request body size to log (bytes)
+    'MAX_RESPONSE_BODY_SIZE': 500,   # Maximum response body size to log (bytes)
+    'EXCLUDE_URLS': [
+        '/static/',
+        '/media/',
+        '/favicon.ico',
+        '/robots.txt',
+        '/admin/jsi18n/',
+        '/__debug__/',
+    ],
+    'EXCLUDE_HTTP_METHODS': ['OPTIONS', 'HEAD'],
+    'SENSITIVE_DATA_FIELDS': [
+        'password', 'token', 'secret', 'key', 'csrfmiddlewaretoken',
+        'credit_card', 'ssn', 'social_security', 'bank_account'
+    ],
+}
+
+# Rate Limiting Settings (for future implementation)
+RATELIMIT_ENABLE = True
+RATELIMIT_USE_CACHE = 'default'
+RATELIMIT_CACHE = 'default'
+
+# Session Security Settings
+SESSION_COOKIE_AGE = 3600 * 8  # 8 hours
+SESSION_COOKIE_HTTPONLY = True
+SESSION_COOKIE_SAMESITE = 'Lax'
+if not DEBUG:
+    SESSION_COOKIE_SECURE = True
+
+# CSRF Security Settings
+CSRF_COOKIE_AGE = 3600 * 24  # 24 hours
+CSRF_COOKIE_HTTPONLY = True
+CSRF_COOKIE_SAMESITE = 'Lax'
+if not DEBUG:
+    CSRF_COOKIE_SECURE = True
+
+# Additional Security Headers
+SECURE_BROWSER_XSS_FILTER = True
+SECURE_CONTENT_TYPE_NOSNIFF = True
+SECURE_REFERRER_POLICY = 'strict-origin-when-cross-origin'
+X_FRAME_OPTIONS = 'DENY'
+
+# Django REST Framework Configuration
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework.authentication.SessionAuthentication',
+        'rest_framework.authentication.BasicAuthentication',
+    ],
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.IsAuthenticated',
+    ],
+    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
+    'PAGE_SIZE': 20,
+    'DEFAULT_FILTER_BACKENDS': [
+        'django_filters.rest_framework.DjangoFilterBackend',
+        'rest_framework.filters.SearchFilter',
+        'rest_framework.filters.OrderingFilter',
+    ],
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
+    'DEFAULT_THROTTLE_CLASSES': [
+        'rest_framework.throttling.AnonRateThrottle',
+        'rest_framework.throttling.UserRateThrottle'
+    ],
+    'DEFAULT_THROTTLE_RATES': {
+        'anon': '100/hour',
+        'user': '1000/hour'
+    }
+}
+
+# drf-spectacular Configuration
+SPECTACULAR_SETTINGS = {
+    'TITLE': 'NDtech POS API',
+    'DESCRIPTION': 'Complete Point of Sale system API with comprehensive audit logging, security tracking, and business analytics',
+    'VERSION': '1.0.0',
+    'SERVE_INCLUDE_SCHEMA': False,
+    'SERVERS': [
+        {'url': 'http://localhost:8000', 'description': 'Development server'},
+        {'url': 'https://ndtechpos.onrender.com', 'description': 'Production server'},
+    ],
+    'TAGS': [
+        {'name': 'Authentication', 'description': 'User authentication and authorization'},
+        {'name': 'Products', 'description': 'Product management and inventory'},
+        {'name': 'Sales', 'description': 'Sales order management'},
+        {'name': 'Notifications', 'description': 'User notifications and alerts'},
+        {'name': 'Security', 'description': 'Security events and audit logs'},
+        {'name': 'Airtime', 'description': 'Airtime product management'},
+        {'name': 'Warehouse', 'description': 'Warehouse price comparisons'},
+    ],
+    'COMPONENT_SPLIT_REQUEST': True,
+    'COMPONENT_NO_READ_ONLY_REQUIRED': True,
+    'SWAGGER_UI_SETTINGS': {
+        'deepLinking': True,
+        'persistAuthorization': True,
+        'displayOperationId': True,
+    },
+    'REDOC_UI_SETTINGS': {
+        'hideDownloadButton': True,
+        'hideHostname': True,
+    },
+    # 'PREPROCESSING_HOOKS': [
+    #     'nano.api_hooks.remove_csrf_from_docs',
+    # ],
+}
+
+# Enhanced Data Protection Settings
+DATA_PROTECTION = {
+    'ENABLE_DATA_ENCRYPTION': False,  # Set to True when implementing field encryption
+    'ENABLE_DATA_ANONYMIZATION': True,
+    'ENABLE_AUTOMATIC_CLEANUP': True,
+    'MASK_SENSITIVE_DATA_IN_LOGS': True,
+    'MASK_SENSITIVE_DATA_IN_RESPONSES': True,
+}
+
+# Data Retention Policies (in days)
+DATA_RETENTION_DAYS = {
+    'security_logs': 365,      # 1 year
+    'audit_logs': 2555,        # 7 years (legal requirement)
+    'api_logs': 90,            # 3 months
+    'user_activity': 365,       # 1 year
+    'error_logs': 180,         # 6 months
+    'sensitive_data_access': 365, # 1 year
+    'temp_files': 7,           # 1 week
+}
+
+# Privacy and GDPR Settings
+PRIVACY_SETTINGS = {
+    'ENABLE_GDPR_COMPLIANCE': True,
+    'ENABLE_CONSENT_MANAGEMENT': True,
+    'ENABLE_DATA_SUBJECT_REQUESTS': True,
+    'ENABLE_PRIVACY_DASHBOARD': True,
+    'COOKIE_CONSENT_REQUIRED': True,
+    'DATA_PROCESSING_PURPOSES': [
+        'essential',      # Essential for service operation
+        'analytics',      # Analytics and improvement
+        'marketing',      # Marketing communications
+        'personalization', # Personalization
+        'security',       # Security and fraud prevention
+    ],
+}
+
+# Enhanced Security Logging
+ENHANCED_SECURITY_LOGGING = {
+    'ENABLE_SENSITIVE_PATTERN_DETECTION': True,
+    'ENABLE_DATA_LEAKAGE_DETECTION': True,
+    'ENABLE_AUTOMATED_THREAT_RESPONSE': True,
+    'LOG_MASKED_DATA': True,
+    'DETECT_PATTERNS': [
+        r'password["\s]*[:=]["\s]*[^"\\s]+',
+        r'token["\s]*[:=]["\s]*[^"\\s]+',
+        r'secret["\s]*[:=]["\s]*[^"\\s]+',
+        r'key["\s]*[:=]["\s]*[^"\\s]+',
+        r'\b\d{4}[-\s]?\d{4}[-\s]?\d{4}[-\s]?\d{4}\b',  # Credit card
+        r'\b\d{3}[-\s]?\d{2}[-\s]?\d{4}\b',  # SSN
+    ],
+}
+
+# Security Headers Configuration
+SECURITY_HEADERS = {
+    'ENABLE_CSP': True,
+    'ENABLE_HSTS': True,
+    'ENABLE_XSS_PROTECTION': True,
+    'ENABLE_FRAME_PROTECTION': True,
+    'ENABLE_CONTENT_TYPE_OPTIONS': True,
+    'CUSTOM_HEADERS': {
+        'X-Privacy-Policy': 'https://ndtechpos.com/privacy',
+        'X-GDPR-Compliant': 'true',
+        'X-Data-Protection': 'enabled',
     },
 }

@@ -1,0 +1,213 @@
+# Environment variables and secrets
+.env
+.env.local
+.env.production
+.env.staging
+.env.backup
+
+# Database
+*.sqlite3
+*.db
+db.sqlite3
+db.sqlite3-journal
+
+# Logs
+*.log
+security_audit.log
+security_events.log
+fcm_notifications.log
+error.log
+access.log
+debug.log
+
+# Django
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual environments
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Static files
+staticfiles/
+media/
+uploads/
+
+# Cache
+.cache/
+*.cache
+.pytest_cache/
+
+# Coverage reports
+htmlcov/
+.coverage
+.coverage.*
+coverage.xml
+*.cover
+.hypothesis/
+
+# Translations
+*.mo
+*.pot
+
+# Django specific:
+local_settings.py
+db.sqlite3-journal
+
+# Flask stuff:
+instance/
+.webassets-cache
+
+# Scrapy stuff:
+.scrapy
+
+# Sphinx documentation
+docs/_build/
+
+# PyBuilder
+target/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# pyenv
+.python-version
+
+# celery beat schedule file
+celerybeat-schedule
+
+# SageMath parsed files
+*.sage.py
+
+# Environments
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Spyder project settings
+.spyderproject
+.spyproject
+
+# Rope project settings
+.ropeproject
+
+# mkdocs documentation
+/site
+
+# mypy
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# Pyre type checker
+.pyre/
+
+# Docker
+.dockerignore
+
+# Backup files
+*.bak
+*.backup
+*.tmp
+
+# Sensitive configuration files
+config/secrets.py
+config/local_settings.py
+certificates/
+ssl/
+*.pem
+*.key
+*.crt
+*.p12
+
+# Test data
+test_data/
+sample_data/
+
+# Temporary files
+temp/
+tmp/
+*.temp
+
+# Node modules (if using npm for frontend)
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Firebase/FCM files
+firebase-credentials.json
+service-account-key.json
+
+# Brevo/Sendinblue credentials
+brevo_credentials.json
+
+# AWS credentials (if applicable)
+.aws/
+
+# Google Cloud credentials
+google-credentials.json
+
+# Any file containing sensitive data
+*credentials*
+*secrets*
+*private*
+*.pem
+*.key
+*.p12
+*.crt
+*.pfx
+
+# Database backups
+*.sql
+*.dump
+*.backup
+
+# Import/Export files with sensitive data
+*import*.csv
+*export*.csv
+*users*.csv
+*customers*.csv
+*sales*.csv

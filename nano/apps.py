@@ -6,4 +6,4 @@ class NanoConfig(AppConfig):
     name = 'nano'
 
     def ready(self):
-        import nano.signals
+        import nano.middleware

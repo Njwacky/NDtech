@@ -1,0 +1,309 @@
+{% extends "nano/base.html" %}
+{% load static %}
+
+{% block title %}API Calls{% endblock %}
+
+{% block extra_css %}
+<style>
+.api-calls {
+    padding: 20px;
+}
+
+.filters-section {
+    background: white;
+    border-radius: 8px;
+    padding: 20px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    margin-bottom: 20px;
+}
+
+.calls-table {
+    background: white;
+    border-radius: 8px;
+    padding: 20px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.table {
+    margin-bottom: 0;
+}
+
+.status-badge {
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 11px;
+    text-transform: uppercase;
+    font-weight: bold;
+}
+
+.status-success {
+    background: #28a745;
+    color: white;
+}
+
+.status-error {
+    background: #dc3545;
+    color: white;
+}
+
+.status-warning {
+    background: #ffc107;
+    color: #212529;
+}
+
+.status-info {
+    background: #17a2b8;
+    color: white;
+}
+
+.method-badge {
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 10px;
+    font-weight: bold;
+    font-family: monospace;
+}
+
+.method-get {
+    background: #28a745;
+    color: white;
+}
+
+.method-post {
+    background: #007bff;
+    color: white;
+}
+
+.method-put {
+    background: #fd7e14;
+    color: white;
+}
+
+.method-delete {
+    background: #dc3545;
+    color: white;
+}
+
+.method-patch {
+    background: #6f42c1;
+    color: white;
+}
+
+.suspicious-indicator {
+    background: #dc3545;
+    color: white;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 11px;
+    text-transform: uppercase;
+    font-weight: bold;
+}
+
+.pagination {
+    margin-top: 20px;
+}
+
+.endpoint-details {
+    max-width: 250px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-family: monospace;
+    font-size: 12px;
+}
+
+.duration-bar {
+    width: 100px;
+    height: 8px;
+    background: #e9ecef;
+    border-radius: 4px;
+    overflow: hidden;
+    position: relative;
+}
+
+.duration-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #28a745, #ffc107, #dc3545);
+    border-radius: 4px;
+}
+
+.duration-text {
+    font-size: 11px;
+    color: #666;
+}
+
+.user-info {
+    max-width: 120px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="api-calls">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>🌐 API Calls</h1>
+        <a href="{% url 'nano:audit_dashboard' %}" class="btn btn-outline-primary">Back to Dashboard</a>
+    </div>
+
+    <!-- Filters Section -->
+    <div class="filters-section">
+        <form method="get" class="row g-3">
+            <div class="col-md-2">
+                <label for="status" class="form-label">Status</label>
+                <select name="status" id="status" class="form-select">
+                    <option value="">All Status</option>
+                    {% for status, label in status_choices %}
+                    <option value="{{ status }}" {% if current_filters.status == status %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label for="method" class="form-label">Method</label>
+                <select name="method" id="method" class="form-select">
+                    <option value="">All Methods</option>
+                    {% for method in methods %}
+                    <option value="{{ method }}" {% if current_filters.method == method %}selected{% endif %}>{{ method }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-5">
+                <label for="search" class="form-label">Search</label>
+                <input type="text" name="search" id="search" class="form-control" 
+                       value="{{ current_filters.search }}" placeholder="Search endpoints, users, or views...">
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">&nbsp;</label>
+                <div>
+                    <button type="submit" class="btn btn-primary me-2">Filter</button>
+                    <a href="{% url 'nano:api_calls' %}" class="btn btn-outline-secondary">Clear</a>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <!-- API Calls Table -->
+    <div class="calls-table">
+        {% if calls %}
+        <div class="table-responsive">
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Timestamp</th>
+                        <th>Method</th>
+                        <th>Endpoint</th>
+                        <th>Status</th>
+                        <th>User</th>
+                        <th>Duration</th>
+                        <th>Suspicious</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for call in calls %}
+                    <tr>
+                        <td>{{ call.created_at|date:"M d, Y H:i:s" }}</td>
+                        <td>
+                            <span class="method-badge method-{{ call.method|lower }}">
+                                {{ call.method }}
+                            </span>
+                        </td>
+                        <td class="endpoint-details" title="{{ call.endpoint }}">
+                            {{ call.endpoint|truncatechars:40 }}
+                        </td>
+                        <td>
+                            <span class="status-badge status-{{ call.status }}">
+                                {{ call.get_status_display }}
+                            </span>
+                        </td>
+                        <td class="user-info">
+                            {% if call.user %}
+                                {{ call.user.username }}
+                            {% else %}
+                                Anonymous
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="d-flex align-items-center">
+                                <div class="duration-bar me-2">
+                                    <div class="duration-fill" data-duration="{{ call.duration_ms|default:0 }}"></div>
+                                </div>
+                                <span class="duration-text">{{ call.duration_ms|default:0 }}ms</span>
+                            </div>
+                        </td>
+                        <td>
+                            {% if call.is_suspicious %}
+                                <span class="suspicious-indicator">Suspicious</span>
+                            {% else %}
+                                <span class="text-muted">Normal</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Pagination -->
+        {% if calls.has_other_pages %}
+        <nav aria-label="API calls pagination">
+            <ul class="pagination justify-content-center">
+                {% if calls.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ calls.previous_page_number }}{% if current_filters.status %}&status={{ current_filters.status }}{% endif %}{% if current_filters.method %}&method={{ current_filters.method }}{% endif %}{% if current_filters.search %}&search={{ current_filters.search }}{% endif %}">Previous</a>
+                    </li>
+                {% endif %}
+
+                {% for num in calls.paginator.page_range %}
+                    {% if calls.number == num %}
+                        <li class="page-item active">
+                            <span class="page-link">{{ num }}</span>
+                        </li>
+                    {% elif num > calls.number|add:"-3" and num < calls.number|add:"3" %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ num }}{% if current_filters.status %}&status={{ current_filters.status }}{% endif %}{% if current_filters.method %}&method={{ current_filters.method }}{% endif %}{% if current_filters.search %}&search={{ current_filters.search }}{% endif %}">{{ num }}</a>
+                        </li>
+                    {% endif %}
+                {% endfor %}
+
+                {% if calls.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ calls.next_page_number }}{% if current_filters.status %}&status={{ current_filters.status }}{% endif %}{% if current_filters.method %}&method={{ current_filters.method }}{% endif %}{% if current_filters.search %}&search={{ current_filters.search }}{% endif %}">Next</a>
+                    </li>
+                {% endif %}
+            </ul>
+        </nav>
+        {% endif %}
+
+        {% else %}
+        <div class="text-center py-5">
+            <h5>No API calls found</h5>
+            <p class="text-muted">Try adjusting your filters or check back later.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+// Auto-refresh every 30 seconds for API calls
+setTimeout(function() {
+    location.reload();
+}, 30000);
+
+// Show endpoint details on click
+document.querySelectorAll('.endpoint-details').forEach(function(element) {
+    element.style.cursor = 'pointer';
+    element.addEventListener('click', function() {
+        alert('Endpoint: ' + this.getAttribute('title'));
+    });
+});
+
+// Set duration bar widths
+document.querySelectorAll('.duration-fill').forEach(function(element) {
+    const duration = parseInt(element.getAttribute('data-duration'));
+    const width = duration > 1000 ? 100 : Math.min(duration / 10, 100);
+    element.style.width = width + '%';
+});
+</script>
+{% endblock %}

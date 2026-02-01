@@ -3,6 +3,7 @@ from . import views
 from . import views_export
 from . import upc_views
 from . import food_ordering_integration
+from . import views_audit_dashboard
 
 urlpatterns = [
     path('', views.home, name='home'),
@@ -114,4 +115,13 @@ urlpatterns = [
     path('airtime/history-review/', views.airtime_history_review, name='airtime_history_review'),
     path('airtime/verify-phone/<int:sale_id>/', views.verify_airtime_phone, name='verify_airtime_phone'),
     path('api/airtime/cashier-process/', views.process_cashier_airtime_sale, name='process_cashier_airtime_sale'),
+    
+    # Audit Dashboard URLs
+    path('audit/', views_audit_dashboard.audit_dashboard, name='audit_dashboard'),
+    path('audit/security-events/', views_audit_dashboard.security_events_view, name='security_events'),
+    path('audit/data-modifications/', views_audit_dashboard.data_modifications_view, name='data_modifications'),
+    path('audit/api-calls/', views_audit_dashboard.api_calls_view, name='api_calls'),
+    path('audit/sensitive-data/', views_audit_dashboard.sensitive_data_access_view, name='sensitive_data_access'),
+    path('audit/resolve/<int:log_id>/', views_audit_dashboard.resolve_security_event, name='resolve_security_event'),
+    path('audit/statistics/', views_audit_dashboard.audit_statistics_api, name='audit_statistics_api'),
 ]
