@@ -98,10 +98,17 @@ import os
 if 'DATABASE_URL' in os.environ:
     del os.environ['DATABASE_URL']
 
+# For Render.com, ensure database directory exists and is writable
+DATABASE_PATH = BASE_DIR / 'db.sqlite3'
+DATABASE_DIR = DATABASE_PATH.parent
+
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'NAME': DATABASE_PATH,
+        'OPTIONS': {
+            'timeout': 20,
+        },
     }
 }
 
@@ -168,9 +175,9 @@ if not DEBUG:
     SECURE_HSTS_SECONDS = config('SECURE_HSTS_SECONDS', default=31536000, cast=int)
     SECURE_HSTS_PRELOAD = config('SECURE_HSTS_PRELOAD', default=True, cast=bool)
     SECURE_REDIRECT_EXEMPT = []
-    SECURE_SSL_REDIRECT = config('SECURE_SSL_REDIRECT', default=True, cast=bool)
-    SESSION_COOKIE_SECURE = True
-    CSRF_COOKIE_SECURE = True
+    SECURE_SSL_REDIRECT = config('SECURE_SSL_REDIRECT', default=False, cast=bool)  # Render handles SSL
+    SESSION_COOKIE_SECURE = config('SESSION_COOKIE_SECURE', default=False, cast=bool)  # Render handles SSL
+    CSRF_COOKIE_SECURE = config('CSRF_COOKIE_SECURE', default=False, cast=bool)  # Render handles SSL
     X_FRAME_OPTIONS = 'DENY'
 
 # CORS settings

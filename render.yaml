@@ -7,7 +7,7 @@ services:
     plan: free
     buildCommand: "python manage.py collectstatic --noinput --clear && python manage.py migrate"
     startCommand: "gunicorn confige.wsgi:application --bind 0.0.0.0:$PORT"
-    healthCheckPath: /admin/
+    healthCheckPath: /
     envVars:
       - key: DJANGO_SETTINGS_MODULE
         value: confige.settings
@@ -21,6 +21,12 @@ services:
         value: 10000
       - key: RENDER_URL
         value: https://ndtechpos.onrender.com
+      - key: SECURE_SSL_REDIRECT
+        value: false
+      - key: SESSION_COOKIE_SECURE
+        value: false
+      - key: CSRF_COOKIE_SECURE
+        value: false
 
 # Optional: Redis for session storage (if needed)
 #  - type: redis

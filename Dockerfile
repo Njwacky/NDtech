@@ -42,11 +42,11 @@ ENV BREVO_SENDER_NAME=futurePOS
 # Create staticfiles directory
 RUN mkdir -p /app/staticfiles
 
-# Collect static files with error handling
-RUN python manage.py collectstatic --noinput --clear 2>&1 || echo "Collectstatic completed with warnings"
+# Verify Django setup and collect static files
+RUN python manage.py check && python manage.py collectstatic --noinput --clear 2>&1 || echo "Collectstatic completed with warnings"
 
 # Expose port (Render will use PORT env var, default 10000)
 EXPOSE 8000
 
 # Run the application using Render's PORT environment variable
-CMD ["sh", "-c", "python manage.py runserver 0.0.0.0:$PORT"]
+CMD ["sh", "-c", "gunicorn confige.wsgi:application --bind 0.0.0.0:$PORT --workers 3"]
