@@ -147,12 +147,13 @@ USE_TZ = True
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
-STATIC_URL = 'static/'
+STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 
 # Additional static files directory for PWA
 STATICFILES_DIRS = [
     BASE_DIR / 'nano' / 'static',
+    BASE_DIR / 'NDtechTrack' / 'static',
 ]
 
 # Media files
