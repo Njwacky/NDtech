@@ -381,9 +381,13 @@ SPECTACULAR_SETTINGS = {
         'hideDownloadButton': True,
         'hideHostname': True,
     },
-    # 'PREPROCESSING_HOOKS': [
-    #     'nano.api_hooks.remove_csrf_from_docs',
-    # ],
+    'PREPROCESSING_HOOKS': [
+        'nano.api_hooks.remove_csrf_from_docs',
+    ],
+    'ENUM_NAME_OVERRIDES': {
+        'RoleEnum': 'UserRoleEnum',
+        'SeverityEnum': 'ErrorSeverityEnum',
+    },
 }
 
 # Enhanced Data Protection Settings

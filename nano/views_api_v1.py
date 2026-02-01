@@ -199,7 +199,7 @@ class NotificationViewSet(viewsets.ModelViewSet):
                     Q(target_user=user) | 
                     Q(target_role=user_role)
                 )
-            except UserProfile.DoesNotExist:
+            except (UserProfile.DoesNotExist, AttributeError):
                 queryset = queryset.filter(target_user=user)
         
         return queryset
@@ -329,7 +329,11 @@ class FCMTokenViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         """Users can only manage their own tokens"""
-        return FCMToken.objects.filter(user=self.request.user)
+        user = self.request.user
+        if hasattr(user, 'id') and user.id:
+            return FCMToken.objects.filter(user=user)
+        else:
+            return FCMToken.objects.none()
 
     @extend_schema(summary="Deactivate token")
     @action(detail=True, methods=['post'])
@@ -391,7 +395,7 @@ class AirtimeSaleViewSet(viewsets.ModelViewSet):
                 user_profile = user.userprofile
                 if user_profile.role == 'cashier':
                     queryset = queryset.filter(requested_by=user)
-            except UserProfile.DoesNotExist:
+            except (UserProfile.DoesNotExist, AttributeError):
                 queryset = queryset.filter(requested_by=user)
         
         return queryset
