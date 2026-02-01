@@ -16,7 +16,7 @@ services:
       - key: DJANGO_SECRET_KEY
         value: cy3fbhBI38T_ult5rpcVi1vAqEjNZEJ-PcBmTBrwDhyVMVf2lN6ljx4h9On2MKThwxg
       - key: DJANGO_ALLOWED_HOSTS
-        value: ndtechpos.onrender.com,.onrender.com,localhost,127.0.0.1
+        value: ndtechpos.onrender.com,.onrender.com,localhost,127.0.0.1,*ndtechpos.onrender.com
       - key: PORT
         value: 10000
       - key: RENDER_URL

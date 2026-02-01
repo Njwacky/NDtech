@@ -32,7 +32,11 @@ if DEBUG:
     ALLOWED_HOSTS = config('DJANGO_ALLOWED_HOSTS', default='localhost,127.0.0.1,172.20.48.1,10.39.110.47').split(',')
 else:
     # Production - Explicitly allow the specific Render.com domain
-    ALLOWED_HOSTS = config('DJANGO_ALLOWED_HOSTS', default='ndtechpos.onrender.com,.onrender.com').split(',')
+    allowed_hosts = config('DJANGO_ALLOWED_HOSTS', default='ndtechpos.onrender.com,.onrender.com').split(',')
+    # Ensure we have the main Render domain
+    if 'ndtechpos.onrender.com' not in allowed_hosts:
+        allowed_hosts.append('ndtechpos.onrender.com')
+    ALLOWED_HOSTS = allowed_hosts
 # Application definition
 INSTALLED_APPS = [
     'django.contrib.admin',
