@@ -45,8 +45,8 @@ RUN mkdir -p /app/staticfiles
 # Collect static files with error handling
 RUN python manage.py collectstatic --noinput --clear 2>&1 || echo "Collectstatic completed with warnings"
 
-# Expose port
+# Expose port (Render will use PORT env var, default 10000)
 EXPOSE 8000
 
-# Run the application
-CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]
+# Run the application using Render's PORT environment variable
+CMD ["sh", "-c", "python manage.py runserver 0.0.0.0:$PORT"]
