@@ -24,6 +24,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY confige/ ./confige/
 COPY nano/ ./nano/
 COPY food_ordering/ ./food_ordering/
+COPY NDtechTrack/ ./NDtechTrack/
 COPY manage.py ./
 COPY generate_favicons.py ./
 
