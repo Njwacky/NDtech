@@ -206,11 +206,6 @@ FCM_API_KEY = config('FCM_API_KEY')
 FCM_SENDER_ID = config('FCM_SENDER_ID', default='')
 FCM_PROJECT_ID = config('FCM_PROJECT_ID', default='')
 
-# Brevo Email Service Settings
-BREVO_API_KEY = config('BREVO_API_KEY', default='')
-BREVO_SENDER_EMAIL = config('BREVO_SENDER_EMAIL', default='')
-BREVO_SENDER_NAME = config('BREVO_SENDER_NAME', default='')
-
 # Logging configuration
 LOGGING = {
     'version': 1,

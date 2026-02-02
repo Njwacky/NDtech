@@ -11,9 +11,9 @@ WORKDIR /app
 # Install system dependencies
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
-        gcc \
-        default-libmysqlclient-dev \
-        pkg-config \
+    gcc \
+    default-libmysqlclient-dev \
+    pkg-config \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Python dependencies first (to leverage Docker cache)
@@ -38,9 +38,6 @@ ENV DJANGO_ALLOWED_HOSTS=localhost,127.0.0.1
 ENV FCM_API_KEY=""
 ENV FCM_SENDER_ID=""
 ENV FCM_PROJECT_ID=""
-ENV BREVO_API_KEY=""
-ENV BREVO_SENDER_EMAIL=""
-ENV BREVO_SENDER_NAME=""
 
 # Create staticfiles directory
 RUN mkdir -p /app/staticfiles

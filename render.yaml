@@ -1,4 +1,4 @@
-# Render.com Deployment Configuration - SQLite Only
+# Render.com Deployment Configuration - PostgreSQL + Web Service
 services:
   # Web Service
   - type: web
@@ -27,22 +27,15 @@ services:
           property: connectionString
       - key: FCM_API_KEY
         sync: false
+      - key: SECURE_SSL_REDIRECT
+        value: "false" 
+      - key: SESSION_COOKIE_SECURE
+        value: "false"
+      - key: CSRF_COOKIE_SECURE
+        value: "false"
 
 databases:
   - name: futurepos-db
     databaseName: futurepos
     user: futurepos
     plan: free # Note: Free DBs expire after 90 days. Upgrade for production persistence.
-      - key: BREVO_API_KEY
-        sync: false
-      - key: SECURE_SSL_REDIRECT
-        value: false
-      - key: SESSION_COOKIE_SECURE
-        value: false
-      - key: CSRF_COOKIE_SECURE
-        value: false
-
-# Optional: Redis for session storage (if needed)
-#  - type: redis
-#    name: futurepos-redis
-#    plan: free

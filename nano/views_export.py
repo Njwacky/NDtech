@@ -22,7 +22,6 @@ import io
 from decimal import Decimal, InvalidOperation
 from .models import Product, Sale, UserProfile, PendingOrder, CompletedOrder, Notification, WarehousePrice, PriceComparison, FCMToken, DeviceConnection, ErrorLog, UserActivity
 from .fcm_service import fcm_service, send_fcm_notification_to_user
-from .brevo_service import send_receipt_email
 
 # Configure logger
 logger = logging.getLogger(__name__)

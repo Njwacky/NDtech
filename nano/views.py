@@ -22,7 +22,6 @@ import logging
 from decimal import Decimal, InvalidOperation
 from .models import Product, Sale, UserProfile, PendingOrder, CompletedOrder, Notification, WarehousePrice, PriceComparison, FCMToken, DeviceConnection, ErrorLog, UserActivity, AirtimeProduct, AirtimeSale, AirtimeRequest
 from .fcm_service import fcm_service, send_fcm_notification_to_user
-from .brevo_service import send_receipt_email
 
 # Set up logger
 logger = logging.getLogger(__name__)
@@ -1501,48 +1500,8 @@ def checkout_order(request, order_id=None):
                     product.stock -= quantity
                     product.save()
 
-                # Send receipt email if customer email is provided
-                customer_email = data.get('customer_email', '').strip()
-                if customer_email:
-                    try:
-                        # Prepare order data for email
-                        order_data = {
-                            'order_id': completed_order.id,
-                            'items': cart_items,
-                            'total': total_amount,
-                            'cash_received': cash_received,
-                            'change_given': change_given,
-                            'payment_method': 'cash',
-                            'customer_phone': customer_phone,
-                            'processed_by': request.user.username,
-                            'order_date': completed_order.completed_at
-                        }
-
-                        # Send receipt email
-                        email_result = send_receipt_email(
-                            order_data=order_data,
-                            customer_email=customer_email,
-                            customer_name=customer_name
-                        )
-
-                        if email_result['success']:
-                            return JsonResponse({
-                                'status': 'success',
-                                'message': f'Order completed successfully! Receipt sent to {customer_email}'
-                            })
-                        else:
-                            return JsonResponse({
-                                'status': 'success',
-                                'message': f'Order completed successfully! But email failed: {email_result.get("error", "Unknown error")}'
-                            })
-
-                    except Exception as e:
-                        return JsonResponse({
-                            'status': 'success',
-                            'message': f'Order completed successfully! But email failed: {str(e)}'
-                        })
-                else:
-                    return JsonResponse({'status': 'success', 'message': 'Order completed successfully!'})
+                # Send receipt email login removed
+                return JsonResponse({'status': 'success', 'message': 'Order completed successfully!'})
 
             except json.JSONDecodeError:
                 return JsonResponse({'status': 'error', 'message': 'Invalid data format'})
