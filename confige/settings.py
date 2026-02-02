@@ -53,6 +53,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    "whitenoise.middleware.WhiteNoiseMiddleware",  # Add WhiteNoise here
     'django.contrib.sessions.middleware.SessionMiddleware',
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -94,27 +95,23 @@ WSGI_APPLICATION = 'confige.wsgi.application'
 
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
-
-# Database configuration - SQLite only (force SQLite even in production)
 import os
+import dj_database_url
 
-# Ignore any DATABASE_URL environment variable to ensure SQLite is always used
-if 'DATABASE_URL' in os.environ:
-    del os.environ['DATABASE_URL']
-
-# For Render.com, ensure database directory exists and is writable
-DATABASE_PATH = BASE_DIR / 'db.sqlite3'
-DATABASE_DIR = DATABASE_PATH.parent
-
+# Default to SQLite for development
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': DATABASE_PATH,
-        'OPTIONS': {
-            'timeout': 20,
-        },
+        'NAME': BASE_DIR / 'db.sqlite3',
     }
 }
+
+# Override with PostgreSQL from DATABASE_URL if available (Production)
+db_from_env = dj_database_url.config(conn_max_age=600)
+DATABASES['default'].update(db_from_env)
+
+# Static file storage - WhiteNoise
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 # Custom authentication backend
 AUTHENTICATION_BACKENDS = [

@@ -4,6 +4,8 @@ FROM python:3.11-slim
 # Set environment variables
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
+# Dummy secret key for build step (collectstatic needs this)
+ENV DJANGO_SECRET_KEY=build-time-dummy-key-change-in-prod-environment
 
 # Set work directory
 WORKDIR /app

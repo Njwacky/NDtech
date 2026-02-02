@@ -29,15 +29,18 @@ COPY manage.py ./
 COPY generate_favicons.py ./
 
 # Set environment variables for build
-ENV DJANGO_SECRET_KEY=cy3fbhBI38T_ult5rpcVi1vAqEjNZEJ-PcBmTBrwDhyVMVf2lN6ljx4h9On2MKThwxg
+# NOTE: These are defaults for the build process. 
+# Secrets should be injected at runtime securely.
+ENV DJANGO_SECRET_KEY=build-time-dummy-key-change-in-prod
 ENV DJANGO_DEBUG=False
-ENV DJANGO_ALLOWED_HOSTS=localhost,127.0.0.1,10.84.134.47
-ENV FCM_API_KEY=your-fcm-api-key-here
-ENV FCM_SENDER_ID=your-sender-id
-ENV FCM_PROJECT_ID=your-project-id
-ENV BREVO_API_KEY=your-brevo-api-key-here
-ENV BREVO_SENDER_EMAIL=njwayelodlamini@gmail.com
-ENV BREVO_SENDER_NAME=futurePOS
+ENV DJANGO_ALLOWED_HOSTS=localhost,127.0.0.1
+# External service keys (Set these in your deployment environment)
+ENV FCM_API_KEY=""
+ENV FCM_SENDER_ID=""
+ENV FCM_PROJECT_ID=""
+ENV BREVO_API_KEY=""
+ENV BREVO_SENDER_EMAIL=""
+ENV BREVO_SENDER_NAME=""
 
 # Create staticfiles directory
 RUN mkdir -p /app/staticfiles
