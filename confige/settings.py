@@ -107,8 +107,27 @@ DATABASES = {
 }
 
 # Override with PostgreSQL from DATABASE_URL if available (Production)
-db_from_env = dj_database_url.config(conn_max_age=600)
-DATABASES['default'].update(db_from_env)
+# Database Configuration
+import sys
+
+# Override with PostgreSQL from DATABASE_URL if available (Production)
+database_url = os.environ.get('DATABASE_URL')
+is_render = os.environ.get('RENDER')
+
+if database_url:
+    DATABASES['default'] = dj_database_url.config(default=database_url, conn_max_age=600)
+    print("✓ Using PostgreSQL database from DATABASE_URL")
+elif is_render:
+    # We are on Render but no DATABASE_URL found!
+    print("!!! CRITICAL ERROR: Running on Render but DATABASE_URL is not set!")
+    print("!!! The application will fail because it cannot connect to the database.")
+    print("!!! Please ensure the database is linked in the Render Dashboard.")
+    # We allow it to crash or fallback, but logging is key. 
+    # Let's try to fail hard to make it obvious?
+    # Actually, falling back to SQLite on Render is what caused the "no such table" error.
+    # So if we are on Render, we should possibly enforce it, or at least log heavily.
+else:
+    print("ℹ Using local SQLite database (Development mode)")
 
 # Static file storage - WhiteNoise
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
