@@ -29,7 +29,7 @@ AUDIT_DASHBOARD_DEV_ONLY = config('AUDIT_DASHBOARD_DEV_ONLY', default=True, cast
 # ALLOWED_HOSTS configuration
 if DEBUG:
     # Also add for mobile using ipconfig
-    ALLOWED_HOSTS = config('DJANGO_ALLOWED_HOSTS', default='localhost,127.0.0.1,172.20.48.1,10.39.110.47').split(',')
+    ALLOWED_HOSTS = config('DJANGO_ALLOWED_HOSTS', default='localhost,127.0.0.1,172.20.48.1,10.39.110.47,192.168.43.185').split(',')
 else:
     # Production - Explicitly allow the specific Render.com domain
     allowed_hosts = config('DJANGO_ALLOWED_HOSTS', default='ndtech.onrender.com,ndtechpos.onrender.com,.onrender.com').split(',')
