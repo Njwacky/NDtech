@@ -53,7 +53,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
-    # "whitenoise.middleware.WhiteNoiseMiddleware",  # Add WhiteNoise here - commented out for now
+    "whitenoise.middleware.WhiteNoiseMiddleware",  # Add WhiteNoise here - needed for Render.com
     'django.contrib.sessions.middleware.SessionMiddleware',
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -150,7 +150,7 @@ else:
         print("ℹ Using local SQLite database (Development mode)")
 
 # Static file storage - WhiteNoise
-# STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'  # Commented out for now
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'  # Needed for Render.com
 
 # Custom authentication backend
 AUTHENTICATION_BACKENDS = [
