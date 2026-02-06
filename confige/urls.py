@@ -21,11 +21,16 @@ from drf_spectacular.views import (
     SpectacularRedocView,
     SpectacularSwaggerView,
 )
+from nano.health_views import health_check, database_status
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', include('nano.urls')),
     path('ndtechtrack/', include('NDtechTrack.urls')),
+    
+    # Health check URLs
+    path('health/', health_check, name='health_check'),
+    path('api/health/', database_status, name='database_status'),
     
     # API Documentation URLs
     path('api/schema/', SpectacularAPIView.as_view(), name='schema'),

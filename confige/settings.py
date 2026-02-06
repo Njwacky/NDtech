@@ -135,14 +135,26 @@ elif database_url:
     DATABASES['default'] = dj_database_url.config(default=database_url, conn_max_age=600)
     print("✓ Using PostgreSQL database from DATABASE_URL")
 elif is_render:
-    # We are on Render but no DATABASE_URL found!
-    print("!!! CRITICAL ERROR: Running on Render but DATABASE_URL is not set!")
-    print("!!! The application will fail because it cannot connect to the database.")
-    print("!!! Please ensure that database is linked in the Render Dashboard.")
-    # We allow it to crash or fallback, but logging is key. 
-    # Let's try to fail hard to make it obvious?
-    # Actually, falling back to SQLite on Render is what caused "no such table" error.
-    # So if we are on Render, we should possibly enforce it, or at least log heavily.
+    # Production Database Configuration for Render
+    if database_url:
+        try:
+            # Test database connection
+            DATABASES['default'] = dj_database_url.config(default=database_url, conn_max_age=600)
+            print("✓ Using Render PostgreSQL database")
+            
+            # Ensure migrations are applied on startup
+            from django.core.management import call_command
+            try:
+                call_command('migrate', '--noinput', verbosity=0)
+                print("✓ Database migrations applied successfully")
+            except Exception as e:
+                print(f"⚠ Migration warning: {e}")
+                
+        except Exception as e:
+            print(f"❌ Database connection failed: {e}")
+            raise ImproperlyConfigured(f"Cannot connect to database: {e}")
+    else:
+        raise ImproperlyConfigured("DATABASE_URL is required on Render")
 else:
     # For development, always use SQLite to avoid connection issues
     DATABASES['default'] = {
