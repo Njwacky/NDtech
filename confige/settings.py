@@ -53,7 +53,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
-    "whitenoise.middleware.WhiteNoiseMiddleware",  # Add WhiteNoise here
+    # "whitenoise.middleware.WhiteNoiseMiddleware",  # Add WhiteNoise here - commented out for now
     'django.contrib.sessions.middleware.SessionMiddleware',
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -114,6 +114,16 @@ import sys
 database_url = os.environ.get('DATABASE_URL')
 is_render = os.environ.get('RENDER')
 
+# Fallback PostgreSQL URL for development (using environment variables for security)
+db_host = config('DB_HOST', default='db.iozxzlwumxvjkoaiirmd.supabase.co')
+db_port = config('DB_PORT', default='5432')
+db_name = config('DB_NAME', default='postgres')
+db_user = config('DB_USER', default='postgres')
+db_password = config('DB_PASSWORD', default='Ndisor07222')
+
+# Construct fallback URL from environment variables
+fallback_postgres_url = f"postgresql://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}"
+
 if database_url:
     DATABASES['default'] = dj_database_url.config(default=database_url, conn_max_age=600)
     print("✓ Using PostgreSQL database from DATABASE_URL")
@@ -121,16 +131,26 @@ elif is_render:
     # We are on Render but no DATABASE_URL found!
     print("!!! CRITICAL ERROR: Running on Render but DATABASE_URL is not set!")
     print("!!! The application will fail because it cannot connect to the database.")
-    print("!!! Please ensure the database is linked in the Render Dashboard.")
+    print("!!! Please ensure that database is linked in the Render Dashboard.")
     # We allow it to crash or fallback, but logging is key. 
     # Let's try to fail hard to make it obvious?
-    # Actually, falling back to SQLite on Render is what caused the "no such table" error.
+    # Actually, falling back to SQLite on Render is what caused "no such table" error.
     # So if we are on Render, we should possibly enforce it, or at least log heavily.
 else:
-    print("ℹ Using local SQLite database (Development mode)")
+    # For development, try to use PostgreSQL fallback, otherwise use SQLite
+    try:
+        DATABASES['default'] = dj_database_url.config(default=fallback_postgres_url, conn_max_age=600)
+        print("✓ Using PostgreSQL database (fallback development connection)")
+    except Exception as e:
+        print(f"⚠ Could not connect to PostgreSQL, falling back to SQLite: {e}")
+        DATABASES['default'] = {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
+        print("ℹ Using local SQLite database (Development mode)")
 
 # Static file storage - WhiteNoise
-STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+# STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'  # Commented out for now
 
 # Custom authentication backend
 AUTHENTICATION_BACKENDS = [

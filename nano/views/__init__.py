@@ -118,24 +118,13 @@ from ..views_legacy import (
 # ============================================================================
 # SPECIALIZED VIEWS (existing separate files)
 # ============================================================================
-# Temporarily commented to identify which module has import errors
-# Cashier-specific views
-# from ..cashier_views import *
-
-# Warehouse price comparison views
-# from ..warehouse_views import *
-
-# UPC/Barcode scanning views
-# from ..upc_views import *
-
-# Audit dashboard views
-# from ..views_audit_dashboard import *
-
-# Export/reporting views
-# from ..views_export import *
-
-# API views (v1)
-# from ..views_api_v1 import *
+# These are imported directly in urls.py to avoid circular imports
+# Cashier-specific views - from ..cashier_views import *
+# Warehouse price comparison views - from ..warehouse_views import *
+# UPC/Barcode scanning views - from ..upc_views import *
+# Audit dashboard views - from ..views_audit_dashboard import *
+# Export/reporting views - from ..views_export import *
+# API views (v1) - from ..views_api_v1 import *
 
 
 # ============================================================================
