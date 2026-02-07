@@ -37,6 +37,35 @@ def run_migrations():
         print(f"❌ Migration failed: {e}")
         return False
 
+def check_security_tables():
+    """Check if security tables exist"""
+    try:
+        from django.db import connection
+        with connection.cursor() as cursor:
+            # Check for specific tables
+            tables = ['nano_securityauditlog', 'nano_apicalllog', 'nano_sensitiveaccesslog']
+            missing_tables = []
+            
+            for table in tables:
+                try:
+                    cursor.execute(f"SELECT 1 FROM {table} LIMIT 1")
+                except Exception:
+                    # If error (likely table doesn't exist), add to missing list
+                    # We need to rollback the transaction if an error occurred in it (for Postgres)
+                    connection.rollback()
+                    missing_tables.append(table)
+            
+            if missing_tables:
+                print(f"❌ Missing security tables: {', '.join(missing_tables)}")
+                return False
+                
+            print("✅ Security audit tables verified")
+            return True
+            
+    except Exception as e:
+        print(f"❌ Security table check failed: {e}")
+        return False
+
 def check_auth_tables():
     """Check if auth tables exist"""
     try:
@@ -110,14 +139,43 @@ def main():
     if not check_auth_tables():
         print("❌ Auth tables not properly created")
         sys.exit(1)
+
+    # Check security tables
+    # Check security tables
+    if not check_security_tables():
+        print("❌ Security tables not properly created - Migrations may have failed silently")
+        
+        print("🔧 Attempting to repair migration state...")
+        try:
+            # Force re-application of the security log migration
+            # First fake-revert to the previous migration to reset state
+            print("  - Resetting migration state for nano app...")
+            call_command('migrate', 'nano', '0017', fake=True)
+            
+            # Then apply the migration normally to force table creation
+            print("  - Re-applying security log migration...")
+            call_command('migrate', 'nano', '0018', interactive=False)
+            
+            # Run any remaining migrations
+            print("  - finalizing migrations...")
+            call_command('migrate', 'nano', interactive=False)
+            
+            print("✅ Repair attempt completed")
+        except Exception as e:
+            print(f"❌ Repair failed: {e}")
+            
+        # Verify again
+        if not check_security_tables():
+            print("❌ Security tables still missing after repair attempt")
+            sys.exit(1)
+        
+        print("✅ Security tables verified after repair")
     
     # Create superuser if needed
     create_superuser_if_needed()
     
-    # Collect static files
-    if not collect_static():
-        print("❌ Static file collection failed")
-        sys.exit(1)
+    # Collect static files - skipped here, should be done in build command
+    # but we can do a quick check if needed. relying on build command.
     
     print("🎉 Deployment setup completed successfully!")
     print("\n📋 Next steps:")

@@ -142,14 +142,8 @@ elif is_render:
             DATABASES['default'] = dj_database_url.config(default=database_url, conn_max_age=600)
             print("✓ Using Render PostgreSQL database")
             
-            # Ensure migrations are applied on startup
-            from django.core.management import call_command
-            try:
-                call_command('migrate', '--noinput', verbosity=0)
-                print("✓ Database migrations applied successfully")
-            except Exception as e:
-                print(f"⚠ Migration warning: {e}")
-                
+            # Migrations should be run in the build/start command, not in settings.py
+            # as it causes recursive loading issues and potential race conditions.
         except Exception as e:
             print(f"❌ Database connection failed: {e}")
             raise ImproperlyConfigured(f"Cannot connect to database: {e}")

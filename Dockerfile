@@ -26,6 +26,7 @@ COPY nano/ ./nano/
 COPY food_ordering/ ./food_ordering/
 COPY NDtechTrack/ ./NDtechTrack/
 COPY manage.py ./
+COPY deploy_fix.py ./
 COPY generate_favicons.py ./
 
 # Set environment variables for build
@@ -49,4 +50,4 @@ RUN python manage.py check && python manage.py collectstatic --noinput --clear 2
 EXPOSE 8000
 
 # Run the application using Render's PORT environment variable
-CMD ["sh", "-c", "gunicorn confige.wsgi:application --bind 0.0.0.0:$PORT --workers 3"]
+CMD ["sh", "-c", "python deploy_fix.py && gunicorn confige.wsgi:application --bind 0.0.0.0:$PORT --workers 3"]

@@ -5,8 +5,8 @@ services:
     name: futurepos-django
     env: docker
     plan: free
-    buildCommand: "python deploy_fix.py && python manage.py collectstatic --noinput --clear"
-    startCommand: "gunicorn confige.wsgi:application --bind 0.0.0.0:$PORT"
+    buildCommand: "pip install -r requirements.txt && python manage.py collectstatic --noinput --clear"
+    startCommand: "python deploy_fix.py && gunicorn confige.wsgi:application --bind 0.0.0.0:$PORT"
     healthCheckPath: /
     envVars:
       - key: DJANGO_SETTINGS_MODULE
