@@ -150,21 +150,63 @@ def main():
         
         print("🔧 Attempting to repair migration state...")
         try:
+            from django.db import connection
+            
+            # Force cleanup of any partial tables from 0018
+            # This handles the "relation already exists" error
+            tables_to_drop = [
+                'nano_adminactionlog', 
+                'nano_apicalllog', 
+                'nano_datamodificationlog', 
+                'nano_securityauditlog', 
+                'nano_sensitiveaccesslog'
+            ]
+            
+            print(f"  - Cleaning up potentially conflicting tables: {', '.join(tables_to_drop)}")
+            with connection.cursor() as cursor:
+                for table in tables_to_drop:
+                    cursor.execute(f"DROP TABLE IF EXISTS {table} CASCADE")
+            print("  - Cleanup successful")
+
             # Force re-application of the security log migration
             # First fake-revert to the previous migration to reset state
             print("  - Resetting migration state for nano app...")
+            # maintain isolation from signal handlers
+            os.environ['DJANGO_MAINTENANCE_MODE'] = 'True'
             call_command('migrate', 'nano', '0017', fake=True)
             
             # Then apply the migration normally to force table creation
             print("  - Re-applying security log migration...")
             call_command('migrate', 'nano', '0018', interactive=False)
             
+            # Handle potential connection issues with migration 0020 (CompletedOrder fields)
+            # If 0020 was partially applied, we need to be careful
+            print("  - Checking for migration 0020 conflicts...")
+            with connection.cursor() as cursor:
+                # Check if columns already exist in nano_completedorder
+                try:
+                    cursor.execute("""
+                        SELECT column_name 
+                        FROM information_schema.columns 
+                        WHERE table_name='nano_completedorder' 
+                        AND column_name IN ('customer_email', 'customer_email_encrypted', 'customer_name_encrypted', 'customer_phone_encrypted')
+                    """)
+                    existing_cols = [row[0] for row in cursor.fetchall()]
+                    if existing_cols:
+                        print(f"  - Clean up existing columns that would conflict: {existing_cols}")
+                        for col in existing_cols:
+                            cursor.execute(f"ALTER TABLE nano_completedorder DROP COLUMN IF EXISTS {col}")
+                except Exception as e:
+                    print(f"  - Warning checking columns: {e}")
+
             # Run any remaining migrations
-            print("  - finalizing migrations...")
+            print("  - Finalizing all migrations...")
             call_command('migrate', 'nano', interactive=False)
+            os.environ.pop('DJANGO_MAINTENANCE_MODE', None)
             
             print("✅ Repair attempt completed")
         except Exception as e:
+            os.environ.pop('DJANGO_MAINTENANCE_MODE', None)
             print(f"❌ Repair failed: {e}")
             
         # Verify again
