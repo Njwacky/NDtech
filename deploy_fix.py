@@ -192,6 +192,161 @@ def fix_partial_migration_0018():
         print("\n✅ Migration 0018 is complete and consistent")
         return True
 
+def fix_partial_migration_0020():
+    """
+    Fix partial migration state for migration 0020.
+    
+    This migration adds 4 fields to nano_completedorder:
+    - customer_email
+    - customer_email_encrypted
+    - customer_name_encrypted
+    - customer_phone_encrypted
+    """
+    from django.db import connection
+    
+    print("\n🔧 Checking migration 0020 status...")
+    
+    # Fields that should be added by migration 0020
+    expected_columns = [
+        'customer_email',
+        'customer_email_encrypted',
+        'customer_name_encrypted',
+        'customer_phone_encrypted'
+    ]
+    
+    # Check which columns exist in nano_completedorder
+    existing_columns = []
+    missing_columns = []
+    
+    try:
+        with connection.cursor() as cursor:
+            # Check if the table exists first
+            cursor.execute("""
+                SELECT EXISTS (
+                    SELECT 1 
+                    FROM information_schema.tables 
+                    WHERE table_schema = 'public' 
+                    AND table_name = 'nano_completedorder'
+                )
+            """)
+            table_exists = cursor.fetchone()[0]
+            
+            if not table_exists:
+                print("   ℹ Table nano_completedorder doesn't exist yet - migration 0020 not applicable")
+                return True
+            
+            # Check which columns exist
+            cursor.execute("""
+                SELECT column_name 
+                FROM information_schema.columns 
+                WHERE table_schema = 'public'
+                AND table_name = 'nano_completedorder'
+                AND column_name IN ('customer_email', 'customer_email_encrypted', 
+                                   'customer_name_encrypted', 'customer_phone_encrypted')
+            """)
+            existing_columns = [row[0] for row in cursor.fetchall()]
+            missing_columns = [col for col in expected_columns if col not in existing_columns]
+            
+    except Exception as e:
+        print(f"   ⚠ Could not check columns: {e}")
+        return True  # Non-fatal, continue
+    
+    print(f"   Existing columns from 0020: {len(existing_columns)}/{len(expected_columns)}")
+    if existing_columns:
+        print(f"   ✓ Found: {', '.join(existing_columns)}")
+    if missing_columns:
+        print(f"   ✗ Missing: {', '.join(missing_columns)}")
+    
+    # Check if migration is marked as applied
+    migration_applied = False
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute("""
+                SELECT 1 FROM django_migrations 
+                WHERE app = 'nano' 
+                AND name = '0020_add_customer_encryption_fields'
+            """)
+            migration_applied = cursor.fetchone() is not None
+    except Exception as e:
+        print(f"   ⚠ Could not check migration record: {e}")
+    
+    print(f"   Migration 0020 marked as applied: {migration_applied}")
+    
+    # Determine the fix strategy
+    if migration_applied and missing_columns:
+        # Migration is marked as applied, but some columns are missing
+        print("\n⚠️ PARTIAL MIGRATION STATE DETECTED!")
+        print("   Strategy: Remove migration record, drop existing columns, then re-apply")
+        
+        try:
+            # Step 1: Remove migration record
+            print("\n   Step 1: Removing migration 0020 from django_migrations table...")
+            with connection.cursor() as cursor:
+                cursor.execute("""
+                    DELETE FROM django_migrations 
+                    WHERE app = 'nano' 
+                    AND name = '0020_add_customer_encryption_fields'
+                """)
+            print("   ✅ Migration record removed")
+            
+            # Step 2: Drop any partially created columns
+            if existing_columns:
+                print(f"\n   Step 2: Dropping {len(existing_columns)} partially created columns...")
+                with connection.cursor() as cursor:
+                    for column in existing_columns:
+                        try:
+                            cursor.execute(f"ALTER TABLE nano_completedorder DROP COLUMN IF EXISTS {column}")
+                            print(f"   ✓ Dropped column {column}")
+                        except Exception as e:
+                            print(f"   ⚠ Could not drop {column}: {e}")
+            
+            # Step 3: Re-apply migration 0020
+            print("\n   Step 3: Re-applying migration 0020...")
+            os.environ['DJANGO_MAINTENANCE_MODE'] = 'True'
+            call_command('migrate', 'nano', '0020', verbosity=2)
+            os.environ.pop('DJANGO_MAINTENANCE_MODE', None)
+            print("   ✅ Migration 0020 re-applied successfully")
+            
+            return True
+            
+        except Exception as e:
+            os.environ.pop('DJANGO_MAINTENANCE_MODE', None)
+            print(f"\n   ❌ Repair failed: {e}")
+            return False
+    
+    elif not migration_applied and existing_columns:
+        # Some columns exist but migration not marked as applied
+        print("\n⚠️ ORPHANED COLUMNS DETECTED!")
+        print("   Strategy: Drop orphaned columns, then apply migration")
+        
+        try:
+            with connection.cursor() as cursor:
+                for column in existing_columns:
+                    cursor.execute(f"ALTER TABLE nano_completedorder DROP COLUMN IF EXISTS {column}")
+                    print(f"   ✓ Dropped orphaned column {column}")
+            
+            print("\n   Applying migration 0020...")
+            os.environ['DJANGO_MAINTENANCE_MODE'] = 'True'
+            call_command('migrate', 'nano', '0020', verbosity=2)
+            os.environ.pop('DJANGO_MAINTENANCE_MODE', None)
+            print("   ✅ Migration 0020 applied successfully")
+            return True
+            
+        except Exception as e:
+            os.environ.pop('DJANGO_MAINTENANCE_MODE', None)
+            print(f"\n   ❌ Repair failed: {e}")
+            return False
+    
+    elif not migration_applied and not existing_columns:
+        # Clean state - just need to apply the migration
+        print("\n✓ Clean state - migration 0020 not yet applied")
+        return True
+    
+    else:
+        # All columns exist and migration is marked as applied
+        print("\n✅ Migration 0020 is complete and consistent")
+        return True
+
 def run_migrations():
     """Run Django migrations with error handling"""
     try:
@@ -287,7 +442,12 @@ def main():
     print("Checking for partial migration states...")
     print("=" * 60)
     if not fix_partial_migration_0018():
-        print("\n⚠️ Warning: Could not fix partial migration state")
+        print("\n⚠️ Warning: Could not fix partial migration 0018 state")
+        print("Attempting to continue anyway...")
+    
+    # Fix partial migration 0020 if needed
+    if not fix_partial_migration_0020():
+        print("\n⚠️ Warning: Could not fix partial migration 0020 state")
         print("Attempting to continue anyway...")
     
     # Run all migrations

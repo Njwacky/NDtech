@@ -1,24 +1,38 @@
-# Render Deployment Fix - Migration 0018 Partial State
+# Render Deployment Fix - Partial Migration States (0018 & 0020)
 
 ## Problem Summary
 
-Your Render deployment was failing due to a **partial migration state** for Django migration `0018_adminactionlog_apicalllog_datamodificationlog_and_more`. 
+Your Render deployment was failing due to **partial migration states** for Django migrations:
+- `0018_adminactionlog_apicalllog_datamodificationlog_and_more` (security logging tables)
+- `0020_add_customer_encryption_fields` (customer data encryption fields)
+ 
 
 ### What Happened?
 
+**Migration 0018 (Security Logging Tables):**
 1. Migration 0018 started applying but failed mid-way
 2. Some tables were created (e.g., `nano_adminactionlog`)
 3. Other tables were missing (e.g., `nano_sensitivedataaccesslog`)
 4. Django's migration system marked the migration as "applied" even though it wasn't complete
 5. When trying to re-run the migration, PostgreSQL rejected it with "relation already exists" errors
 
+**Migration 0020 (Customer Encryption Fields):**
+1. Migration 0020 started applying but failed mid-way
+2. Some columns were created (e.g., `customer_email`)
+3. Other columns were missing (e.g., `customer_name_encrypted`, `customer_phone_encrypted`)
+4. Django marked it as "applied" despite being incomplete
+5. Re-running caused "column already exists" errors
+
 ### Root Causes Found
 
-1. **Table name bug**: The original `deploy_fix.py` was checking for `nano_sensitiveaccesslog` but the actual table name is `nano_sensitivedataaccesslog` (note the extra "data" in the name)
+1. **Table/column name bugs**: The original `deploy_fix.py` had typos and didn't detect which database objects actually existed
 
 2. **Insufficient error handling**: The repair logic didn't properly detect partial migration states before attempting repairs
 
-3. **No build script**: Render.com recommends using a `build.sh` script, but the project only had inline build commands in `render.yaml`
+3. **Multiple partial states**: Both migrations 0018 and 0020 had partial states that compounded the issue
+
+4. **No build script**: Render.com recommends using a `build.sh` script, but the project only had inline build commands in `render.yaml`
+
 
 ## Solution Implemented
 
@@ -257,11 +271,11 @@ To avoid similar issues in the future:
 
 ## Summary
 
-The deployment issue was caused by a **partial migration state** where migration 0018 was marked as applied but some tables were missing. The fix includes:
+The deployment issues were caused by **partial migration states** where migrations 0018 and 0020 were marked as applied but database objects were missing. The fix includes:
 
-1. **Correct table name detection** (fixed typo in table name)
-2. **Intelligent partial state detection and repair**
+1. **Correct database object detection** (tables for 0018, columns for 0020)
+2. **Intelligent partial state detection and repair** for both migrations
 3. **Render.com best practices** (build.sh script, improved gunicorn config)
 4. **Better logging and error messages**
 
-Deploy the changes and monitor the logs. The script will automatically detect and fix the partial migration state!
+Deploy the changes and monitor the logs. The script will automatically detect and fix both partial migration states!
