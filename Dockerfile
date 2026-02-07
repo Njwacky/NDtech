@@ -50,4 +50,5 @@ RUN python manage.py check && python manage.py collectstatic --noinput --clear 2
 EXPOSE 8000
 
 # Run the application using Render's PORT environment variable
-CMD ["sh", "-c", "python deploy_fix.py && gunicorn confige.wsgi:application --bind 0.0.0.0:$PORT --workers 3"]
+# Use improved gunicorn config: 3 workers, sync worker class, 120s timeout
+CMD ["sh", "-c", "python deploy_fix.py && gunicorn confige.wsgi:application --bind 0.0.0.0:$PORT --workers 3 --worker-class sync --timeout 120"]
