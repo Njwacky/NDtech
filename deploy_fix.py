@@ -30,7 +30,10 @@ def run_migrations():
     """Run Django migrations with error handling"""
     try:
         print("🔄 Running Django migrations...")
+        # maintain isolation from signal handlers
+        os.environ['DJANGO_MAINTENANCE_MODE'] = 'True'
         call_command('migrate', '--noinput', verbosity=2)
+        os.environ.pop('DJANGO_MAINTENANCE_MODE', None)
         print("✅ Migrations completed successfully")
         return True
     except Exception as e:

@@ -444,6 +444,14 @@ def log_data_modification(sender, instance, **kwargs):
         # Skip logging for audit models themselves to avoid infinite loops
         if sender.__name__ in ['SecurityAuditLog', 'DataModificationLog', 'AdminActionLog', 'APICallLog', 'SensitiveDataAccessLog']:
             return
+            
+        # Skip during migrations or maintenance
+        import sys
+        import os
+        if 'migrate' in sys.argv or 'makemigrations' in sys.argv or 'deploy_fix.py' in sys.argv[0]:
+            return
+        if os.environ.get('DJANGO_MAINTENANCE_MODE') == 'True':
+            return
 
         # Skip if instance doesn't have an ID yet (new object)
         if not instance.pk:
@@ -539,10 +547,13 @@ def log_data_creation(sender, instance, created, **kwargs):
         if not created:
             return
 
-        # Skip during migrations
+        # Skip during migrations or maintenance
         from django.core.management import execute_from_command_line
         import sys
-        if 'migrate' in sys.argv or 'makemigrations' in sys.argv:
+        import os
+        if 'migrate' in sys.argv or 'makemigrations' in sys.argv or 'deploy_fix.py' in sys.argv[0]:
+            return
+        if os.environ.get('DJANGO_MAINTENANCE_MODE') == 'True':
             return
 
         # Get current request
@@ -607,7 +618,16 @@ def log_data_deletion(sender, instance, **kwargs):
     """Log data deletion"""
     try:
         # Skip logging for audit models themselves
+        # Skip logging for audit models themselves
         if sender.__name__ in ['SecurityAuditLog', 'DataModificationLog', 'AdminActionLog', 'APICallLog', 'SensitiveDataAccessLog']:
+            return
+
+        # Skip during migrations or maintenance
+        import sys
+        import os
+        if 'migrate' in sys.argv or 'makemigrations' in sys.argv or 'deploy_fix.py' in sys.argv[0]:
+            return
+        if os.environ.get('DJANGO_MAINTENANCE_MODE') == 'True':
             return
 
         # Get current request
