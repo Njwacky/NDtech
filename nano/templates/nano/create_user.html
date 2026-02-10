@@ -33,12 +33,17 @@
         <label for="role">Role:</label>
         <select id="role" name="role" required>
             <option value="">Select Role</option>
+            {% if user_role == 'admin' or request.user.is_superuser %}
             {% if request.user.is_superuser %}
             <option value="superuser">Superuser</option>
             {% endif %}
             <option value="admin">Admin</option>
             <option value="manager">Manager</option>
             <option value="cashier">Cashier</option>
+            {% elif user_role == 'manager' %}
+            <option value="manager">Manager</option>
+            <option value="cashier">Cashier</option>
+            {% endif %}
         </select><br><br>
         
         <div class="role-descriptions">
@@ -47,10 +52,15 @@
                 {% if request.user.is_superuser %}
                 <li><strong>Superuser:</strong> Full system access, can create other superusers</li>
                 {% endif %}
-                <li><strong>Admin:</strong> Can manage users, products, sales, and view reports</li>
-                <li><strong>Manager:</strong> Can manage products and sales, view reports</li>
+                {% if user_role == 'admin' or request.user.is_superuser %}
+                <li><strong>Admin:</strong> Can manage all users, products, sales, and view reports</li>
+                {% endif %}
+                <li><strong>Manager:</strong> Can create and manage their own team, manage products and sales</li>
                 <li><strong>Cashier:</strong> Can process sales and manage orders</li>
             </ul>
+            {% if user_role == 'manager' %}
+            <p><em>Note: As a Manager, you can create other Managers and Cashiers for your workspace.</em></p>
+            {% endif %}
         </div>
         
         <button type="submit">Create User</button>

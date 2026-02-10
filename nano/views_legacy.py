@@ -13,7 +13,8 @@ from django.db.models import Q, Count, Sum, Min, Avg, Max
 from django.core.files.storage import default_storage
 from django.core.files.base import ContentFile
 from django.conf import settings
-import pandas as pd
+import pandas as p
+
 import json
 import re
 import csv
@@ -334,7 +335,9 @@ def add_stock(request):
 
                         # Parse expiry date if provided
                         expiry_date = None
-                        if expiry_date_str:
+                        no_expiry_date = str(row.get('no_expiry_date', '')).strip().lower() in ['true', '1', 'yes', 'on']
+                        
+                        if not no_expiry_date and expiry_date_str:
                             try:
                                 try:
                                     expiry_date = timezone.datetime.strptime(expiry_date_str, '%Y-%m-%d').date()
@@ -396,6 +399,9 @@ def add_stock(request):
             category = request.POST.get('category', '').strip()
             expiry_date_str = request.POST.get('expiry_date', '').strip()
             stock_str = request.POST.get('stock', '').strip()
+            # Check for no_expiry_date checkbox - handle various truthy values
+            no_expiry_val = request.POST.get('no_expiry_date')
+            no_expiry_date = no_expiry_val in ['on', 'true', 'True', '1', 'checked']
 
             errors = {}
 
@@ -421,15 +427,23 @@ def add_stock(request):
             elif category not in dict(Product.CATEGORY_CHOICES):
                 errors['category'] = 'Invalid category'
 
-            if not expiry_date_str:
-                errors['expiry_date'] = 'Expiry date is required'
-            else:
-                try:
-                    expiry_date = timezone.datetime.strptime(expiry_date_str, '%Y-%m-%d').date()
-                    if expiry_date <= timezone.now().date():
-                        errors['expiry_date'] = 'Expiry date must be in the future'
-                except ValueError:
-                    errors['expiry_date'] = 'Invalid date format'
+            # Validate expiry date only if "No Expiry Date" is not checked
+            expiry_date = None
+            if not no_expiry_date:
+                if not expiry_date_str:
+                    errors['expiry_date'] = 'Expiry date is required (or check "No Expiry Date")'
+                else:
+                    try:
+                        expiry_date = timezone.datetime.strptime(expiry_date_str, '%Y-%m-%d').date()
+                        # Allow adding products that are already expired (maybe keeping stock record), 
+                        # but warn? Or strictly forbid?
+                        # User might be adding old stock. Let's allow past dates but maybe just for valid dates.
+                        # The previous code forbade past dates: if expiry_date <= timezone.now().date()
+                        # Let's keep that restriction if that's the business rule.
+                        if expiry_date <= timezone.now().date():
+                            errors['expiry_date'] = 'Expiry date must be in the future'
+                    except ValueError:
+                        errors['expiry_date'] = 'Invalid date format'
 
             if not stock_str:
                 errors['stock'] = 'Stock quantity is required'
@@ -2880,9 +2894,10 @@ def airtime_management(request):
                     messages.error(request, error)
                 # Return JSON response for AJAX requests from quick sell interface
                 if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-                    return JsonResponse({'success': False, 'error': 'Please fix the validation errors'})
+                    return JsonResponse({'success': False, 'error': 'Please fix validation errors'})
             else:
                 # Create airtime product
+                description = request.POST.get('description', '').strip()
                 airtime_product = AirtimeProduct.objects.create(
                     name=name,
                     network=network,

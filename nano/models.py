@@ -16,9 +16,14 @@ class UserProfile(models.Model):
     created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='created_users')
     is_active = models.BooleanField(default=True)
     date_created = models.DateTimeField(auto_now_add=True)
+    company_name = models.CharField(max_length=100, blank=True, null=True, help_text="Company name for display purposes")
 
     def __str__(self):
         return f"{self.user.username} - {self.role}"
+    
+    def get_display_name(self):
+        """Get company name or default to NDtech"""
+        return self.company_name if self.company_name else "NDtech"
 
     def can_create_users(self):
         """Check if this user can create other users"""

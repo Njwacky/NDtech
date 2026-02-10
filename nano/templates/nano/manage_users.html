@@ -5,11 +5,27 @@
 {% block content %}
 <div class="manage-users-container">
     <div class="page-header">
-        <h2><i class="fas fa-users"></i> Manage Users</h2>
+        <h2><i class="fas fa-users"></i> 
+            {% if is_workspace_view %}
+                My Workspace Users
+            {% else %}
+                Manage Users
+            {% endif %}
+        </h2>
         <a href="{% url 'create_user' %}" class="btn-create-user">
             <i class="fas fa-user-plus"></i> Create New User
         </a>
     </div>
+    
+    {% if is_workspace_view %}
+    <div class="workspace-info">
+        <div class="info-card">
+            <i class="fas fa-info-circle"></i>
+            <h4>Your Workspace</h4>
+            <p>This is your personal workspace. You can only see and manage users you have created. Each manager runs their own independent workspace.</p>
+        </div>
+    </div>
+    {% endif %}
     
     {% if users %}
         <form method="post" action="{% url 'bulk_delete_users' %}" class="manage-users-form">
@@ -76,8 +92,20 @@
         </form>
     {% else %}
         <div class="no-users">
-            <p><i class="fas fa-info-circle"></i> No users found in the system.</p>
-            <p>Please create user accounts to manage them here.</p>
+            <p><i class="fas fa-info-circle"></i> 
+                {% if is_workspace_view %}
+                    No users found in your workspace.
+                {% else %}
+                    No users found in the system.
+                {% endif %}
+            </p>
+            <p>
+                {% if is_workspace_view %}
+                    Start building your team by creating your first team member.
+                {% else %}
+                    Please create user accounts to manage them here.
+                {% endif %}
+            </p>
         </div>
     {% endif %}
 </div>

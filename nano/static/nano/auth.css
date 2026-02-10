@@ -707,6 +707,82 @@ body {
     margin: 0;
 }
 
+/* Workspace Info Styling */
+.workspace-info {
+    margin-bottom: 20px;
+}
+
+.info-card {
+    background-color: #e3f2fd;
+    color: #1565c0;
+    padding: 20px;
+    border-radius: 8px;
+    border: 1px solid #bbdefb;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: flex-start;
+    gap: 15px;
+}
+
+.info-card i {
+    font-size: 1.5rem;
+    margin-top: 2px;
+    color: #1976d2;
+}
+
+.info-card h4 {
+    margin: 0 0 8px 0;
+    color: #1565c0;
+    font-size: 1.1rem;
+    font-weight: 600;
+}
+
+.info-card p {
+    margin: 0;
+    line-height: 1.5;
+    color: #1976d2;
+}
+
+/* Regular user registration styling */
+.regular-user-registration h1 {
+    color: #588157;
+    margin-bottom: 20px;
+    text-shadow: 1px 1px 2px rgba(255, 255, 255, 0.8);
+}
+
+.workspace-info {
+    background-color: #e8f5e8;
+    color: #2e7d32;
+    padding: 20px;
+    border-radius: 8px;
+    border: 1px solid #c8e6c9;
+    margin-bottom: 20px;
+    text-shadow: 1px 1px 2px rgba(255, 255, 255, 0.8);
+}
+
+.workspace-info p {
+    margin-bottom: 10px;
+    line-height: 1.5;
+    color: #2e7d32;
+}
+
+.workspace-info ul {
+    margin: 15px 0;
+    padding-left: 25px;
+}
+
+.workspace-info li {
+    margin-bottom: 8px;
+    line-height: 1.4;
+    color: #2e7d32;
+}
+
+.workspace-info em {
+    color: #1b5e20;
+    font-style: italic;
+    font-weight: 500;
+}
+
 /* Extra Small Mobile */
 @media (max-width: 380px) {
     .auth-container {
@@ -758,5 +834,22 @@ body {
     
     .checkbox-cell {
         width: 30px;
+    }
+    
+    .info-card {
+        padding: 15px;
+        gap: 10px;
+    }
+    
+    .info-card i {
+        font-size: 1.2rem;
+    }
+    
+    .info-card h4 {
+        font-size: 1rem;
+    }
+    
+    .workspace-info {
+        padding: 15px;
     }
 }

@@ -1203,7 +1203,7 @@ function createStandaloneFloatingButton() {
     floatingBtn.title = 'Send Message';
     floatingBtn.style.cssText = `
         position: fixed;
-        bottom: 20px;
+        bottom: ${window.innerWidth <= 768 ? '80px' : '20px'};
         right: 20px;
         width: 60px;
         height: 60px;

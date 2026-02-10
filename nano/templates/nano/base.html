@@ -3,8 +3,9 @@
 <head>
     {% load static %}
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}NDtech{% endblock %}</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="mobile-web-app-capable" content="yes">
+    <title>{% block title %}{{ user_company_name|default:"NDtech" }}{% endblock %}</title>
     
     <!-- PWA Meta Tags -->
     <meta name="theme-color" content="#007bff">
@@ -67,7 +68,7 @@
     <!-- Navigation Bar -->
     <header class="navbar">
         <div class="nav-brand">
-            <h1><i class="fas fa-cash-register"></i> NDtech</h1>
+            <h1><i class="fas fa-cash-register"></i> {{ user_company_name|default:"NDtech" }}</h1>
         </div>
         <nav class="nav-menu">
             <a href="{% url 'home' %}" class="nav-link">
@@ -151,7 +152,7 @@
                 <i class="fas fa-sign-out-alt"></i> Logout
             </a>
         </nav>
-        <button class="hamburger-toggle" aria-label="Toggle mobile menu">
+        <button class="hamburger-toggle" aria-label="Toggle mobile menu" style="display: none;">
             <i class="fas fa-bars icon"></i>
         </button>
     </header>
@@ -160,7 +161,7 @@
     <nav class="mobile-nav" id="mobile-nav">
         <div class="mobile-nav-header">
             <div class="mobile-nav-brand">
-                <i class="fas fa-cash-register"></i> NDtech
+                <i class="fas fa-cash-register"></i> {{ user_company_name|default:"NDtech" }}
             </div>
             <button class="mobile-nav-close" aria-label="Close mobile menu">
                 <i class="fas fa-times"></i>
@@ -262,6 +263,30 @@
             {% block content %}{% endblock %}
         </div>
     </main>
+
+    <!-- Mobile Bottom Navigation -->
+    <nav class="bottom-nav">
+        <a href="{% url 'home' %}" class="bottom-nav-link {% if request.resolver_match.url_name == 'home' %}active{% endif %}">
+            <i class="fas fa-home"></i>
+            <span>Home</span>
+        </a>
+        <a href="{% url 'upc_lookup' %}" class="bottom-nav-link {% if request.resolver_match.url_name == 'upc_lookup' %}active{% endif %}">
+            <i class="fas fa-search"></i>
+            <span>Search</span>
+        </a>
+        <a href="{% url 'barcode_scanner' %}" class="bottom-nav-link {% if request.resolver_match.url_name == 'barcode_scanner' %}active{% endif %}">
+            <i class="fas fa-camera"></i>
+            <span>Scan</span>
+        </a>
+        <a href="{% url 'pending_orders' %}" class="bottom-nav-link {% if request.resolver_match.url_name == 'pending_orders' %}active{% endif %}">
+            <i class="fas fa-clock"></i>
+            <span>Orders</span>
+        </a>
+        <button class="bottom-nav-link menu-trigger" id="mobileMenuBtn">
+            <i class="fas fa-bars"></i>
+            <span>Menu</span>
+        </button>
+    </nav>
 
     {% csrf_token %}
     <script src="{% static 'nano/notifications.js' %}"></script>

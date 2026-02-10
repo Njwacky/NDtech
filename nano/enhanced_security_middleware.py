@@ -90,7 +90,7 @@ class EnhancedSecurityMiddleware(MiddlewareMixin):
                 content = response.content.decode('utf-8', errors='ignore')
                 
                 import re
-                for pattern in self.sensitive_patterns:
+                for idx, pattern in enumerate(self.sensitive_patterns):
                     if re.search(pattern, content, re.IGNORECASE):
                         # Log potential data leakage
                         SecurityAuditLog.objects.create(
@@ -104,7 +104,8 @@ class EnhancedSecurityMiddleware(MiddlewareMixin):
                             detection_method='enhanced_middleware',
                         )
                         
-                        logger.warning(f"Sensitive data pattern detected in response: {pattern}")
+                        # Log warning without exposing the pattern itself
+                        logger.warning(f"Sensitive data pattern #{idx + 1} detected in response to {request.path}")
                         break
         
         except Exception as e:

@@ -6,100 +6,139 @@
 {% block extra_css %}
 <link rel="stylesheet" href="{% static 'nano/airtime-modern.css' %}">
 <style>
-/* Status Toggle Button Styles */
-.status-toggle-btn {
-    background: rgba(255, 255, 255, 0.9) !important;
-    border: 2px solid rgba(163, 177, 138, 0.3) !important;
-    border-radius: 2rem !important;
-    padding: 0.5rem 1rem !important;
-    cursor: pointer !important;
-    transition: all 0.3s ease !important;
-    display: flex !important;
-    align-items: center !important;
-    gap: 0.5rem !important;
-    font-size: 0.85rem !important;
-    font-weight: 600 !important;
-    color: #344e41 !important;
-    backdrop-filter: blur(10px) !important;
-}
+    /* Status Toggle Button Styles */
+    .status-toggle-btn {
+        background: rgba(255, 255, 255, 0.9) !important;
+        border: 2px solid rgba(163, 177, 138, 0.3) !important;
+        border-radius: 2rem !important;
+        padding: 0.5rem 1rem !important;
+        cursor: pointer !important;
+        transition: all 0.3s ease !important;
+        display: flex !important;
+        align-items: center !important;
+        gap: 0.5rem !important;
+        font-size: 0.85rem !important;
+        font-weight: 600 !important;
+        color: #344e41 !important;
+        backdrop-filter: blur(10px) !important;
+        pointer-events: auto !important;
+    }
 
-.status-toggle-btn:hover {
-    transform: translateY(-2px) !important;
-    box-shadow: 0 4px 15px rgba(52, 78, 65, 0.2) !important;
-}
+    .status-toggle-btn:hover {
+        transform: translateY(-2px) !important;
+        box-shadow: 0 4px 15px rgba(52, 78, 65, 0.2) !important;
+    }
 
-.status-toggle-btn.active {
-    background: linear-gradient(135deg, #588157, #344e41) !important;
-    color: white !important;
-    border-color: #588157 !important;
-}
+    .status-toggle-btn.active {
+        background: linear-gradient(135deg, #588157, #344e41) !important;
+        color: white !important;
+        border-color: #588157 !important;
+    }
 
-.status-toggle-btn.inactive {
-    background: linear-gradient(135deg, #6b7280, #4b5563) !important;
-    color: white !important;
-    border-color: #6b7280 !important;
-}
+    .status-toggle-btn.inactive {
+        background: linear-gradient(135deg, #6b7280, #4b5563) !important;
+        color: white !important;
+        border-color: #6b7280 !important;
+    }
 
-.status-toggle-btn.active:hover {
-    background: linear-gradient(135deg, #344e41, #2d3e35) !important;
-    box-shadow: 0 4px 15px rgba(88, 129, 87, 0.4) !important;
-}
+    .status-toggle-btn.active:hover {
+        background: linear-gradient(135deg, #344e41, #2d3e35) !important;
+        box-shadow: 0 4px 15px rgba(88, 129, 87, 0.4) !important;
+    }
 
-.status-toggle-btn.inactive:hover {
-    background: linear-gradient(135deg, #4b5563, #374151) !important;
-    box-shadow: 0 4px 15px rgba(107, 114, 128, 0.4) !important;
-}
+    .status-toggle-btn.inactive:hover {
+        background: linear-gradient(135deg, #4b5563, #374151) !important;
+        box-shadow: 0 4px 15px rgba(107, 114, 128, 0.4) !important;
+    }
 
-.status-toggle-btn i {
-    font-size: 0.9rem !important;
-}
+    .status-toggle-btn i {
+        font-size: 0.9rem !important;
+    }
 
-.status-toggle-btn.loading {
-    pointer-events: none !important;
-    opacity: 0.7 !important;
-}
+    .status-toggle-btn.loading {
+        pointer-events: none !important;
+        opacity: 0.7 !important;
+    }
 
-.status-toggle-btn.loading i {
-    animation: spin 1s linear infinite !important;
-}
+    .status-toggle-btn.loading i {
+        animation: spin 1s linear infinite !important;
+    }
 
-@keyframes spin {
-    from { transform: rotate(0deg); }
-    to { transform: rotate(360deg); }
-}
+    @keyframes spin {
+        from {
+            transform: rotate(0deg);
+        }
+
+        to {
+            transform: rotate(360deg);
+        }
+    }
+
+    /* Fix button pointer events */
+    .network-btn,
+    .template-btn,
+    .action-btn,
+    .guide-btn,
+    .help-close {
+        pointer-events: auto !important;
+        cursor: pointer !important;
+    }
+
+    /* Notification System Fix */
+    .notification {
+        position: fixed;
+        top: 2rem;
+        right: 2rem;
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(20px);
+        border-radius: 0.75rem;
+        padding: 1rem 1.5rem;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        z-index: 9999;
+        transform: translateX(400px);
+        opacity: 0;
+        transition: all 0.3s ease;
+        max-width: 400px;
+        pointer-events: auto;
+    }
+
+    .notification.show {
+        transform: translateX(0);
+        opacity: 1;
+    }
+
+    .notification-content {
+        align-items: center;
+        gap: 1rem;
+    }
 </style>
 {% endblock %}
 
 {% block content %}
 <div class="airtime-container">
-    <!-- Header Section -->
+
     <header class="airtime-header">
         <div class="header-content">
             <div class="header-title">
                 <div class="title-icon">
-                    <i class="fas fa-cogs"></i>
+                    <i class="fas fa-boxes"></i>
                 </div>
                 <div class="title-text">
                     <h1>Airtime Management</h1>
-                    <p class="subtitle">Add products and manage inventory</p>
+                    <p class="subtitle">Manage products, stock levels, and settings</p>
                 </div>
             </div>
             <div class="header-actions">
-                <button class="guide-btn" data-bs-toggle="collapse" data-bs-target="#helpGuide">
-                    <i class="fas fa-question-circle"></i>
-                    <span>Help Guide</span>
+                <button class="guide-btn" type="button" data-bs-toggle="collapse" data-bs-target="#helpGuide">
+                    <i class="fas fa-question-circle"></i> Quick Guide
                 </button>
-                <a href="{% url 'airtime_dashboard' %}" class="action-btn secondary">
-                    <i class="fas fa-arrow-left"></i>
-                    <span>Back to Dashboard</span>
-                </a>
             </div>
         </div>
     </header>
 
-    <!-- Help Guide Section -->
-    <div class="help-section" id="helpGuide">
-        <div class="help-card">
+    <div class="collapse show help-section" id="helpGuide">
+        <div class="help-card"> <!-- guessed class based on dashboard -->
             <div class="help-header">
                 <div class="help-icon">
                     <i class="fas fa-info-circle"></i>
@@ -117,7 +156,8 @@
                         </div>
                         <h4>Adding New Products</h4>
                         <ul>
-                            <li><strong>Product Name:</strong> Enter a descriptive name (e.g., "Vodacom R50 Airtime")</li>
+                            <li><strong>Product Name:</strong> Enter a descriptive name (e.g., "Vodacom R50 Airtime")
+                            </li>
                             <li><strong>Network:</strong> Select the mobile network provider</li>
                             <li><strong>Type:</strong> Choose between Airtime, Data, SMS Bundle, or Combo</li>
                             <li><strong>Value:</strong> Enter the face value in Rands (what customer gets)</li>
@@ -136,7 +176,7 @@
                             <li><strong>Quantity to Add:</strong> Enter amount to increase stock</li>
                             <li><strong>Current Stock:</strong> Shows available inventory for each product</li>
                         </ul>
-                        
+
                         <h4 class="mt-3">Pro Tips</h4>
                         <ul>
                             <li>Set selling price higher than face value for profit margin</li>
@@ -151,9 +191,11 @@
                         </div>
                         <h4>Security & Permissions</h4>
                         <ul>
-                            <li>Only <strong>Managers</strong>, <strong>Admins</strong>, and <strong>Superusers</strong> can add airtime products</li>
+                            <li>Only <strong>Managers</strong>, <strong>Admins</strong>, and <strong>Superusers</strong>
+                                can add airtime products</li>
                             <li>Cashiers must request approval for new products through the request system</li>
-                            <li><strong>NEW:</strong> Cashiers can now sell airtime immediately without manager approval for urgent purchases!</li>
+                            <li><strong>NEW:</strong> Cashiers can now sell airtime immediately without manager approval
+                                for urgent purchases!</li>
                             <li>Cashiers can customize airtime amounts using the quick sell feature</li>
                         </ul>
                     </div>
@@ -175,7 +217,7 @@
                 </div>
             </div>
         </div>
-        
+
         <div class="quick-sell-container">
             <!-- Network Selection -->
             <div class="network-selector">
@@ -223,7 +265,7 @@
             <!-- Amount Selection -->
             <div class="amount-selector" id="amountSelector" style="display: none;">
                 <h3>Select Amount</h3>
-                
+
                 <!-- Quick Templates -->
                 <div class="template-grid">
                     <button class="template-btn" data-amount="5" data-type="airtime">
@@ -359,7 +401,7 @@
                 </div>
             </div>
         </div>
-        
+
         <div class="form-container">
             <form method="post" class="modern-form">
                 {% csrf_token %}
@@ -373,9 +415,9 @@
                             <select class="form-control" id="update_product_id" name="product_id" required>
                                 <option value="">Select Product</option>
                                 {% for product in airtime_products %}
-                                    <option value="{{ product.id }}">
-                                        {{ product.get_display_name }} (Current Stock: {{ product.stock }})
-                                    </option>
+                                <option value="{{ product.id }}">
+                                    {{ product.get_display_name }} (Current Stock: {{ product.stock }})
+                                </option>
                                 {% endfor %}
                             </select>
                         </div>
@@ -386,8 +428,8 @@
                             <span class="input-icon">
                                 <i class="fas fa-plus-circle"></i>
                             </span>
-                            <input type="number" class="form-control" id="quantity" name="quantity" 
-                                   min="1" placeholder="10" required>
+                            <input type="number" class="form-control" id="quantity" name="quantity" min="1"
+                                placeholder="10" required>
                         </div>
                     </div>
                 </div>
@@ -419,66 +461,66 @@
                 <span>Back to Dashboard</span>
             </a>
         </div>
-        
+
         <div class="products-container">
             {% if airtime_products %}
-                <div class="products-grid">
-                    {% for product in airtime_products %}
-                        <div class="product-card">
-                            <div class="product-header">
-                                <div class="network-badge {{ product.network }}">
-                                    {{ product.get_network_display }}
-                                </div>
-                                <button class="status-toggle-btn {% if product.is_active %}active{% else %}inactive{% endif %}" 
-                                        data-product-id="{{ product.id }}" 
-                                        data-current-status="{% if product.is_active %}active{% else %}inactive{% endif %}">
-                                    {% if product.is_active %}
-                                        <i class="fas fa-check-circle"></i>
-                                        <span>Active</span>
-                                    {% else %}
-                                        <i class="fas fa-pause-circle"></i>
-                                        <span>Inactive</span>
-                                    {% endif %}
-                                </button>
+            <div class="products-grid">
+                {% for product in airtime_products %}
+                <div class="product-card">
+                    <div class="product-header">
+                        <div class="network-badge {{ product.network }}">
+                            {{ product.get_network_display }}
+                        </div>
+                        <button class="status-toggle-btn {% if product.is_active %}active{% else %}inactive{% endif %}"
+                            data-product-id="{{ product.id }}"
+                            data-current-status="{% if product.is_active %}active{% else %}inactive{% endif %}">
+                            {% if product.is_active %}
+                            <i class="fas fa-check-circle"></i>
+                            <span>Active</span>
+                            {% else %}
+                            <i class="fas fa-pause-circle"></i>
+                            <span>Inactive</span>
+                            {% endif %}
+                        </button>
+                    </div>
+                    <div class="product-body">
+                        <h3 class="product-name">{{ product.name }}</h3>
+                        <div class="product-details">
+                            <div class="detail-item">
+                                <span class="label">Type:</span>
+                                <span class="value">{{ product.get_airtime_type_display }}</span>
                             </div>
-                            <div class="product-body">
-                                <h3 class="product-name">{{ product.name }}</h3>
-                                <div class="product-details">
-                                    <div class="detail-item">
-                                        <span class="label">Type:</span>
-                                        <span class="value">{{ product.get_airtime_type_display }}</span>
-                                    </div>
-                                    <div class="detail-item">
-                                        <span class="label">Value:</span>
-                                        <span class="value">R{{ product.value }}</span>
-                                    </div>
-                                    <div class="detail-item">
-                                        <span class="label">Price:</span>
-                                        <span class="price">R{{ product.price }}</span>
-                                    </div>
-                                    <div class="detail-item">
-                                        <span class="label">Stock:</span>
-                                        <span class="stock {% if product.stock > 0 %}in-stock{% else %}out-of-stock{% endif %}">
-                                            {{ product.stock }} units
-                                        </span>
-                                    </div>
-                                    <div class="detail-item">
-                                        <span class="label">Added:</span>
-                                        <span class="value">{{ product.date_added|date:"Y-m-d" }}</span>
-                                    </div>
-                                </div>
+                            <div class="detail-item">
+                                <span class="label">Value:</span>
+                                <span class="value">R{{ product.value }}</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="label">Price:</span>
+                                <span class="price">R{{ product.price }}</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="label">Stock:</span>
+                                <span class="stock {% if product.stock > 0 %}in-stock{% else %}out-of-stock{% endif %}">
+                                    {{ product.stock }} units
+                                </span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="label">Added:</span>
+                                <span class="value">{{ product.date_added|date:"Y-m-d" }}</span>
                             </div>
                         </div>
-                    {% endfor %}
-                </div>
-            {% else %}
-                <div class="empty-state">
-                    <div class="empty-icon">
-                        <i class="fas fa-box-open"></i>
                     </div>
-                    <h3>No airtime products found</h3>
-                    <p>Add your first product using the form above to get started.</p>
                 </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="empty-state">
+                <div class="empty-icon">
+                    <i class="fas fa-box-open"></i>
+                </div>
+                <h3>No airtime products found</h3>
+                <p>Add your first product using the form above to get started.</p>
+            </div>
             {% endif %}
         </div>
     </section>
@@ -487,181 +529,182 @@
 
 {% block extra_js %}
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
 <script>
-$(document).ready(function() {
-    let selectedNetwork = null;
-    let selectedAmount = null;
-    let selectedType = null;
-    let selectedPrice = null;
+    $(document).ready(function () {
+        let selectedNetwork = null;
+        let selectedAmount = null;
+        let selectedType = null;
+        let selectedPrice = null;
 
-    // Network selection
-    $('.network-btn').click(function() {
-        $('.network-btn').removeClass('selected');
-        $(this).addClass('selected');
-        
-        selectedNetwork = $(this).data('network');
-        $('#amountSelector').fadeIn(300);
-        
-        // Scroll to amount selector
-        $('html, body').animate({
-            scrollTop: $('#amountSelector').offset().top - 20
-        }, 500);
-    });
+        // Network selection
+        $('.network-btn').click(function () {
+            $('.network-btn').removeClass('selected');
+            $(this).addClass('selected');
 
-    // Template button selection
-    $('.template-btn').click(function() {
-        $('.template-btn').removeClass('selected');
-        $(this).addClass('selected');
-        
-        selectedAmount = parseFloat($(this).data('amount'));
-        selectedType = $(this).data('type');
-        selectedPrice = parseFloat($(this).find('.price').text().replace('R', ''));
-        
-        showProductDetails();
-    });
+            selectedNetwork = $(this).data('network');
+            $('#amountSelector').fadeIn(300);
 
-    // Custom amount calculation
-    $('#customAmount, #customType').on('input change', function() {
-        calculateCustomPrice();
-    });
-
-    function calculateCustomPrice() {
-        const amount = parseFloat($('#customAmount').val()) || 0;
-        const type = $('#customType').val();
-        const markup = type === 'data' ? 3 : 2;
-        const totalPrice = amount + markup;
-        
-        $('#calculatedPrice').text('R' + totalPrice.toFixed(2));
-    }
-
-    // Use custom amount
-    $('#useCustomAmount').click(function() {
-        const amount = parseFloat($('#customAmount').val()) || 0;
-        const type = $('#customType').val();
-        const markup = type === 'data' ? 3 : 2;
-        const totalPrice = amount + markup;
-        
-        if (amount <= 0) {
-            showNotification('Please enter a valid amount', 'warning');
-            return;
-        }
-        
-        selectedAmount = amount;
-        selectedType = type;
-        selectedPrice = totalPrice;
-        
-        showProductDetails();
-    });
-
-    // Show product details
-    function showProductDetails() {
-        $('#amountSelector').fadeOut(300);
-        $('#productDetails').fadeIn(300);
-        
-        // Update summary
-        $('#selectedNetwork').text(selectedNetwork.charAt(0).toUpperCase() + selectedNetwork.slice(1));
-        $('#selectedType').text(selectedType.charAt(0).toUpperCase() + selectedType.slice(1));
-        $('#selectedAmount').text('R' + selectedAmount.toFixed(2));
-        $('#selectedPrice').text('R' + selectedPrice.toFixed(2));
-        
-        // Scroll to product details
-        $('html, body').animate({
-            scrollTop: $('#productDetails').offset().top - 20
-        }, 500);
-        
-        // Focus on stock input
-        $('#initialStock').focus();
-    }
-
-    // Back to amount selection
-    $('#backToAmount').click(function() {
-        $('#productDetails').fadeOut(300);
-        $('#amountSelector').fadeIn(300);
-    });
-
-    // Add to inventory
-    $('#addToInventory').click(function() {
-        const initialStock = parseInt($('#initialStock').val()) || 0;
-        
-        // Validation
-        if (initialStock < 0) {
-            showNotification('Stock quantity cannot be negative', 'warning');
-            $('#initialStock').focus();
-            return;
-        }
-        
-        if (!selectedNetwork || !selectedAmount || !selectedType || !selectedPrice) {
-            showNotification('Please complete selection', 'warning');
-            return;
-        }
-        
-        const button = $(this);
-        button.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Adding...');
-        
-        // Create product name
-        const productName = `${selectedNetwork.charAt(0).toUpperCase() + selectedNetwork.slice(1)} R${selectedAmount} ${selectedType.charAt(0).toUpperCase() + selectedType.slice(1)}`;
-        
-        // Create form data for product creation
-        const formData = new FormData();
-        formData.append('name', productName);
-        formData.append('network', selectedNetwork);
-        formData.append('airtime_type', selectedType);
-        formData.append('value', selectedAmount);
-        formData.append('price', selectedPrice);
-        formData.append('stock', initialStock);
-        formData.append('mode', 'add_product');
-        formData.append('csrfmiddlewaretoken', getCookie('csrftoken'));
-        
-        $.ajax({
-            url: '{% url "airtime_management" %}',
-            method: 'POST',
-            data: formData,
-            processData: false,
-            contentType: false,
-            headers: {
-                'X-Requested-With': 'XMLHttpRequest'
-            },
-            success: function(response) {
-                if (response.success) {
-                    showNotification(response.message, 'success');
-                    resetQuickSellForm();
-                    setTimeout(() => location.reload(), 1500);
-                } else {
-                    showNotification(response.error || 'Error adding product. Please check your input.', 'error');
-                }
-            },
-            error: function(xhr, status, error) {
-                let errorMessage = 'Error adding product. Please try again.';
-                if (xhr.responseJSON && xhr.responseJSON.error) {
-                    errorMessage = 'Error: ' + xhr.responseJSON.error;
-                }
-                showNotification(errorMessage, 'error');
-            },
-            complete: function() {
-                button.prop('disabled', false).html('<i class="fas fa-plus"></i> Add to Inventory');
-            }
+            // Scroll to amount selector
+            $('html, body').animate({
+                scrollTop: $('#amountSelector').offset().top - 20
+            }, 500);
         });
-    });
 
-    // Reset form
-    function resetQuickSellForm() {
-        $('.network-btn, .template-btn').removeClass('selected');
-        $('#productDetails, #amountSelector').hide();
-        $('#initialStock, #customAmount').val('');
-        $('#calculatedPrice').text('R0.00');
-        selectedNetwork = null;
-        selectedAmount = null;
-        selectedType = null;
-        selectedPrice = null;
-    }
+        // Template button selection
+        $('.template-btn').click(function () {
+            $('.template-btn').removeClass('selected');
+            $(this).addClass('selected');
 
-    // Show notification function
-    function showNotification(message, type = 'info') {
-        // Remove existing notifications
-        $('.notification').remove();
-        
-        // Create notification element
-        const notification = $(`
+            selectedAmount = parseFloat($(this).data('amount'));
+            selectedType = $(this).data('type');
+            selectedPrice = parseFloat($(this).find('.price').text().replace('R', ''));
+
+            showProductDetails();
+        });
+
+        // Custom amount calculation
+        $('#customAmount, #customType').on('input change', function () {
+            calculateCustomPrice();
+        });
+
+        function calculateCustomPrice() {
+            const amount = parseFloat($('#customAmount').val()) || 0;
+            const type = $('#customType').val();
+            const markup = type === 'data' ? 3 : 2;
+            const totalPrice = amount + markup;
+
+            $('#calculatedPrice').text('R' + totalPrice.toFixed(2));
+        }
+
+        // Use custom amount
+        $('#useCustomAmount').click(function () {
+            const amount = parseFloat($('#customAmount').val()) || 0;
+            const type = $('#customType').val();
+            const markup = type === 'data' ? 3 : 2;
+            const totalPrice = amount + markup;
+
+            if (amount <= 0) {
+                showNotification('Please enter a valid amount', 'warning');
+                return;
+            }
+
+            selectedAmount = amount;
+            selectedType = type;
+            selectedPrice = totalPrice;
+
+            showProductDetails();
+        });
+
+        // Show product details
+        function showProductDetails() {
+            $('#amountSelector').fadeOut(300);
+            $('#productDetails').fadeIn(300);
+
+            // Update summary
+            $('#selectedNetwork').text(selectedNetwork.charAt(0).toUpperCase() + selectedNetwork.slice(1));
+            $('#selectedType').text(selectedType.charAt(0).toUpperCase() + selectedType.slice(1));
+            $('#selectedAmount').text('R' + selectedAmount.toFixed(2));
+            $('#selectedPrice').text('R' + selectedPrice.toFixed(2));
+
+            // Scroll to product details
+            $('html, body').animate({
+                scrollTop: $('#productDetails').offset().top - 20
+            }, 500);
+
+            // Focus on stock input
+            $('#initialStock').focus();
+        }
+
+        // Back to amount selection
+        $('#backToAmount').click(function () {
+            $('#productDetails').fadeOut(300);
+            $('#amountSelector').fadeIn(300);
+        });
+
+        // Add to inventory
+        $('#addToInventory').click(function () {
+            const initialStock = parseInt($('#initialStock').val()) || 0;
+
+            // Validation
+            if (initialStock < 0) {
+                showNotification('Stock quantity cannot be negative', 'warning');
+                $('#initialStock').focus();
+                return;
+            }
+
+            if (!selectedNetwork || !selectedAmount || !selectedType || !selectedPrice) {
+                showNotification('Please complete selection', 'warning');
+                return;
+            }
+
+            const button = $(this);
+            button.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Adding...');
+
+            // Create product name
+            const productName = `${selectedNetwork.charAt(0).toUpperCase() + selectedNetwork.slice(1)} R${selectedAmount} ${selectedType.charAt(0).toUpperCase() + selectedType.slice(1)}`;
+
+            // Create form data for product creation
+            const formData = new FormData();
+            formData.append('name', productName);
+            formData.append('network', selectedNetwork);
+            formData.append('airtime_type', selectedType);
+            formData.append('value', selectedAmount);
+            formData.append('price', selectedPrice);
+            formData.append('stock', initialStock);
+            formData.append('mode', 'add_product');
+            formData.append('csrfmiddlewaretoken', getCookie('csrftoken'));
+
+            $.ajax({
+                url: '{% url "airtime_management" %}',
+                method: 'POST',
+                data: formData,
+                processData: false,
+                contentType: false,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                success: function (response) {
+                    if (response.success) {
+                        showNotification(response.message, 'success');
+                        resetQuickSellForm();
+                        setTimeout(() => location.reload(), 1500);
+                    } else {
+                        showNotification(response.error || 'Error adding product. Please check your input.', 'error');
+                    }
+                },
+                error: function (xhr, status, error) {
+                    let errorMessage = 'Error adding product. Please try again.';
+                    if (xhr.responseJSON && xhr.responseJSON.error) {
+                        errorMessage = 'Error: ' + xhr.responseJSON.error;
+                    }
+                    showNotification(errorMessage, 'error');
+                },
+                complete: function () {
+                    button.prop('disabled', false).html('<i class="fas fa-plus"></i> Add to Inventory');
+                }
+            });
+        });
+
+        // Reset form
+        function resetQuickSellForm() {
+            $('.network-btn, .template-btn').removeClass('selected');
+            $('#productDetails, #amountSelector').hide();
+            $('#initialStock, #customAmount').val('');
+            $('#calculatedPrice').text('R0.00');
+            selectedNetwork = null;
+            selectedAmount = null;
+            selectedType = null;
+            selectedPrice = null;
+        }
+
+        // Show notification function
+        function showNotification(message, type = 'info') {
+            // Remove existing notifications
+            $('.notification').remove();
+
+            // Create notification element
+            const notification = $(`
             <div class="notification ${type}">
                 <div class="notification-content">
                     <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'warning' ? 'exclamation-triangle' : type === 'error' ? 'times-circle' : 'info-circle'}"></i>
@@ -672,115 +715,115 @@ $(document).ready(function() {
                 </button>
             </div>
         `);
-        
-        // Add to body
-        $('body').append(notification);
-        
-        // Show notification with animation
-        setTimeout(() => notification.addClass('show'), 100);
-        
-        // Auto remove after 5 seconds
-        setTimeout(() => {
-            notification.removeClass('show');
-            setTimeout(() => notification.remove(), 300);
-        }, 5000);
-        
-        // Handle close button
-        notification.find('.notification-close').click(() => {
-            notification.removeClass('show');
-            setTimeout(() => notification.remove(), 300);
-        });
-    }
 
-    // Keyboard navigation
-    $(document).keydown(function(e) {
-        if (e.key === 'Escape') {
-            if ($('#productDetails').is(':visible')) {
-                $('#backToAmount').click();
-            } else if ($('#amountSelector').is(':visible')) {
-                resetQuickSellForm();
-            }
+            // Add to body
+            $('body').append(notification);
+
+            // Show notification with animation
+            setTimeout(() => notification.addClass('show'), 100);
+
+            // Auto remove after 5 seconds
+            setTimeout(() => {
+                notification.removeClass('show');
+                setTimeout(() => notification.remove(), 300);
+            }, 5000);
+
+            // Handle close button
+            notification.find('.notification-close').click(() => {
+                notification.removeClass('show');
+                setTimeout(() => notification.remove(), 300);
+            });
         }
-    });
 
-    // Status toggle functionality
-    $('.status-toggle-btn').click(function() {
-        const button = $(this);
-        const productId = button.data('product-id');
-        const currentStatus = button.data('current-status');
-        const newStatus = currentStatus === 'active' ? 'inactive' : 'active';
-        
-        // Add loading state
-        button.addClass('loading');
-        const originalHtml = button.html();
-        button.html('<i class="fas fa-spinner fa-spin"></i> <span>Updating...</span>');
-        
-        // Create form data
-        const formData = new FormData();
-        formData.append('product_id', productId);
-        formData.append('status', newStatus);
-        formData.append('mode', 'toggle_status');
-        formData.append('csrfmiddlewaretoken', getCookie('csrftoken'));
-        
-        $.ajax({
-            url: '{% url "airtime_management" %}',
-            method: 'POST',
-            data: formData,
-            processData: false,
-            contentType: false,
-            headers: {
-                'X-Requested-With': 'XMLHttpRequest'
-            },
-            success: function(response) {
-                if (response.success) {
-                    // Update button appearance
-                    button.removeClass('active inactive').addClass(newStatus);
-                    button.data('current-status', newStatus);
-                    
-                    // Update button content
-                    if (newStatus === 'active') {
-                        button.html('<i class="fas fa-check-circle"></i> <span>Active</span>');
+        // Keyboard navigation
+        $(document).keydown(function (e) {
+            if (e.key === 'Escape') {
+                if ($('#productDetails').is(':visible')) {
+                    $('#backToAmount').click();
+                } else if ($('#amountSelector').is(':visible')) {
+                    resetQuickSellForm();
+                }
+            }
+        });
+
+        // Status toggle functionality
+        $('.status-toggle-btn').click(function () {
+            const button = $(this);
+            const productId = button.data('product-id');
+            const currentStatus = button.data('current-status');
+            const newStatus = currentStatus === 'active' ? 'inactive' : 'active';
+
+            // Add loading state
+            button.addClass('loading');
+            const originalHtml = button.html();
+            button.html('<i class="fas fa-spinner fa-spin"></i> <span>Updating...</span>');
+
+            // Create form data
+            const formData = new FormData();
+            formData.append('product_id', productId);
+            formData.append('status', newStatus);
+            formData.append('mode', 'toggle_status');
+            formData.append('csrfmiddlewaretoken', getCookie('csrftoken'));
+
+            $.ajax({
+                url: '{% url "airtime_management" %}',
+                method: 'POST',
+                data: formData,
+                processData: false,
+                contentType: false,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                success: function (response) {
+                    if (response.success) {
+                        // Update button appearance
+                        button.removeClass('active inactive').addClass(newStatus);
+                        button.data('current-status', newStatus);
+
+                        // Update button content
+                        if (newStatus === 'active') {
+                            button.html('<i class="fas fa-check-circle"></i> <span>Active</span>');
+                        } else {
+                            button.html('<i class="fas fa-pause-circle"></i> <span>Inactive</span>');
+                        }
+
+                        showNotification(response.message, 'success');
                     } else {
-                        button.html('<i class="fas fa-pause-circle"></i> <span>Inactive</span>');
+                        // Restore original button state
+                        button.html(originalHtml);
+                        showNotification(response.error || 'Error updating status. Please try again.', 'error');
                     }
-                    
-                    showNotification(response.message, 'success');
-                } else {
+                },
+                error: function (xhr, status, error) {
                     // Restore original button state
                     button.html(originalHtml);
-                    showNotification(response.error || 'Error updating status. Please try again.', 'error');
+                    let errorMessage = 'Error updating status. Please try again.';
+                    if (xhr.responseJSON && xhr.responseJSON.error) {
+                        errorMessage = 'Error: ' + xhr.responseJSON.error;
+                    }
+                    showNotification(errorMessage, 'error');
+                },
+                complete: function () {
+                    button.removeClass('loading');
                 }
-            },
-            error: function(xhr, status, error) {
-                // Restore original button state
-                button.html(originalHtml);
-                let errorMessage = 'Error updating status. Please try again.';
-                if (xhr.responseJSON && xhr.responseJSON.error) {
-                    errorMessage = 'Error: ' + xhr.responseJSON.error;
-                }
-                showNotification(errorMessage, 'error');
-            },
-            complete: function() {
-                button.removeClass('loading');
-            }
+            });
         });
-    });
 
-    // CSRF token function
-    function getCookie(name) {
-        let cookieValue = null;
-        if (document.cookie && document.cookie !== '') {
-            const cookies = document.cookie.split(';');
-            for (let i = 0; i < cookies.length; i++) {
-                const cookie = cookies[i].trim();
-                if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                    break;
+        // CSRF token function
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
                 }
             }
+            return cookieValue;
         }
-        return cookieValue;
-    }
-});
+    });
 </script>
 {% endblock %}

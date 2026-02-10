@@ -17,6 +17,24 @@ const categoryExamples = {
     'seasonal_items': 'Christmas Decor, Easter Eggs, Halloween Items'
 };
 
+// Toggle expiry date field based on "No Expiry Date" checkbox
+function toggleExpiryDate() {
+    const checkbox = document.getElementById('no_expiry_date');
+    const expiryDateInput = document.getElementById('expiry_date');
+    
+    if (checkbox.checked) {
+        expiryDateInput.disabled = true;
+        expiryDateInput.value = '';
+        expiryDateInput.required = false;
+        expiryDateInput.style.opacity = '0.5';
+        expiryDateInput.style.backgroundColor = '#f3f4f6';
+    } else {
+        expiryDateInput.disabled = false;
+        expiryDateInput.style.opacity = '1';
+        expiryDateInput.style.backgroundColor = '';
+    }
+}
+
 // Toggle between different modes
 function toggleMode(mode) {
     // Update toggle buttons

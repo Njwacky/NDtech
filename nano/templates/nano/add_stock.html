@@ -215,10 +215,22 @@
                             <label for="expiry_date">
                                 Expiry Date
                             </label>
-                            <input type="date" 
-                                   id="expiry_date" 
-                                   name="expiry_date" 
-                                   class="form-control">
+                            <div class="expiry-date-container">
+                                <div class="checkbox-container">
+                                    <label class="checkbox-label">
+                                        <input type="checkbox" 
+                                               id="no_expiry_date" 
+                                               name="no_expiry_date" 
+                                               onchange="toggleExpiryDate()">
+                                        <span class="checkmark"></span>
+                                        No Expiry Date
+                                    </label>
+                                </div>
+                                <input type="date" 
+                                       id="expiry_date" 
+                                       name="expiry_date" 
+                                       class="form-control">
+                            </div>
                         </div>
 
                         <div class="form-group" style="grid-column: 1 / -1;">

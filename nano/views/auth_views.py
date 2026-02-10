@@ -14,33 +14,22 @@ from ..fcm_service import send_fcm_notification_to_user
 
 
 def register(request):
-    """Initial registration redirect - checks if users exist"""
-    # Check if any users already exist
-    existing_users = User.objects.exists()
-
-    if existing_users:
-        # If users exist, show the sign_up page which will display "registration closed"
-        return redirect('sign_up')
-    else:
-        # If no users exist, show the sign_up page for first user registration
-        return redirect('sign_up')
+    """Initial registration redirect - always allows registration"""
+    return redirect('sign_up')
 
 
 def sign_up(request):
-    """User registration form - only allows first user creation"""
-    # Check if any users already exist
+    """User registration form - allows multiple users to create their own workspaces"""
+    # Check if any users already exist to determine if this is first user
     existing_users = User.objects.exists()
+    is_first_user = not existing_users
 
     if request.method == 'POST':
-        # First check if users already exist - if so, don't allow registration
-        if existing_users:
-            messages.error(request, 'Registration is closed. An admin account already exists. New users must be created by the administrator.')
-            return redirect('sign_in')
-
         username = request.POST.get('username', '').strip()
         email = request.POST.get('email', '').strip()
         password = request.POST.get('password', '')
         confirm_password = request.POST.get('confirm_password', '')
+        company_name = request.POST.get('company_name', '').strip()
 
         errors = {}
 
@@ -58,6 +47,11 @@ def sign_up(request):
         elif User.objects.filter(email=email).exists():
             errors['email'] = 'Email already exists'
 
+        if not company_name:
+            errors['company_name'] = 'Company name is required'
+        elif len(company_name) < 2:
+            errors['company_name'] = 'Company name must be at least 2 characters'
+
         if not password:
             errors['password'] = 'Password is required'
         elif len(password) < 6:
@@ -69,29 +63,47 @@ def sign_up(request):
         if errors:
             for field, error in errors.items():
                 messages.error(request, error)
-            return render(request, 'nano/sign_up.html', {'existing_users': existing_users})
+            return render(request, 'nano/sign_up.html', {'is_first_user': is_first_user})
 
         try:
             with transaction.atomic():
                 user = User.objects.create_user(username=username, email=email, password=password)
 
-                # This is the first user, make them an admin
-                user.is_staff = True  # Make staff to access admin
+                # Determine role based on whether this is the first user
+                if is_first_user:
+                    # First user gets admin privileges
+                    user.is_staff = True
+                    user.is_superuser = True
+                    role = 'admin'
+                    created_by = None
+                    success_message = 'Admin account created successfully! You can now manage other users.'
+                else:
+                    # New users get manager role so they can create their own team
+                    user.is_staff = False
+                    user.is_superuser = False
+                    role = 'manager'
+                    created_by = None  # Self-registered
+                    success_message = 'Account created successfully! You can now create and manage your own team.'
+
                 user.save()
 
-                # Create or update admin profile (not superuser)
-                profile, created = UserProfile.objects.get_or_create(user=user)
-                profile.role = 'admin'
-                profile.created_by = None  # First user has no creator
+                # Create user profile
+                profile = UserProfile.objects.create(
+                    user=user,
+                    role=role,
+                    created_by=created_by,
+                    company_name=company_name
+                )
                 profile.save()
-                messages.success(request, 'Admin account created successfully! You can now manage other users.')
+
+                messages.success(request, success_message)
         except Exception as e:
             messages.error(request, f'Error creating account: {str(e)}')
-            return redirect('sign_in')
+            return redirect('sign_up')
 
         return redirect('sign_in')
 
-    return render(request, 'nano/sign_up.html', {'existing_users': existing_users})
+    return render(request, 'nano/sign_up.html', {'is_first_user': is_first_user})
 
 
 def sign_in(request):

@@ -2,6 +2,7 @@
 User Management Views for NDtech POS System
 Handles user CRUD operations (Create, Read, Update, Delete).
 """
+
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.contrib.auth.models import User
@@ -9,13 +10,16 @@ from django.contrib.auth.decorators import login_required
 from django.http import HttpResponseForbidden
 from django.core.paginator import Paginator
 from ..models import UserProfile
+from django.db.models import Q
 
 
 @login_required
 def create_user(request):
-    """Create new user - Admin only"""
-    # Allow only superusers or users with admin role
-    if not (request.user.is_superuser or (hasattr(request.user, 'userprofile') and request.user.userprofile.role in ['superuser', 'admin'])):
+    """Create new user - Admin and Manager roles"""
+    # Allow admins and managers to create users
+    user_role = getattr(request.user.userprofile, 'role', 'cashier') if hasattr(request.user, 'userprofile') else 'cashier'
+    
+    if not (request.user.is_superuser or user_role in ['admin', 'manager']):
         return HttpResponseForbidden("You do not have permission to access this page.")
 
     if request.method == 'POST':
@@ -24,6 +28,7 @@ def create_user(request):
         password = request.POST.get('password', '')
         confirm_password = request.POST.get('confirm_password', '')
         role = request.POST.get('role', '')
+        company_name = request.POST.get('company_name', '').strip()
 
         errors = {}
 
@@ -51,6 +56,16 @@ def create_user(request):
 
         if not role:
             errors['role'] = 'Role is required'
+        
+        # Validate role based on who is creating the user
+        if user_role == 'manager':
+            # Managers can only create cashiers and managers (not admins)
+            if role not in ['manager', 'cashier']:
+                errors['role'] = 'Managers can only create Manager or Cashier roles'
+        elif user_role == 'admin':
+            # Admins can create admin, manager, cashier (but not superuser)
+            if role not in ['admin', 'manager', 'cashier']:
+                errors['role'] = 'Admins can only create Admin, Manager, or Cashier roles'
         elif role not in ['superuser', 'admin', 'manager', 'cashier']:
             errors['role'] = 'Invalid role'
 
@@ -58,10 +73,18 @@ def create_user(request):
         if role == 'superuser' and not request.user.is_superuser:
             errors['role'] = 'Only superusers can create other superusers'
 
+        if not company_name:
+            errors['company_name'] = 'Company name is required'
+        elif len(company_name) < 2:
+            errors['company_name'] = 'Company name must be at least 2 characters'
+
         if errors:
             for field, error in errors.items():
                 messages.error(request, error)
-            return render(request, 'nano/create_user.html')
+            return render(request, 'nano/create_user.html', {
+                'user_role': user_role,
+                'company_name': company_name
+            })
 
         user = User.objects.create_user(username=username, email=email, password=password)
 
@@ -75,39 +98,69 @@ def create_user(request):
         profile, created = UserProfile.objects.get_or_create(user=user)
         profile.role = role
         profile.created_by = request.user
+        profile.company_name = company_name
         profile.save()
 
         messages.success(request, f'User "{username}" created successfully with role "{role}"!')
         return redirect('manage_users')
 
-    return render(request, 'nano/create_user.html')
+    return render(request, 'nano/create_user.html', {'user_role': user_role})
 
 
 @login_required
 def manage_users(request):
-    """List all users - Admin only"""
-    # Allow only superusers or users with admin role
-    if not (request.user.is_superuser or (hasattr(request.user, 'userprofile') and request.user.userprofile.role in ['superuser', 'admin'])):
+    """List users based on role - workspace separation"""
+    # Allow admins and managers to view users
+    user_role = getattr(request.user.userprofile, 'role', 'cashier') if hasattr(request.user, 'userprofile') else 'cashier'
+    
+    if not (request.user.is_superuser or user_role in ['admin', 'manager']):
         return HttpResponseForbidden("You do not have permission to access this page.")
 
-    users = User.objects.all().order_by('username')
+    # Filter users based on who created them (workspace separation)
+    if request.user.is_superuser:
+        # Superusers can see all users
+        users = User.objects.all().order_by('username')
+    elif user_role == 'admin':
+        # Admins can see all users
+        users = User.objects.all().order_by('username')
+    elif user_role == 'manager':
+        # Managers can only see users they created + themselves
+        users = User.objects.filter(
+            Q(userprofile__created_by=request.user) | Q(id=request.user.id)
+        ).distinct().order_by('username')
+    else:
+        users = User.objects.filter(id=request.user.id).order_by('username')
 
     # Pagination
     paginator = Paginator(users, 20)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
 
-    return render(request, 'nano/manage_users.html', {'users': page_obj})
+    return render(request, 'nano/manage_users.html', {
+        'users': page_obj,
+        'user_role': user_role,
+        'is_workspace_view': user_role == 'manager'
+    })
 
 
 @login_required
 def edit_user(request, user_id):
-    """Edit user details - Admin only"""
-    # Allow only superusers or users with admin role
-    if not (request.user.is_superuser or (hasattr(request.user, 'userprofile') and request.user.userprofile.role == 'admin')):
+    """Edit user details - Admin and Manager roles with workspace separation"""
+    # Allow admins and managers to edit users
+    user_role = getattr(request.user.userprofile, 'role', 'cashier') if hasattr(request.user, 'userprofile') else 'cashier'
+    
+    if not (request.user.is_superuser or user_role in ['admin', 'manager']):
         return HttpResponseForbidden("You do not have permission to access this page.")
 
     user = get_object_or_404(User, id=user_id)
+    
+    # Check workspace permissions
+    if user_role == 'manager':
+        # Managers can only edit users they created or themselves
+        target_user_profile = getattr(user, 'userprofile', None)
+        if not (user.id == request.user.id or 
+                (target_user_profile and target_user_profile.created_by == request.user)):
+            return HttpResponseForbidden("You can only edit users you created or yourself.")
 
     if request.method == 'POST':
         username = request.POST.get('username', '').strip()
@@ -192,12 +245,25 @@ def edit_user(request, user_id):
 
 @login_required
 def delete_user(request, user_id):
-    """Delete user - Admin only"""
-    # Allow only superusers or users with admin role
-    if not (request.user.is_superuser or (hasattr(request.user, 'userprofile') and request.user.userprofile.role == 'admin')):
+    """Delete user - Admin and Manager roles with workspace separation"""
+    # Allow admins and managers to delete users
+    user_role = getattr(request.user.userprofile, 'role', 'cashier') if hasattr(request.user, 'userprofile') else 'cashier'
+    
+    if not (request.user.is_superuser or user_role in ['admin', 'manager']):
         return HttpResponseForbidden("You do not have permission to access this page.")
 
     user = get_object_or_404(User, id=user_id)
+    
+    # Check workspace permissions
+    if user_role == 'manager':
+        # Managers can only delete users they created
+        target_user_profile = getattr(user, 'userprofile', None)
+        if not (target_user_profile and target_user_profile.created_by == request.user):
+            return HttpResponseForbidden("You can only delete users you created.")
+    
+    # Prevent users from deleting themselves
+    if user.id == request.user.id:
+        return HttpResponseForbidden("You cannot delete your own account.")
 
     if request.method == 'POST':
         username = request.POST.get('username', '').strip()
@@ -214,9 +280,11 @@ def delete_user(request, user_id):
 
 @login_required
 def bulk_delete_users(request):
-    """Bulk delete users - Admin only"""
-    # Allow only superusers or users with admin role
-    if not (request.user.is_superuser or (hasattr(request.user, 'userprofile') and request.user.userprofile.role == 'admin')):
+    """Bulk delete users - Admin and Manager roles with workspace separation"""
+    # Allow admins and managers to delete users
+    user_role = getattr(request.user.userprofile, 'role', 'cashier') if hasattr(request.user, 'userprofile') else 'cashier'
+    
+    if not (request.user.is_superuser or user_role in ['admin', 'manager']):
         return HttpResponseForbidden("You do not have permission to access this page.")
 
     if request.method == 'POST':
@@ -226,8 +294,23 @@ def bulk_delete_users(request):
             messages.error(request, 'No users selected for deletion')
             return redirect('manage_users')
 
-        # Delete selected users
-        deleted_count = User.objects.filter(id__in=user_ids).exclude(id=request.user.id).delete()[0]
-        messages.success(request, f'{deleted_count} user(s) deleted successfully!')
+        # For managers, restrict to users they created
+        if user_role == 'manager':
+            # Get users they created
+            deletable_users = User.objects.filter(
+                id__in=user_ids,
+                userprofile__created_by=request.user
+            ).exclude(id=request.user.id)
+        else:
+            # Admins can delete any users except themselves
+            deletable_users = User.objects.filter(id__in=user_ids).exclude(id=request.user.id)
+
+        deleted_count = deletable_users.count()
+        deletable_users.delete()
+        
+        if deleted_count > 0:
+            messages.success(request, f'{deleted_count} user(s) deleted successfully!')
+        else:
+            messages.error(request, 'No users could be deleted. Check permissions.')
 
     return redirect('manage_users')
