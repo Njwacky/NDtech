@@ -1,25 +1,28 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     {% load static %}
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes, viewport-fit=cover">
     <meta name="mobile-web-app-capable" content="yes">
     <title>{% block title %}{{ user_company_name|default:"NDtech" }}{% endblock %}</title>
-    
+
     <!-- PWA Meta Tags -->
     <meta name="theme-color" content="#007bff">
-    <meta name="description" content="A comprehensive Point of Sale system for inventory management and order processing">
+    <meta name="description"
+        content="A comprehensive Point of Sale system for inventory management and order processing">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="apple-mobile-web-app-title" content="NDtech POS">
     <meta name="application-name" content="NDtech POS">
     <meta name="msapplication-TileColor" content="#007bff">
     <meta name="msapplication-config" content="{% static 'nano/browserconfig.xml' %}">
-    
+
     <!-- PWA Manifest -->
     <link rel="manifest" href="{% static 'nano/manifest.json' %}">
-    
+
     <!-- Favicon -->
     <link rel="icon" type="image/png" sizes="16x16" href="{% static 'nano/icon-16.png' %}">
     <link rel="icon" type="image/png" sizes="32x32" href="{% static 'nano/icon-32.png' %}">
@@ -28,7 +31,7 @@
     <link rel="icon" type="image/png" sizes="128x128" href="{% static 'nano/icon-128.png' %}">
     <link rel="icon" type="image/png" sizes="192x192" href="{% static 'nano/icon-192.png' %}">
     <link rel="shortcut icon" type="image/x-icon" href="{% static 'nano/favicon.ico' %}">
-    
+
     <!-- Apple Touch Icons -->
     <link rel="apple-touch-icon" sizes="57x57" href="{% static 'nano/icon-57.png' %}">
     <link rel="apple-touch-icon" sizes="60x60" href="{% static 'nano/icon-60.png' %}">
@@ -39,13 +42,13 @@
     <link rel="apple-touch-icon" sizes="144x144" href="{% static 'nano/icon-144.png' %}">
     <link rel="apple-touch-icon" sizes="152x152" href="{% static 'nano/icon-152.png' %}">
     <link rel="apple-touch-icon" sizes="180x180" href="{% static 'nano/icon-180.png' %}">
-    
+
     <!-- PWA Icons -->
     <link rel="icon" type="image/png" sizes="192x192" href="{% static 'nano/icon-192.png' %}">
     <link rel="icon" type="image/png" sizes="256x256" href="{% static 'nano/icon-256.png' %}">
     <link rel="icon" type="image/png" sizes="384x384" href="{% static 'nano/icon-384.png' %}">
     <link rel="icon" type="image/png" sizes="512x512" href="{% static 'nano/icon-512.png' %}">
-    
+
     <!-- Android Chrome Icons -->
     <link rel="icon" type="image/png" sizes="36x36" href="{% static 'nano/icon-36.png' %}">
     <link rel="icon" type="image/png" sizes="48x48" href="{% static 'nano/icon-48.png' %}">
@@ -53,17 +56,22 @@
     <link rel="icon" type="image/png" sizes="96x96" href="{% static 'nano/icon-96.png' %}">
     <link rel="icon" type="image/png" sizes="144x144" href="{% static 'nano/icon-144.png' %}">
     <link rel="icon" type="image/png" sizes="192x192" href="{% static 'nano/icon-192.png' %}">
-    
+
     <!-- Windows Tile -->
     <meta name="msapplication-TileImage" content="{% static 'nano/icon-144.png' %}">
     <meta name="msapplication-TileColor" content="#007bff">
-    
+
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css">
+
+    <!-- Custom CSS -->
     <link rel="stylesheet" href="{% static 'nano/styles.css' %}">
     <link rel="stylesheet" href="{% static 'nano/notifications.css' %}">
     <link rel="stylesheet" href="{% static 'nano/hamburger.css' %}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     {% block extra_css %}{% endblock %}
 </head>
+
 <body>
     <!-- Navigation Bar -->
     <header class="navbar">
@@ -77,7 +85,7 @@
             <a href="{% url 'add_stock' %}" class="nav-link">
                 <i class="fas fa-box"></i> Manage Stock
             </a>
-            
+
             <!-- Product Scanning Dropdown -->
             <div class="nav-dropdown">
                 <button class="nav-link dropdown-toggle">
@@ -92,7 +100,7 @@
                     </a>
                 </div>
             </div>
-            
+
             <!-- Orders Dropdown -->
             <div class="nav-dropdown">
                 <button class="nav-link dropdown-toggle">
@@ -109,7 +117,7 @@
                     {% endif %}
                 </div>
             </div>
-            
+
             <!-- Airtime Dropdown -->
             <div class="nav-dropdown">
                 <button class="nav-link dropdown-toggle">
@@ -132,7 +140,7 @@
                     {% endif %}
                 </div>
             </div>
-            
+
             {% if user.is_superuser or user.userprofile.role == 'admin' or user.userprofile.role == 'manager' %}
             <a href="{% url 'manage_users' %}" class="nav-link">
                 <i class="fas fa-users"></i> Manage Users
@@ -141,7 +149,7 @@
                 <i class="fas fa-warehouse"></i> Warehouse
             </a>
             {% endif %}
-            
+
             {% if user.is_authenticated %}
             <a href="{% url 'notifications_page' %}" class="nav-link notification-bell">
                 <i class="fas fa-bell"></i>
@@ -174,7 +182,7 @@
             <a href="{% url 'add_stock' %}" class="mobile-nav-link">
                 <i class="fas fa-box"></i> Add Stock
             </a>
-            
+
             <!-- Mobile Product Scanning Section -->
             <div class="mobile-nav-section">
                 <div class="mobile-nav-section-title">
@@ -187,7 +195,7 @@
                     <i class="fas fa-camera"></i> Barcode Scanner
                 </a>
             </div>
-            
+
             <!-- Mobile Orders Section -->
             <div class="mobile-nav-section">
                 <div class="mobile-nav-section-title">
@@ -202,7 +210,7 @@
                 </a>
                 {% endif %}
             </div>
-            
+
             <!-- Mobile Airtime Section -->
             <div class="mobile-nav-section">
                 <div class="mobile-nav-section-title">
@@ -223,7 +231,7 @@
                 </a>
                 {% endif %}
             </div>
-            
+
             {% if user.is_superuser or user.userprofile.role == 'admin' or user.userprofile.role == 'manager' %}
             <a href="{% url 'manage_users' %}" class="mobile-nav-link">
                 <i class="fas fa-users"></i> Manage Users
@@ -232,7 +240,7 @@
                 <i class="fas fa-warehouse"></i> Warehouse
             </a>
             {% endif %}
-            
+
             {% if user.is_authenticated %}
             <a href="{% url 'notifications_page' %}" class="mobile-nav-link notification-bell">
                 <i class="fas fa-bell"></i>
@@ -249,14 +257,15 @@
     <!-- Main Content -->
     <main class="main-content">
         {% if messages %}
-            <div class="messages">
-                {% for message in messages %}
-                    <div class="message {{ message.tags }}">
-                        {% if message.tags == 'success' %}✅{% elif message.tags == 'error' %}❌{% elif message.tags == 'warning' %}⚠️{% else %}ℹ️{% endif %}
-                        {{ message }}
-                    </div>
-                {% endfor %}
+        <div class="messages">
+            {% for message in messages %}
+            <div class="message {{ message.tags }}">
+                {% if message.tags == 'success' %}✅{% elif message.tags == 'error' %}❌{% elif message.tags == 'warning'
+                %}⚠️{% else %}ℹ️{% endif %}
+                {{ message }}
             </div>
+            {% endfor %}
+        </div>
         {% endif %}
 
         <div class="content-wrapper">
@@ -266,19 +275,23 @@
 
     <!-- Mobile Bottom Navigation -->
     <nav class="bottom-nav">
-        <a href="{% url 'home' %}" class="bottom-nav-link {% if request.resolver_match.url_name == 'home' %}active{% endif %}">
+        <a href="{% url 'home' %}"
+            class="bottom-nav-link {% if request.resolver_match.url_name == 'home' %}active{% endif %}">
             <i class="fas fa-home"></i>
             <span>Home</span>
         </a>
-        <a href="{% url 'upc_lookup' %}" class="bottom-nav-link {% if request.resolver_match.url_name == 'upc_lookup' %}active{% endif %}">
+        <a href="{% url 'upc_lookup' %}"
+            class="bottom-nav-link {% if request.resolver_match.url_name == 'upc_lookup' %}active{% endif %}">
             <i class="fas fa-search"></i>
             <span>Search</span>
         </a>
-        <a href="{% url 'barcode_scanner' %}" class="bottom-nav-link {% if request.resolver_match.url_name == 'barcode_scanner' %}active{% endif %}">
-            <i class="fas fa-camera"></i>
-            <span>Scan</span>
+        <a href="{% url 'add_stock' %}"
+            class="bottom-nav-link {% if request.resolver_match.url_name == 'add_stock' %}active{% endif %}">
+            <i class="fas fa-box"></i>
+            <span>Add Stock</span>
         </a>
-        <a href="{% url 'pending_orders' %}" class="bottom-nav-link {% if request.resolver_match.url_name == 'pending_orders' %}active{% endif %}">
+        <a href="{% url 'pending_orders' %}"
+            class="bottom-nav-link {% if request.resolver_match.url_name == 'pending_orders' %}active{% endif %}">
             <i class="fas fa-clock"></i>
             <span>Orders</span>
         </a>
@@ -289,24 +302,30 @@
     </nav>
 
     {% csrf_token %}
+
+    <!-- jQuery and Bootstrap - Required for interactive elements -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- Custom Scripts -->
     <script src="{% static 'nano/notifications.js' %}"></script>
     <script src="{% static 'nano/hamburger.js' %}"></script>
     <script src="{% static 'nano/toast.js' %}"></script>
-    
+
     <!-- PWA Service Worker Registration -->
     <script>
         if ('serviceWorker' in navigator) {
-            window.addEventListener('load', function() {
+            window.addEventListener('load', function () {
                 navigator.serviceWorker.register("{% static 'nano/sw.js' %}")
-                    .then(function(registration) {
+                    .then(function (registration) {
                         console.log('ServiceWorker registration successful with scope: ', registration.scope);
-                        
+
                         // Check for updates periodically
                         setInterval(() => {
                             registration.update();
                         }, 60 * 60 * 1000); // Check every hour
                     })
-                    .catch(function(error) {
+                    .catch(function (error) {
                         console.log('ServiceWorker registration failed: ', error);
                     });
             });
@@ -315,14 +334,14 @@
         // PWA Install Prompt
         let deferredPrompt;
         let installPromptShown = false;
-        
+
         window.addEventListener('beforeinstallprompt', (e) => {
             e.preventDefault();
             deferredPrompt = e;
-            
+
             // Don't show if already shown or dismissed
             if (installPromptShown) return;
-            
+
             // Create mobile-friendly install popup
             const installPopup = document.createElement('div');
             installPopup.id = 'pwa-install-popup';
@@ -365,7 +384,7 @@
                     </div>
                 </div>
             `;
-            
+
             // Add styles for the popup
             const style = document.createElement('style');
             style.textContent = `
@@ -605,26 +624,26 @@
                     }
                 }
             `;
-            
+
             document.head.appendChild(style);
             document.body.appendChild(installPopup);
-            
+
             // Auto-show after a short delay
             setTimeout(() => {
                 installPromptShown = true;
             }, 1000);
         });
-        
+
         // Global functions for install prompt
-        window.closeInstallPrompt = function() {
+        window.closeInstallPrompt = function () {
             const popup = document.getElementById('pwa-install-popup');
             if (popup) {
                 popup.remove();
                 installPromptShown = true; // Mark as dismissed
             }
         };
-        
-        window.installPWA = async function() {
+
+        window.installPWA = async function () {
             if (deferredPrompt) {
                 deferredPrompt.prompt();
                 const { outcome } = await deferredPrompt.userChoice;
@@ -644,7 +663,8 @@
             }
         });
     </script>
-    
+
     {% block extra_js %}{% endblock %}
 </body>
+
 </html>

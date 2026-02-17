@@ -327,59 +327,6 @@
         gap: 1rem !important;
     }
 
-    /* Modal Styles */
-    .modal {
-        display: none !important;
-        position: fixed !important;
-        z-index: 1000 !important;
-        left: 0 !important;
-        top: 0 !important;
-        width: 100% !important;
-        height: 100% !important;
-        background-color: rgba(0, 0, 0, 0.5) !important;
-        backdrop-filter: blur(5px) !important;
-    }
-
-    .modal-content {
-        background: linear-gradient(135deg, rgba(245, 245, 240, 0.98), rgba(255, 255, 255, 0.95)) !important;
-        margin: 5% auto !important;
-        padding: 2rem !important;
-        border: 2px solid rgba(163, 177, 138, 0.3) !important;
-        border-radius: 1.5rem !important;
-        width: 90% !important;
-        max-width: 500px !important;
-        box-shadow: 0 20px 60px rgba(52, 78, 65, 0.3) !important;
-        color: #344e41 !important;
-    }
-
-    .modal-header {
-        display: flex !important;
-        justify-content: space-between !important;
-        align-items: center !important;
-        margin-bottom: 1.5rem !important;
-        padding-bottom: 1rem !important;
-        border-bottom: 1px solid rgba(163, 177, 138, 0.2) !important;
-    }
-
-    .modal-title {
-        font-size: 1.25rem !important;
-        font-weight: 700 !important;
-        color: #344e41 !important;
-    }
-
-    .close-btn {
-        background: none !important;
-        border: none !important;
-        font-size: 1.5rem !important;
-        color: #6b7280 !important;
-        cursor: pointer !important;
-        transition: color 0.3s ease !important;
-    }
-
-    .close-btn:hover {
-        color: #dc2626 !important;
-    }
-
     /* Responsive Design */
     @media (max-width: 768px) {
         .stats-grid {
@@ -405,12 +352,6 @@
 
         .action-buttons {
             flex-direction: column !important;
-        }
-
-        .modal-content {
-            width: 95% !important;
-            margin: 10% auto !important;
-            padding: 1rem !important;
         }
     }
 </style>
@@ -547,11 +488,11 @@
                         </td>
                         <td>
                             <div class="action-buttons">
-                                <button class="action-btn verify" onclick="verifyPhone({{ sale.id }})">
+                                <button class="action-btn verify">
                                     <i class="fas fa-phone"></i>
                                     Verify Phone
                                 </button>
-                                <button class="action-btn demo" onclick="showDemoNumber({{ sale.id }})">
+                                <button class="action-btn demo">
                                     <i class="fas fa-eye"></i>
                                     Show Demo
                                 </button>
@@ -608,169 +549,4 @@
     </div>
     {% endif %}
 </div>
-
-<!-- Phone Verification Modal -->
-<div id="verifyPhoneModal" class="modal">
-    <div class="modal-content">
-        <div class="modal-header">
-            <h3 class="modal-title">Verify Customer Phone Number</h3>
-            <button class="close-btn" onclick="closeVerifyModal()">
-                <i class="fas fa-times"></i>
-            </button>
-        </div>
-        <div class="modal-body">
-            <form id="verifyPhoneForm">
-                <div class="form-group">
-                    <label for="originalPhone">Original Phone Number:</label>
-                    <input type="text" id="originalPhone" readonly style="background: #f5f5f5;">
-                </div>
-                <div class="form-group">
-                    <label for="confirmedPhone">Confirmed Phone Number:</label>
-                    <input type="tel" id="confirmedPhone" placeholder="Enter confirmed phone number" required>
-                </div>
-                <div class="form-group">
-                    <label>
-                        <input type="checkbox" id="customerConfirmed" required>
-                        Customer confirmed this is their number
-                    </label>
-                </div>
-                <div class="action-buttons">
-                    <button type="button" class="btn btn-secondary" onclick="closeVerifyModal()">
-                        <i class="fas fa-times"></i>
-                        Cancel
-                    </button>
-                    <button type="submit" class="btn btn-primary">
-                        <i class="fas fa-check"></i>
-                        Confirm Verification
-                    </button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
-
-{% endblock %}
-
-{% block extra_js %}
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
-<script>
-    let currentSaleId = null;
-
-    function verifyPhone(saleId) {
-        currentSaleId = saleId;
-
-        // Fetch sale details
-        $.ajax({
-            url: "{% url 'verify_airtime_phone' 0 %}".replace('0', saleId),
-            method: 'GET',
-            success: function (response) {
-                if (response.success) {
-                    $('#originalPhone').val(response.sale.customer_phone);
-                    $('#verifyPhoneModal').fadeIn(300);
-                    $('#confirmedPhone').focus();
-                } else {
-                    alert('Error loading sale details: ' + response.error);
-                }
-            },
-            error: function () {
-                alert('Error loading sale details. Please try again.');
-            }
-        });
-    }
-
-    function showDemoNumber(saleId) {
-        // Find and toggle the demo number for this sale
-        const demoSection = $('tr:has(button[onclick*="' + saleId + '"]) .demo-section');
-        demoSection.toggle();
-    }
-
-    function closeVerifyModal() {
-        $('#verifyPhoneModal').fadeOut(300);
-        currentSaleId = null;
-        document.getElementById('verifyPhoneForm').reset();
-    }
-
-    // Handle form submission
-    $('#verifyPhoneForm').on('submit', function (e) {
-        e.preventDefault();
-
-        const confirmedPhone = $('#confirmedPhone').val().trim();
-        const customerConfirmed = $('#customerConfirmed').is(':checked');
-
-        if (!confirmedPhone) {
-            alert('Please enter a confirmed phone number');
-            return;
-        }
-
-        if (!customerConfirmed) {
-            alert('Please confirm that the customer verified this is their number');
-            return;
-        }
-
-        // Validate phone number format
-        const phoneRegex = /^[0-9]{10,15}$/;
-        if (!phoneRegex.test(confirmedPhone)) {
-            alert('Please enter a valid phone number (10-15 digits)');
-            return;
-        }
-
-        // Submit verification
-        $.ajax({
-            url: `{% url 'verify_airtime_phone' 0 %}`.replace('0', currentSaleId),
-            method: 'POST',
-            headers: {
-                'X-CSRFToken': getCookie('csrftoken'),
-                'Content-Type': 'application/json'
-            },
-            data: JSON.stringify({
-                confirmed_phone: confirmedPhone,
-                customer_confirmed: customerConfirmed
-            }),
-            success: function (response) {
-                if (response.success) {
-                    alert('Phone number verified successfully!');
-                    closeVerifyModal();
-                    // Reload the page to show updated information
-                    location.reload();
-                } else {
-                    alert('Error verifying phone number: ' + response.error);
-                }
-            },
-            error: function () {
-                alert('Error verifying phone number. Please try again.');
-            }
-        });
-    }
-
-    // CSRF token function
-    function getCookie(name) {
-        let cookieValue = null;
-        if (document.cookie && document.cookie !== '') {
-            const cookies = document.cookie.split(';');
-            for (let i = 0; i < cookies.length; i++) {
-                const cookie = cookies[i].trim();
-                if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                    break;
-                }
-            }
-        }
-        return cookieValue;
-    }
-
-    // Close modal when clicking outside
-    $(document).on('click', function (e) {
-        if ($(e.target).hasClass('modal')) {
-            closeVerifyModal();
-        }
-    });
-
-    // Keyboard shortcuts
-    $(document).keydown(function (e) {
-        if (e.key === 'Escape') {
-            closeVerifyModal();
-        }
-    });
-</script>
 {% endblock %}

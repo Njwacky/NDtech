@@ -816,6 +816,39 @@
     z-index: 15;
 }
 
+/* Additional fixes for clickability */
+.action-btn, .guide-btn, .help-close {
+    pointer-events: auto !important;
+    cursor: pointer !important;
+    position: relative;
+    z-index: 20;
+}
+
+/* Ensure no overlay blocks clicks */
+.airtime-container * {
+    pointer-events: auto;
+}
+
+.airtime-container .disabled {
+    pointer-events: none;
+}
+
+/* Fix any potential z-index conflicts */
+.airtime-header, .products-section, .pending-section, .requests-section {
+    position: relative;
+    z-index: 1;
+}
+
+.product-card, .pending-card, .request-card {
+    position: relative;
+    z-index: 2;
+}
+
+.product-footer, .pending-actions, .request-actions {
+    position: relative;
+    z-index: 3;
+}
+
 /* Empty State */
 .empty-state {
     text-align: center;

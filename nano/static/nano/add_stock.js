@@ -9,7 +9,6 @@ const categoryExamples = {
     'canned_goods': 'Baked Beans, Tuna, Soup, Vegetables, Fruit',
     'personal_care': 'Soap, Shampoo, Toothpaste, Deodorant, Lotion',
     'household_items': 'Cleaning Supplies, Paper Towels, Trash Bags',
-    'airtime_data': 'Vodacom, MTN, Cell C, Telkom Airtime',
     'frozen_goods': 'Frozen Pizza, Ice Cream, Frozen Vegetables',
     'tuckshop_packs': 'Combo Deals, Lunch Packs, Party Packs',
     'stationery': 'Pens, Notebooks, Pencils, Erasers, Rulers',
