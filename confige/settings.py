@@ -12,15 +12,24 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 
 from pathlib import Path
 from decouple import config
+from django.core.exceptions import ImproperlyConfigured
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = config('DJANGO_SECRET_KEY')
+# SECRET_KEY MUST be set via DJANGO_SECRET_KEY environment variable - never hardcode
+SECRET_KEY = config('DJANGO_SECRET_KEY', default=None)
+INSECURE_KEYS = ('your-secret-key-here', 'django-insecure-', 'build-time-dummy-key-change-in-prod', 'build-time-dummy-key-change-in-prod-environment', 'generate-a-secure-key-with-command-above')
+if not SECRET_KEY or (isinstance(SECRET_KEY, str) and (SECRET_KEY in INSECURE_KEYS or SECRET_KEY.startswith('django-insecure-'))):
+    raise ImproperlyConfigured(
+        'DJANGO_SECRET_KEY must be set in environment. '
+        'Generate one with: python -c "from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())"'
+    )
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = config('DJANGO_DEBUG', default=True, cast=bool)
+# Default to False for production safety - explicitly set True for development
+DEBUG = config('DJANGO_DEBUG', default=False, cast=bool)
 
 # Developer Mode Settings
 DEVELOPER_MODE = config('DEVELOPER_MODE', default=DEBUG, cast=bool)
@@ -115,15 +124,16 @@ import sys
 database_url = os.environ.get('DATABASE_URL')
 is_render = os.environ.get('RENDER')
 
-# Fallback PostgreSQL URL for development (using environment variables for security)
-db_host = config('DB_HOST', default='db.iozxzlwumxvjkoaiirmd.supabase.co')
+# Fallback PostgreSQL URL for development - NEVER use defaults with real credentials
+# In production, always use DATABASE_URL. For dev, set DB_* env vars explicitly.
+db_host = config('DB_HOST', default='')
 db_port = config('DB_PORT', default='5432')
-db_name = config('DB_NAME', default='postgres')
-db_user = config('DB_USER', default='postgres')
-db_password = config('DB_PASSWORD', default='Ndisor07222')
+db_name = config('DB_NAME', default='')
+db_user = config('DB_USER', default='')
+db_password = config('DB_PASSWORD', default='')
 
-# Construct fallback URL from environment variables
-fallback_postgres_url = f"postgresql://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}"
+# Construct fallback URL only when all DB vars are set (no hardcoded creds)
+fallback_postgres_url = f"postgresql://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}" if all([db_host, db_name, db_user, db_password]) else None
 
 # Temporarily force SQLite for development to resolve migration issues
 if os.environ.get('FORCE_SQLITE') == 'True':
@@ -131,22 +141,22 @@ if os.environ.get('FORCE_SQLITE') == 'True':
         'ENGINE': 'django.db.backends.sqlite3',
         'NAME': BASE_DIR / 'db.sqlite3',
     }
-    print("ℹ Using local SQLite database (Forced mode)")
+    print("Using local SQLite database (Forced mode)")
 elif database_url:
     DATABASES['default'] = dj_database_url.config(default=database_url, conn_max_age=600)
-    print("✓ Using PostgreSQL database from DATABASE_URL")
+    print("Using PostgreSQL database from DATABASE_URL")
 elif is_render:
     # Production Database Configuration for Render
     if database_url:
         try:
             # Test database connection
             DATABASES['default'] = dj_database_url.config(default=database_url, conn_max_age=600)
-            print("✓ Using Render PostgreSQL database")
+            print("Using Render PostgreSQL database")
             
             # Migrations should be run in the build/start command, not in settings.py
             # as it causes recursive loading issues and potential race conditions.
         except Exception as e:
-            print(f"❌ Database connection failed: {e}")
+            print(f"Database connection failed: {e}")
             raise ImproperlyConfigured(f"Cannot connect to database: {e}")
     else:
         raise ImproperlyConfigured("DATABASE_URL is required on Render")
@@ -156,7 +166,7 @@ else:
         'ENGINE': 'django.db.backends.sqlite3',
         'NAME': BASE_DIR / 'db.sqlite3',
     }
-    print("ℹ Using local SQLite database (Development mode)")
+    print("Using local SQLite database (Development mode)")
 
 # Static file storage - WhiteNoise
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'  # Needed for Render.com

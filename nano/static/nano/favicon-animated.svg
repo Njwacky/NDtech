@@ -1,0 +1,106 @@
+<svg width="64" height="64" viewBox="0 0 192 192" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <!-- 3D Spin Animation -->
+    <style>
+      .ndtech-icon {
+        transform-style: preserve-3d;
+        animation: spin3d 3s linear infinite;
+        transform-origin: center;
+      }
+      
+      @keyframes spin3d {
+        0% {
+          transform: rotateY(0deg) rotateX(0deg);
+        }
+        25% {
+          transform: rotateY(90deg) rotateX(5deg);
+        }
+        50% {
+          transform: rotateY(180deg) rotateX(0deg);
+        }
+        75% {
+          transform: rotateY(270deg) rotateX(-5deg);
+        }
+        100% {
+          transform: rotateY(360deg) rotateX(0deg);
+        }
+      }
+      
+      /* Fallback for browsers that don't support 3D transforms */
+      @supports not (transform-style: preserve-3d) {
+        .ndtech-icon {
+          animation: spin2d 2s linear infinite;
+        }
+        
+        @keyframes spin2d {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(360deg); }
+        }
+      }
+    </style>
+    
+    <!-- Gradient for depth -->
+    <linearGradient id="bgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#588157;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#344e41;stop-opacity:1" />
+    </linearGradient>
+    
+    <!-- Shadow filter -->
+    <filter id="shadow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="3"/>
+      <feOffset dx="2" dy="2" result="offsetblur"/>
+      <feFlood flood-color="#000000" flood-opacity="0.3"/>
+      <feComposite in2="offsetblur" operator="in"/>
+      <feMerge>
+        <feMergeNode/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  
+  <g class="ndtech-icon">
+    <!-- Background circle -->
+    <circle cx="96" cy="96" r="88" fill="url(#bgGradient)" filter="url(#shadow)"/>
+    
+    <!-- Inner circle for depth effect -->
+    <circle cx="96" cy="96" r="84" fill="none" stroke="#f5f5f0" stroke-width="1" opacity="0.3"/>
+    
+    <!-- Cash Register/POS Terminal Design -->
+    <!-- Main body -->
+    <rect x="48" y="60" width="96" height="72" rx="8" fill="#f5f5f0" opacity="0.95"/>
+    
+    <!-- Screen/Display -->
+    <rect x="56" y="68" width="80" height="32" rx="4" fill="#344e41"/>
+    
+    <!-- Screen content lines -->
+    <rect x="62" y="74" width="68" height="2" fill="#a3b18a"/>
+    <rect x="62" y="80" width="50" height="2" fill="#a3b18a"/>
+    <rect x="62" y="86" width="60" height="2" fill="#a3b18a"/>
+    <rect x="62" y="92" width="45" height="2" fill="#a3b18a"/>
+    
+    <!-- Keypad buttons -->
+    <g fill="#344e41">
+      <!-- Row 1 -->
+      <circle cx="68" cy="116" r="4"/>
+      <circle cx="84" cy="116" r="4"/>
+      <circle cx="100" cy="116" r="4"/>
+      <circle cx="116" cy="116" r="4"/>
+      
+      <!-- Row 2 -->
+      <circle cx="68" cy="124" r="4"/>
+      <circle cx="84" cy="124" r="4"/>
+      <circle cx="100" cy="124" r="4"/>
+      <circle cx="116" cy="124" r="4"/>
+    </g>
+    
+    <!-- Receipt printer top -->
+    <rect x="64" y="52" width="64" height="8" rx="2" fill="#f5f5f0" opacity="0.9"/>
+    <rect x="68" y="48" width="56" height="4" fill="#a3b18a" opacity="0.7"/>
+    
+    <!-- NDtech text -->
+    <text x="96" y="145" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="#f5f5f0" text-anchor="middle">NDtech</text>
+    
+    <!-- Highlight for 3D effect -->
+    <ellipse cx="76" cy="76" rx="20" ry="15" fill="white" opacity="0.2"/>
+  </g>
+</svg>

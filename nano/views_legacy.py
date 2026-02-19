@@ -1235,9 +1235,6 @@ def get_notifications(request):
             'sender_is_admin': notification.created_by.is_superuser if notification.created_by else False
         })
 
-    print(f"DEBUG: get_notifications called for user: {request.user.username}")
-    print(f"DEBUG: Found {len(notifications)} notifications for user: {request.user.username}")
-
     return JsonResponse({'notifications': notification_data})
 
 @login_required
@@ -1586,7 +1583,7 @@ def create_cashier_request(request):
         except json.JSONDecodeError:
             return JsonResponse({'success': False, 'error': 'Invalid JSON data format'})
         except Exception as e:
-            print(f"DEBUG: Exception in create_cashier_request: {str(e)}")
+            logger.exception("Error in create_cashier_request: %s", str(e))
             import traceback
             traceback.print_exc()
             return JsonResponse({
@@ -1594,7 +1591,6 @@ def create_cashier_request(request):
                 'error': f'Error creating request: {str(e)}'
             })
 
-    print(f"DEBUG: create_cashier_request called with method: {request.method}")
     return JsonResponse({
         'success': False,
         'error': 'Only POST requests are supported'
@@ -3302,6 +3298,38 @@ def approve_airtime_request(request, request_id):
     return render(request, 'nano/approve_airtime_request.html', {
         'airtime_request': airtime_request
     })
+
+@login_required
+def airtime_product_status_api(request):
+    """API endpoint for toggling airtime product status (active/inactive)"""
+    if not (request.user.is_superuser or (hasattr(request.user, 'userprofile') and request.user.userprofile.role in ['admin', 'manager'])):
+        return JsonResponse({'success': False, 'error': 'Permission denied'}, status=403)
+
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'error': 'Method not allowed'}, status=405)
+
+    try:
+        data = json.loads(request.body)
+        product_id = data.get('product_id')
+        status = data.get('status', '').strip()
+
+        if not product_id:
+            return JsonResponse({'success': False, 'error': 'Product ID is required'})
+        if status not in ['active', 'inactive']:
+            return JsonResponse({'success': False, 'error': 'Invalid status. Use "active" or "inactive"'})
+
+        product = AirtimeProduct.objects.get(id=product_id)
+        product.is_active = (status == 'active')
+        product.save()
+
+        return JsonResponse({'success': True, 'message': f'Product status updated to {status}'})
+    except json.JSONDecodeError:
+        return JsonResponse({'success': False, 'error': 'Invalid JSON'}, status=400)
+    except AirtimeProduct.DoesNotExist:
+        return JsonResponse({'success': False, 'error': 'Product not found'}, status=404)
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)}, status=500)
+
 
 @login_required
 def reject_airtime_request(request, request_id):

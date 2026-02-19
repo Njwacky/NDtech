@@ -721,11 +721,11 @@
     color: #ccc;
 }
 
-/* Floating Message Button */
+/* Floating Message Button - positioned inward to avoid blocking bottom nav Menu button */
 .floating-message-btn {
     position: fixed !important;
     bottom: 90px !important;
-    right: 20px !important;
+    right: 85px !important;
     width: 50px !important;
     height: 50px !important;
     background: #588157 !important;
@@ -1006,7 +1006,7 @@
     
     .floating-message-btn {
         bottom: 85px;
-        right: 15px;
+        right: 75px;
         width: 45px;
         height: 45px;
         font-size: 1.1rem;
@@ -1083,7 +1083,7 @@
     
     .floating-message-btn {
         bottom: 80px;
-        right: 10px;
+        right: 70px;
         width: 40px;
         height: 40px;
         font-size: 1rem;

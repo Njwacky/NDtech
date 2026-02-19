@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NDtech POS Animated Favicon Demo</title>
+    
+    <!-- Use the animated SVG as favicon -->
+    <link rel="icon" type="image/svg+xml" href="favicon-animated.svg">
+    <link rel="alternate icon" href="favicon.ico" type="image/x-icon">
+    
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 40px;
+            background: linear-gradient(135deg, #f5f5f0 0%, #e8e8e3 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        .demo-container {
+            background: white;
+            border-radius: 16px;
+            padding: 40px;
+            box-shadow: 0 8px 32px rgba(52, 78, 65, 0.1);
+            max-width: 800px;
+            width: 100%;
+        }
+        
+        h1 {
+            color: #344e41;
+            text-align: center;
+            margin-bottom: 40px;
+            font-size: 2.5rem;
+        }
+        
+        .demo-section {
+            margin: 40px 0;
+            padding: 30px;
+            border: 2px solid #a3b18a;
+            border-radius: 12px;
+            background: #fafaf9;
+        }
+        
+        .demo-title {
+            color: #588157;
+            font-size: 1.3rem;
+            margin-bottom: 20px;
+            font-weight: 600;
+        }
+        
+        .demo-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 30px;
+            align-items: center;
+            justify-items: center;
+        }
+        
+        .demo-item {
+            text-align: center;
+            padding: 20px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        .demo-label {
+            margin-top: 15px;
+            color: #666;
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+        
+        .code-block {
+            background: #2d3748;
+            color: #e2e8f0;
+            padding: 20px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            overflow-x: auto;
+            margin: 20px 0;
+        }
+        
+        .highlight {
+            color: #68d391;
+        }
+        
+        /* Load the spinner CSS */
+        .favicon-spinner {
+          width: 32px;
+          height: 32px;
+          background-image: url('icon-32.png');
+          background-size: contain;
+          background-repeat: no-repeat;
+          background-position: center;
+          transform-style: preserve-3d;
+          animation: spin3d 3s linear infinite;
+          display: inline-block;
+        }
+
+        .favicon-spinner-large {
+          width: 64px;
+          height: 64px;
+          background-image: url('icon-192.png');
+          background-size: contain;
+          background-repeat: no-repeat;
+          background-position: center;
+          transform-style: preserve-3d;
+          animation: spin3d 3s linear infinite;
+          display: inline-block;
+        }
+
+        .favicon-spinner-xl {
+          width: 128px;
+          height: 128px;
+          background-image: url('icon-192.png');
+          background-size: contain;
+          background-repeat: no-repeat;
+          background-position: center;
+          transform-style: preserve-3d;
+          animation: spin3d 3s linear infinite;
+          display: inline-block;
+        }
+
+        @keyframes spin3d {
+          0% {
+            transform: rotateY(0deg) rotateX(0deg);
+          }
+          25% {
+            transform: rotateY(90deg) rotateX(5deg);
+          }
+          50% {
+            transform: rotateY(180deg) rotateX(0deg);
+          }
+          75% {
+            transform: rotateY(270deg) rotateX(-5deg);
+          }
+          100% {
+            transform: rotateY(360deg) rotateX(0deg);
+          }
+        }
+
+        @supports not (transform-style: preserve-3d) {
+          .favicon-spinner,
+          .favicon-spinner-large,
+          .favicon-spinner-xl {
+            animation: spin2d 2s linear infinite;
+          }
+          
+          @keyframes spin2d {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+          }
+        }
+
+        .favicon-spinner:hover,
+        .favicon-spinner-large:hover,
+        .favicon-spinner-xl:hover {
+          animation-play-state: paused;
+        }
+
+        /* Dark mode demo */
+        .dark-demo {
+            background: #2d3748;
+            color: white;
+            padding: 30px;
+            border-radius: 12px;
+            margin: 20px 0;
+        }
+
+        .dark-demo .demo-title {
+            color: #a3b18a;
+        }
+    </style>
+</head>
+<body>
+    <div class="demo-container">
+        <h1>🎯 NDtech POS Animated Favicon</h1>
+        
+        <div class="demo-section">
+            <div class="demo-title">📋 Implementation Options</div>
+            
+            <div class="code-block">
+<span class="highlight">Option 1: SVG Favicon (Recommended)</span>
+&lt;link rel="icon" type="image/svg+xml" href="favicon-animated.svg"&gt;
+
+<span class="highlight">Option 2: CSS Animation with PNG</span>
+&lt;link rel="stylesheet" href="favicon-spinner.css"&gt;
+&lt;div class="favicon-spinner"&gt;&lt;/div&gt;
+
+<span class="highlight">Option 3: Direct SVG Embed</span>
+&lt;svg width="32" height="32"&gt;...&lt;/svg&gt;
+            </div>
+        </div>
+
+        <div class="demo-section">
+            <div class="demo-title">🔄 Size Variations</div>
+            
+            <div class="demo-grid">
+                <div class="demo-item">
+                    <div class="favicon-spinner"></div>
+                    <div class="demo-label">Standard (32px)</div>
+                </div>
+                
+                <div class="demo-item">
+                    <div class="favicon-spinner-large"></div>
+                    <div class="demo-label">Large (64px)</div>
+                </div>
+                
+                <div class="demo-item">
+                    <div class="favicon-spinner-xl"></div>
+                    <div class="demo-label">Extra Large (128px)</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="demo-section">
+            <div class="demo-title">🎨 Original SVG Animation</div>
+            <div style="text-align: center; padding: 20px;">
+                <img src="favicon-animated.svg" alt="Animated SVG Favicon" style="width: 128px; height: 128px;">
+            </div>
+            <div class="demo-label" style="text-align: center;">Pure SVG with embedded animation</div>
+        </div>
+
+        <div class="dark-demo">
+            <div class="demo-title">🌙 Dark Mode Compatibility</div>
+            <div style="display: flex; justify-content: space-around; align-items: center;">
+                <div>
+                    <div class="favicon-spinner"></div>
+                    <div class="demo-label" style="color: #a3b18a; margin-top: 10px;">Standard</div>
+                </div>
+                <div>
+                    <div class="favicon-spinner-large"></div>
+                    <div class="demo-label" style="color: #a3b18a; margin-top: 10px;">Large</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="demo-section">
+            <div class="demo-title">✨ Features</div>
+            <ul style="color: #666; line-height: 1.8;">
+                <li><strong>3D Spin Effect</strong> - Rotates on Y-axis with subtle X-axis tilt</li>
+                <li><strong>Smooth Animation</strong> - 3-second continuous loop</li>
+                <li><strong>Original Design</strong> - Preserves exact NDtech POS colors and design</li>
+                <li><strong>Responsive</strong> - Works on all screen sizes</li>
+                <li><strong>Fallback Support</strong> - 2D rotation for older browsers</li>
+                <li><strong>Hover Pause</strong> - Pauses on hover for better UX</li>
+                <li><strong>Dark/Light Mode</strong> - Adapts to theme preferences</li>
+                <li><strong>Web Optimized</strong> - Lightweight and performant</li>
+            </ul>
+        </div>
+
+        <div class="demo-section">
+            <div class="demo-title">🚀 Quick Start</div>
+            <div class="code-block">
+<span class="highlight">Add to your HTML head:</span>
+&lt;link rel="icon" type="image/svg+xml" href="favicon-animated.svg"&gt;
+
+<span class="highlight">Or use CSS version:</span>
+&lt;link rel="stylesheet" href="favicon-spinner.css"&gt;
+&lt;div class="favicon-spinner"&gt;&lt;/div&gt;
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Add some interactivity
+        document.querySelectorAll('.favicon-spinner, .favicon-spinner-large, .favicon-spinner-xl').forEach(element => {
+            element.addEventListener('click', function() {
+                this.style.animation = 'none';
+                setTimeout(() => {
+                    this.style.animation = '';
+                }, 10);
+            });
+        });
+    </script>
+</body>
+</html>

@@ -115,6 +115,7 @@ urlpatterns = [
     path('airtime/history-review/', views.airtime_history_review, name='airtime_history_review'),
     path('airtime/verify-phone/<int:sale_id>/', views.verify_airtime_phone, name='verify_airtime_phone'),
     path('api/airtime/cashier-process/', views.process_cashier_airtime_sale, name='process_cashier_airtime_sale'),
+    path('api/airtime/product-status/', views.airtime_product_status_api, name='airtime_product_status_api'),
     
     # Audit Dashboard URLs
     path('audit/', views_audit_dashboard.audit_dashboard, name='audit_dashboard'),

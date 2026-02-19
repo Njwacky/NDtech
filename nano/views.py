@@ -133,6 +133,7 @@ __all__ = [
     'airtime_requests_management',
     'approve_airtime_request',
     'reject_airtime_request',
+    'airtime_product_status_api',
     'process_quick_airtime_sale',
     'cashier_airtime_quick_sell',
     'airtime_history_review',

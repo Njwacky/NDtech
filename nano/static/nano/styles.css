@@ -102,6 +102,87 @@ html, body {
     -webkit-overflow-scrolling: touch;
 }
 
+/* Floating Messages Button */
+.floating-messages-btn {
+    position: fixed;
+    top: 80px;
+    right: -10px;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #588157 0%, #344e41 100%);
+    border: 2px solid #f5f5f0;
+    color: #f5f5f0;
+    font-size: 14px;
+    cursor: pointer;
+    z-index: 1001;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 12px rgba(52, 78, 65, 0.3);
+    transition: all 0.3s ease;
+    touch-action: manipulation;
+}
+
+.floating-messages-btn:hover {
+    transform: translateY(-2px) translateX(-5px);
+    box-shadow: 0 6px 20px rgba(52, 78, 65, 0.4);
+    background: linear-gradient(135deg, #344e41 0%, #588157 100%);
+}
+
+.floating-messages-btn:active {
+    transform: translateY(0) translateX(-5px);
+    box-shadow: 0 2px 8px rgba(52, 78, 65, 0.3);
+}
+
+.messages-badge {
+    position: absolute;
+    top: -4px;
+    right: -4px;
+    background: #e63946;
+    color: #f5f5f0;
+    border-radius: 50%;
+    width: 16px;
+    height: 16px;
+    font-size: 9px;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid #f5f5f0;
+    min-width: 10px;
+    padding: 0;
+}
+
+/* Show floating button only on mobile - positioned inward to avoid blocking bottom nav */
+@media (max-width: 768px) {
+    .floating-messages-btn {
+        display: flex;
+        width: 28px;
+        height: 28px;
+        font-size: 12px;
+        top: 15px;
+        right: 70px;
+    }
+    
+    .messages-badge {
+        width: 14px;
+        height: 14px;
+        font-size: 8px;
+        top: -3px;
+        right: -3px;
+        min-width: 8px;
+    }
+}
+
+/* Adjust position for smaller screens to avoid overlap with menu button */
+@media (max-width: 480px) {
+    .floating-messages-btn {
+        right: 65px;
+        top: 12px;
+    }
+}
+
 /* Enhanced Tap Targets & Visual Hierarchy */
 @media (max-width: 480px) {
     .content-wrapper {

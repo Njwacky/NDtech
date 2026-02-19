@@ -68,7 +68,8 @@
     <link rel="stylesheet" href="{% static 'nano/styles.css' %}">
     <link rel="stylesheet" href="{% static 'nano/notifications.css' %}">
     <link rel="stylesheet" href="{% static 'nano/hamburger.css' %}">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <!-- Font Awesome 6 - crossorigin for reliable icon loading -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer">
     {% block extra_css %}{% endblock %}
 </head>
 
@@ -164,6 +165,14 @@
             <i class="fas fa-bars icon"></i>
         </button>
     </header>
+
+    <!-- Floating Messages Button (Mobile Only) -->
+    {% if user.is_authenticated %}
+    <button class="floating-messages-btn" id="floatingMessagesBtn" aria-label="Messages">
+        <i class="fas fa-envelope"></i>
+        <span class="messages-badge" id="messagesBadge" style="display: none;">0</span>
+    </button>
+    {% endif %}
 
     <!-- Mobile Navigation Menu -->
     <nav class="mobile-nav" id="mobile-nav">
@@ -665,6 +674,53 @@
     </script>
 
     {% block extra_js %}{% endblock %}
+
+    <!-- Floating Messages Button Script -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const floatingMessagesBtn = document.getElementById('floatingMessagesBtn');
+            const messagesBadge = document.getElementById('messagesBadge');
+            
+            if (floatingMessagesBtn) {
+                // Handle click event
+                floatingMessagesBtn.addEventListener('click', function() {
+                    // Navigate to notifications page
+                    window.location.href = "{% url 'notifications_page' %}";
+                });
+
+                // Update messages count from existing notification system
+                function updateMessagesBadge() {
+                    const notificationBadge = document.getElementById('notificationBadge');
+                    if (notificationBadge && messagesBadge) {
+                        const count = notificationBadge.textContent;
+                        if (count && count !== '0' && count !== '') {
+                            messagesBadge.textContent = count;
+                            messagesBadge.style.display = 'flex';
+                        } else {
+                            messagesBadge.style.display = 'none';
+                        }
+                    }
+                }
+
+                // Initial update
+                updateMessagesBadge();
+
+                // Watch for changes in the main notification badge
+                const observer = new MutationObserver(updateMessagesBadge);
+                const notificationBadge = document.getElementById('notificationBadge');
+                if (notificationBadge) {
+                    observer.observe(notificationBadge, {
+                        childList: true,
+                        characterData: true,
+                        subtree: true
+                    });
+                }
+
+                // Periodic sync with notification system
+                setInterval(updateMessagesBadge, 5000);
+            }
+        });
+    </script>
 </body>
 
 </html>
