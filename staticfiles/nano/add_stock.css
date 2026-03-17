@@ -244,6 +244,70 @@
     letter-spacing: 1px;
 }
 
+/* Expiry Date Container */
+.expiry-date-container {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.checkbox-container {
+    display: flex;
+    align-items: center;
+    margin-bottom: 0.5rem;
+}
+
+.checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: pointer;
+    font-weight: 500;
+    color: #344e41;
+    font-size: 0.9rem;
+}
+
+.checkbox-label input[type="checkbox"] {
+    appearance: none;
+    width: 18px;
+    height: 18px;
+    border: 2px solid #588157;
+    border-radius: 4px;
+    cursor: pointer;
+    position: relative;
+    transition: all 0.3s ease;
+}
+
+.checkbox-label input[type="checkbox"]:checked {
+    background: #588157;
+}
+
+.checkbox-label input[type="checkbox"]:checked::after {
+    content: '✓';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: white;
+    font-size: 12px;
+    font-weight: bold;
+}
+
+.checkbox-label input[type="checkbox"]:hover {
+    border-color: #344e41;
+}
+
+.checkmark {
+    /* This is the custom checkmark styling */
+    display: none;
+}
+
+#expiry_date:disabled {
+    opacity: 0.5;
+    background-color: #f3f4f6;
+    cursor: not-allowed;
+}
+
 /* Manager Only Badge */
 .manager-only {
     background: linear-gradient(135deg, #588157, #344e41);

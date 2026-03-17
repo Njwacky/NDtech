@@ -1,4 +1,4 @@
-const CACHE_NAME = 'ndtech-pos-v1';
+const CACHE_NAME = 'ndtech-pos-v2';
 const urlsToCache = [
     '/',
     '/accounts/login/',
@@ -10,10 +10,13 @@ const urlsToCache = [
     '/static/nano/hamburger.js',
     '/static/nano/toast.js',
     '/static/nano/manifest.json',
+    '/static/nano/icon-192.png',
+    '/static/nano/icon-512.png',
+    '/offline/', // Explicitly cache the offline page
     'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css'
 ];
 
-// Install event - cache resources
+// Install event - cache critical resources
 self.addEventListener('install', event => {
     event.waitUntil(
         caches.open(CACHE_NAME)
@@ -22,50 +25,10 @@ self.addEventListener('install', event => {
                 return cache.addAll(urlsToCache);
             })
     );
+    self.skipWaiting();
 });
 
-// Fetch event - serve from cache when offline
-self.addEventListener('fetch', event => {
-    event.respondWith(
-        caches.match(event.request)
-            .then(response => {
-                // Cache hit - return response
-                if (response) {
-                    return response;
-                }
-
-                // Clone the request
-                const fetchRequest = event.request.clone();
-
-                return fetch(fetchRequest).then(response => {
-                    // Check if valid response
-                    if (!response || response.status !== 200 || response.type !== 'basic') {
-                        return response;
-                    }
-
-                    // Clone the response
-                    const responseToCache = response.clone();
-
-                    // Cache successful GET requests
-                    if (event.request.method === 'GET') {
-                        caches.open(CACHE_NAME)
-                            .then(cache => {
-                                cache.put(event.request, responseToCache);
-                            });
-                    }
-
-                    return response;
-                }).catch(() => {
-                    // Return offline page for navigation requests
-                    if (event.request.destination === 'document') {
-                        return caches.match('/');
-                    }
-                });
-            })
-    );
-});
-
-// Activate event - clean up old caches
+// Activate event - clean up old caches and claim clients
 self.addEventListener('activate', event => {
     event.waitUntil(
         caches.keys().then(cacheNames => {
@@ -79,67 +42,101 @@ self.addEventListener('activate', event => {
             );
         })
     );
+    self.clients.claim();
 });
 
-// Background sync for offline actions
+// Helper function to determine if request is API call
+const isApiCall = (request) => {
+    return request.url.includes('/api/') || request.headers.get('Accept').includes('application/json');
+};
+
+// Fetch event - Robust Offline Strategy
+self.addEventListener('fetch', event => {
+    // 1. Handle POST requests (Sales/Data mutations)
+    if (event.request.method === 'POST') {
+        if (!navigator.onLine) {
+             // TODO: In a full implementation, you would save this request to IndexedDB here
+             // and replay it when back online via Background Sync.
+             // For now, we allow the fetch to fail so the UI can handle the error gracefully,
+             // OR we could return a synthetic response saying "Saved Offline".
+             return; 
+        }
+        return; // Let browser handle online POST normally
+    }
+
+    // 2. Handle GET requests
+    event.respondWith(
+        caches.match(event.request)
+            .then(cachedResponse => {
+                // Strategy: Stale-While-Revalidate for non-mutating data
+                // Access cache first, but trigger network update in background
+                
+                const fetchPromise = fetch(event.request).then(networkResponse => {
+                    // Check if valid response
+                    if (!networkResponse || networkResponse.status !== 200 || networkResponse.type !== 'basic') {
+                        return networkResponse;
+                    }
+
+                    // Clone and Cache updated response for next time
+                    const responseToCache = networkResponse.clone();
+                    caches.open(CACHE_NAME).then(cache => {
+                        cache.put(event.request, responseToCache);
+                    });
+
+                    return networkResponse;
+                }).catch(error => {
+                    console.log('Fetch failed, returning offline page if navigation', error);
+                });
+
+                // Return cached response immediately if available, otherwise wait for network
+                return cachedResponse || fetchPromise;
+            })
+            .catch(() => {
+                // Fallback for navigation requests
+                if (event.request.mode === 'navigate') {
+                    return caches.match('/offline/');
+                }
+            })
+    );
+});
+
+// Background sync for offline actions (Queue processing)
 self.addEventListener('sync', event => {
-    if (event.tag === 'background-sync') {
-        event.waitUntil(doBackgroundSync());
+    if (event.tag === 'sync-sales') {
+        event.waitUntil(processOfflineSales());
     }
 });
 
-function doBackgroundSync() {
-    // Handle background sync tasks
-    console.log('Background sync triggered');
-    return Promise.resolve();
+async function processOfflineSales() {
+    // Placeholder: Logic to read from IndexedDB and POST to server
+    console.log('Processing offline sales queue...');
+    // 1. Open IndexedDB
+    // 2. Get all pending transactions
+    // 3. Iterate and fetch(api_endpoint, data)
+    // 4. On success, delete from IndexedDB
 }
 
 // Push notification handler
 self.addEventListener('push', event => {
+    const data = event.data ? event.data.json() : {};
+    const title = data.title || 'NDtech POS';
     const options = {
-        body: event.data ? event.data.text() : 'New notification from NDtech POS',
-        icon: '/static/nano/manifest.json',
-        badge: '/static/nano/manifest.json',
+        body: data.body || 'New notification',
+        icon: '/static/nano/icon-192.png',
+        badge: '/static/nano/icon-96.png',
         vibrate: [100, 50, 100],
-        data: {
-            dateOfArrival: Date.now(),
-            primaryKey: 1
-        },
-        actions: [
-            {
-                action: 'explore',
-                title: 'View Details',
-                icon: '/static/nano/manifest.json'
-            },
-            {
-                action: 'close',
-                title: 'Close',
-                icon: '/static/nano/manifest.json'
-            }
-        ]
+        data: { url: data.url || '/' }
     };
 
     event.waitUntil(
-        self.registration.showNotification('NDtech POS', options)
+        self.registration.showNotification(title, options)
     );
 });
 
 // Notification click handler
 self.addEventListener('notificationclick', event => {
     event.notification.close();
-
-    if (event.action === 'explore') {
-        // Open the app to notifications page
-        event.waitUntil(
-            clients.openWindow('/notifications/')
-        );
-    } else if (event.action === 'close') {
-        // Just close the notification
-        event.notification.close();
-    } else {
-        // Default action - open the app
-        event.waitUntil(
-            clients.openWindow('/')
-        );
-    }
+    event.waitUntil(
+        clients.openWindow(event.notification.data.url)
+    );
 });

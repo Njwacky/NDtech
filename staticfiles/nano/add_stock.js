@@ -9,13 +9,30 @@ const categoryExamples = {
     'canned_goods': 'Baked Beans, Tuna, Soup, Vegetables, Fruit',
     'personal_care': 'Soap, Shampoo, Toothpaste, Deodorant, Lotion',
     'household_items': 'Cleaning Supplies, Paper Towels, Trash Bags',
-    'airtime_data': 'Vodacom, MTN, Cell C, Telkom Airtime',
     'frozen_goods': 'Frozen Pizza, Ice Cream, Frozen Vegetables',
     'tuckshop_packs': 'Combo Deals, Lunch Packs, Party Packs',
     'stationery': 'Pens, Notebooks, Pencils, Erasers, Rulers',
     'baby_products': 'Diapers, Baby Formula, Baby Food, Wipes',
     'seasonal_items': 'Christmas Decor, Easter Eggs, Halloween Items'
 };
+
+// Toggle expiry date field based on "No Expiry Date" checkbox
+function toggleExpiryDate() {
+    const checkbox = document.getElementById('no_expiry_date');
+    const expiryDateInput = document.getElementById('expiry_date');
+    
+    if (checkbox.checked) {
+        expiryDateInput.disabled = true;
+        expiryDateInput.value = '';
+        expiryDateInput.required = false;
+        expiryDateInput.style.opacity = '0.5';
+        expiryDateInput.style.backgroundColor = '#f3f4f6';
+    } else {
+        expiryDateInput.disabled = false;
+        expiryDateInput.style.opacity = '1';
+        expiryDateInput.style.backgroundColor = '';
+    }
+}
 
 // Toggle between different modes
 function toggleMode(mode) {

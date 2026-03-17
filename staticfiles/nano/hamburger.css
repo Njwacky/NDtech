@@ -3,8 +3,7 @@
 /* Base hamburger button */
 .hamburger-toggle {
     display: none;
-    background: #ff8c00 !important;
-    /* Orange background */
+    background: none;
     border: none;
     cursor: pointer;
     padding: 0.5rem;
@@ -14,8 +13,7 @@
 }
 
 .hamburger-toggle:hover {
-    background-color: #ff7700;
-    /* Darker orange on hover */
+    background-color: rgba(255, 255, 255, 0.1);
 }
 
 .hamburger-toggle .icon {
@@ -23,8 +21,15 @@
     width: 24px;
     height: 24px;
     position: relative;
-    color: white;
+    color: #ffffff !important;
     font-size: 1.5rem;
+    line-height: 1;
+}
+
+.hamburger-toggle {
+    /* Ensure button is visible even if icon fails to load */
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    background-color: rgba(255, 255, 255, 0.1);
 }
 
 /* Mobile navigation menu */

@@ -387,11 +387,39 @@
     }
     
     .info-grid {
-        grid-template-columns: 1fr;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 0.75rem;
+    }
+    
+    .info-item {
+        padding: 0.75rem;
+    }
+    
+    .info-label {
+        font-size: 0.8rem;
+        margin-bottom: 0.25rem;
+    }
+    
+    .info-value {
+        font-size: 0.95rem;
     }
     
     .payment-grid {
-        grid-template-columns: 1fr;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 0.75rem;
+    }
+    
+    .payment-item {
+        padding: 0.75rem;
+    }
+    
+    .payment-label {
+        font-size: 0.8rem;
+        margin-bottom: 0.25rem;
+    }
+    
+    .payment-value {
+        font-size: 1rem;
     }
     
     .items-table {
@@ -400,6 +428,26 @@
     
     .items-table th,
     .items-table td {
+        padding: 0.5rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .info-grid {
+        grid-template-columns: 1fr;
+        gap: 0.5rem;
+    }
+    
+    .info-item {
+        padding: 0.5rem;
+    }
+    
+    .payment-grid {
+        grid-template-columns: 1fr;
+        gap: 0.5rem;
+    }
+    
+    .payment-item {
         padding: 0.5rem;
     }
 }

@@ -45,7 +45,7 @@
 .favicon-spinner-large {
   width: 64px;
   height: 64px;
-  background-image: url('icon-64.png');
+  background-image: url('icon-32.png');
   background-size: contain;
   background-repeat: no-repeat;
   background-position: center;

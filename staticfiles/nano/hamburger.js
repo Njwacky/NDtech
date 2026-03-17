@@ -22,15 +22,17 @@ class HamburgerMenu {
         this.mobileNav = document.querySelector('.mobile-nav');
         this.mobileNavClose = document.querySelector('.mobile-nav-close');
         this.mobileNavLinks = document.querySelectorAll('.mobile-nav-link');
+        this.mobileMenuBtn = document.getElementById('mobileMenuBtn');
         
         console.log('Elements found:', {
             toggle: !!this.hamburgerToggle,
             nav: !!this.mobileNav,
             close: !!this.mobileNavClose,
-            links: this.mobileNavLinks.length
+            links: this.mobileNavLinks.length,
+            mobileBtn: !!this.mobileMenuBtn
         });
 
-        if (!this.hamburgerToggle || !this.mobileNav) {
+        if (!this.mobileNav) {
             console.error('Hamburger menu elements not found!');
             return;
         }
@@ -43,12 +45,23 @@ class HamburgerMenu {
     }
 
     setupEventListeners() {
-        // Hamburger toggle click
-        this.hamburgerToggle.addEventListener('click', (e) => {
-            e.preventDefault();
-            console.log('Hamburger clicked');
-            this.toggleMenu();
-        });
+        // Hamburger toggle click (if visible)
+        if (this.hamburgerToggle) {
+            this.hamburgerToggle.addEventListener('click', (e) => {
+                e.preventDefault();
+                console.log('Hamburger clicked');
+                this.toggleMenu();
+            });
+        }
+
+        // Bottom nav menu button click
+        if (this.mobileMenuBtn) {
+            this.mobileMenuBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                console.log('Mobile menu button clicked');
+                this.toggleMenu();
+            });
+        }
 
         // Close button click
         if (this.mobileNavClose) {
@@ -79,7 +92,8 @@ class HamburgerMenu {
         document.addEventListener('click', (e) => {
             if (this.mobileNav.classList.contains('active')) {
                 const isClickInside = this.mobileNav.contains(e.target) || 
-                                    this.hamburgerToggle.contains(e.target);
+                                    (this.hamburgerToggle && this.hamburgerToggle.contains(e.target)) ||
+                                    (this.mobileMenuBtn && this.mobileMenuBtn.contains(e.target));
                 
                 if (!isClickInside) {
                     this.closeMenu();
@@ -103,11 +117,13 @@ class HamburgerMenu {
         this.mobileNav.classList.add('active');
         document.body.style.overflow = 'hidden'; // Prevent background scrolling
         
-        // Update hamburger icon
-        const icon = this.hamburgerToggle.querySelector('.icon');
-        if (icon) {
-            icon.classList.remove('fa-bars');
-            icon.classList.add('fa-times');
+        // Update hamburger icon if it exists
+        if (this.hamburgerToggle) {
+            const icon = this.hamburgerToggle.querySelector('.icon');
+            if (icon) {
+                icon.classList.remove('fa-bars');
+                icon.classList.add('fa-times');
+            }
         }
     }
 
@@ -116,11 +132,13 @@ class HamburgerMenu {
         this.mobileNav.classList.remove('active');
         document.body.style.overflow = ''; // Restore scrolling
         
-        // Update hamburger icon
-        const icon = this.hamburgerToggle.querySelector('.icon');
-        if (icon) {
-            icon.classList.remove('fa-times');
-            icon.classList.add('fa-bars');
+        // Update hamburger icon if it exists
+        if (this.hamburgerToggle) {
+            const icon = this.hamburgerToggle.querySelector('.icon');
+            if (icon) {
+                icon.classList.remove('fa-times');
+                icon.classList.add('fa-bars');
+            }
         }
     }
 
