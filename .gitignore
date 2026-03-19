@@ -181,6 +181,9 @@ yarn-error.log*
 firebase-credentials.json
 service-account-key.json
 
+# MCP configuration with sensitive data
+.mcp.json
+
 # Brevo/Sendinblue credentials
 brevo_credentials.json
 
