@@ -189,8 +189,13 @@ html, body {
         padding: 1rem !important;
     }
     
-    /* Thumb-friendly tap targets */
-    button, .btn, .nav-link, .dropdown-item, .mobile-nav-link, .bottom-nav-link {
+    /* Thumb-friendly tap targets (avoid overriding Bootstrap .btn everywhere) */
+    .nav-link,
+    .dropdown-item,
+    .mobile-nav-link,
+    .bottom-nav-link,
+    button.bottom-nav-link,
+    .menu-trigger {
         min-height: 48px;
         display: flex;
         align-items: center;

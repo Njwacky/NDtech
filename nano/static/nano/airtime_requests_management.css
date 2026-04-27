@@ -1,0 +1,43 @@
+/* Airtime Requests Management - page-specific styles */
+
+.container-fluid {
+  max-width: 1200px;
+}
+
+.card {
+  border-radius: 1rem;
+  overflow: hidden;
+}
+
+.card-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* Table polish */
+.table thead th {
+  font-weight: 700;
+}
+
+.table tbody tr:hover {
+  background: rgba(88, 129, 87, 0.06);
+}
+
+/* Pagination spacing */
+.pagination {
+  margin: 1rem 0 0;
+  gap: 0.25rem;
+}
+
+@media (max-width: 768px) {
+  .container-fluid {
+    padding-left: 1rem !important;
+    padding-right: 1rem !important;
+  }
+
+  h2 {
+    font-size: 1.5rem;
+  }
+}
+
