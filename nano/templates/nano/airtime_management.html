@@ -1,348 +1,206 @@
 {% extends 'nano/base.html' %}
 {% load static %}
 
-{% block title %}Airtime Management - futurePOS{% endblock %}
+{% block title %}Airtime Management{% endblock %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="{% static 'nano/airtime-modern.css' %}">
-<style>
-    /* Status Toggle Button Styles */
-    .status-toggle-btn {
-        background: rgba(255, 255, 255, 0.9) !important;
-        border: 2px solid rgba(163, 177, 138, 0.3) !important;
-        border-radius: 2rem !important;
-        padding: 0.5rem 1rem !important;
-        cursor: pointer !important;
-        transition: all 0.3s ease !important;
-        display: flex !important;
-        align-items: center !important;
-        gap: 0.5rem !important;
-        font-size: 0.85rem !important;
-        font-weight: 600 !important;
-        color: #344e41 !important;
-        backdrop-filter: blur(10px) !important;
-        pointer-events: auto !important;
-    }
-
-    .status-toggle-btn:hover {
-        transform: translateY(-2px) !important;
-        box-shadow: 0 4px 15px rgba(52, 78, 65, 0.2) !important;
-    }
-
-    .status-toggle-btn.active {
-        background: linear-gradient(135deg, #588157, #344e41) !important;
-        color: white !important;
-        border-color: #588157 !important;
-    }
-
-    .status-toggle-btn.inactive {
-        background: linear-gradient(135deg, #6b7280, #4b5563) !important;
-        color: white !important;
-        border-color: #6b7280 !important;
-    }
-
-    .status-toggle-btn.active:hover {
-        background: linear-gradient(135deg, #344e41, #2d3e35) !important;
-        box-shadow: 0 4px 15px rgba(88, 129, 87, 0.4) !important;
-    }
-
-    .status-toggle-btn.inactive:hover {
-        background: linear-gradient(135deg, #4b5563, #374151) !important;
-        box-shadow: 0 4px 15px rgba(107, 114, 128, 0.4) !important;
-    }
-
-    .status-toggle-btn i {
-        font-size: 0.9rem !important;
-    }
-
-    .status-toggle-btn.loading {
-        pointer-events: none !important;
-        opacity: 0.7 !important;
-    }
-
-    .status-toggle-btn.loading i {
-        animation: spin 1s linear infinite !important;
-    }
-
-    @keyframes spin {
-        from {
-            transform: rotate(0deg);
-        }
-
-        to {
-            transform: rotate(360deg);
-        }
-    }
-
-    /* Fix button pointer events */
-    .network-btn,
-    .template-btn,
-    .action-btn,
-    .guide-btn,
-    .help-close {
-        pointer-events: auto !important;
-        cursor: pointer !important;
-    }
-
-    /* Notification System Fix */
-    .notification {
-        position: fixed;
-        top: 2rem;
-        right: 2rem;
-        background: rgba(255, 255, 255, 0.95);
-        backdrop-filter: blur(20px);
-        border-radius: 0.75rem;
-        padding: 1rem 1.5rem;
-        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
-        border: 1px solid rgba(255, 255, 255, 0.2);
-        z-index: 9999;
-        transform: translateX(400px);
-        opacity: 0;
-        transition: all 0.3s ease;
-        max-width: 400px;
-        pointer-events: auto;
-    }
-
-    .notification.show {
-        transform: translateX(0);
-        opacity: 1;
-    }
-
-    .notification-content {
-        align-items: center;
-        gap: 1rem;
-    }
-</style>
-{% endblock %}
-
-{% block extra_js %}
-<script src="{% static 'nano/airtime.js' %}"></script>
+<link rel="stylesheet" href="{% static 'nano/airtime.css' %}">
 {% endblock %}
 
 {% block content %}
-<div class="airtime-container">
+<div class="container-fluid">
+  <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
+    <div>
+      <h2 class="mb-0"><i class="fas fa-cogs"></i> Airtime Management</h2>
+      <div class="text-muted small">Add products, update stock, and toggle active status.</div>
+    </div>
+    <div class="d-flex gap-2 flex-wrap">
+      <a class="btn btn-outline-primary" href="{% url 'airtime_dashboard' %}">
+        <i class="fas fa-tachometer-alt"></i> Dashboard
+      </a>
+      <a class="btn btn-outline-primary" href="{% url 'airtime_sales' %}">
+        <i class="fas fa-shopping-cart"></i> Sales
+      </a>
+      <a class="btn btn-outline-primary" href="{% url 'airtime_requests_management' %}">
+        <i class="fas fa-clipboard-list"></i> Requests
+      </a>
+    </div>
+  </div>
 
-    <header class="airtime-header">
-        <div class="header-content">
-            <div class="header-title">
-                <div class="title-icon">
-                    <i class="fas fa-boxes"></i>
-                </div>
-                <div class="title-text">
-                    <h1>Airtime Management</h1>
-                    <p class="subtitle">Manage products, stock levels, and settings</p>
-                </div>
+  <div class="row g-3">
+    <div class="col-12 col-xl-5">
+      <div class="card shadow-sm mb-3">
+        <div class="card-header fw-bold"><i class="fas fa-plus-circle"></i> Add Product</div>
+        <div class="card-body">
+          <form method="post">
+            {% csrf_token %}
+            <input type="hidden" name="mode" value="add_product">
+
+            <div class="mb-2">
+              <label class="form-label">Name</label>
+              <input class="form-control" name="name" required>
             </div>
-            <div class="header-actions">
-                <button class="guide-btn" type="button" data-bs-toggle="collapse" data-bs-target="#helpGuide">
-                    <i class="fas fa-question-circle"></i> Quick Guide
-                </button>
+
+            <div class="row g-2">
+              <div class="col-12 col-md-6">
+                <label class="form-label">Network</label>
+                <select class="form-select" name="network" required>
+                  <option value="" selected disabled>Select</option>
+                  <option value="mtn">MTN</option>
+                  <option value="vodacom">Vodacom</option>
+                  <option value="cellc">Cell C</option>
+                  <option value="telkom">Telkom</option>
+                  <option value="other">Other</option>
+                </select>
+              </div>
+              <div class="col-12 col-md-6">
+                <label class="form-label">Type</label>
+                <select class="form-select" name="airtime_type" required>
+                  <option value="" selected disabled>Select</option>
+                  <option value="airtime">Airtime</option>
+                  <option value="data">Data</option>
+                  <option value="electricity">Electricity</option>
+                </select>
+              </div>
             </div>
+
+            <div class="row g-2 mt-0">
+              <div class="col-12 col-md-4">
+                <label class="form-label">Value</label>
+                <input class="form-control" name="value" inputmode="decimal" required>
+              </div>
+              <div class="col-12 col-md-4">
+                <label class="form-label">Price</label>
+                <input class="form-control" name="price" inputmode="decimal" required>
+              </div>
+              <div class="col-12 col-md-4">
+                <label class="form-label">Stock</label>
+                <input class="form-control" name="stock" type="number" min="0" required>
+              </div>
+            </div>
+
+            <div class="mt-2">
+              <label class="form-label">Description (optional)</label>
+              <textarea class="form-control" name="description" rows="2"></textarea>
+            </div>
+
+            <div class="mt-3">
+              <button class="btn btn-primary" type="submit">
+                <i class="fas fa-save"></i> Create
+              </button>
+            </div>
+          </form>
         </div>
-    </header>
+      </div>
 
-    <div class="collapse show help-section" id="helpGuide">
-        <div class="help-card"> <!-- guessed class based on dashboard -->
-            <div class="help-header">
-                <div class="help-icon">
-                    <i class="fas fa-info-circle"></i>
-                </div>
-                <h3>How to Add Airtime Products</h3>
-                <button class="help-close" data-bs-toggle="collapse" data-bs-target="#helpGuide">
-                    <i class="fas fa-times"></i>
+      <div class="card shadow-sm">
+        <div class="card-header fw-bold"><i class="fas fa-sync"></i> Update Stock / Toggle Status</div>
+        <div class="card-body">
+          <form method="post" class="mb-3">
+            {% csrf_token %}
+            <input type="hidden" name="mode" value="update_stock">
+
+            <div class="mb-2">
+              <label class="form-label">Product</label>
+              <select class="form-select" name="product_id" required>
+                <option value="" selected disabled>Select</option>
+                {% for p in airtime_products %}
+                  <option value="{{ p.id }}">{{ p.name }} — Stock {{ p.stock }}</option>
+                {% endfor %}
+              </select>
+            </div>
+
+            <div class="row g-2">
+              <div class="col-12 col-md-6">
+                <label class="form-label">Quantity to add</label>
+                <input class="form-control" name="quantity" type="number" min="0" required>
+              </div>
+              <div class="col-12 col-md-6 d-flex align-items-end">
+                <button class="btn btn-outline-primary w-100" type="submit">
+                  <i class="fas fa-plus"></i> Add Stock
                 </button>
+              </div>
             </div>
-            <div class="help-content">
-                <div class="help-grid">
-                    <div class="help-item">
-                        <div class="help-item-icon add">
-                            <i class="fas fa-plus-circle"></i>
-                        </div>
-                        <h4>Adding New Products</h4>
-                        <ul>
-                            <li><strong>Product Name:</strong> Enter a descriptive name (e.g., "Vodacom R50 Airtime")
-                                </li>
-                            <li><strong>Network:</strong> Select mobile network provider</li>
-                            <li><strong>Type:</strong> Choose between Airtime, Data, SMS Bundle, or Combo</li>
-                            <li><strong>Value:</strong> Enter face value in Rands (what customer gets)</li>
-                            <li><strong>Selling Price:</strong> Enter your selling price (what customer pays)</li>
-                            <li><strong>Description:</strong> Optional - add product details</li>
-                            <li><strong>Initial Stock:</strong> Set starting inventory quantity</li>
-                        </ul>
-                    </div>
-                    <div class="help-item">
-                        <div class="help-item-icon stock">
-                            <i class="fas fa-boxes"></i>
-                        </div>
-                        <h4>Managing Stock</h4>
-                        <ul>
-                            <li><strong>Select Product:</strong> Choose from existing products</li>
-                            <li><strong>Quantity to Add:</strong> Enter amount to increase stock</li>
-                            <li><strong>Current Stock:</strong> Shows available inventory for each product</li>
-                        </ul>
+          </form>
 
-                        <h4 class="mt-3">Pro Tips</h4>
-                        <ul>
-                            <li>Set selling price higher than face value for profit margin</li>
-                            <li>Keep adequate stock levels to avoid sales interruptions</li>
-                            <li>Monitor sales trends to optimize inventory</li>
-                            <li>Use clear, consistent product naming conventions</li>
-                        </ul>
-                    </div>
-                    <div class="help-item">
-                        <div class="help-item-icon security">
-                            <i class="fas fa-shield-alt"></i>
-                        </div>
-                        <h4>Security & Permissions</h4>
-                        <ul>
-                            <li>Only <strong>Managers</strong>, <strong>Admins</strong>, and <strong>Superusers</strong>
-                                can add airtime products</li>
-                            <li>Cashiers must request approval for new products through request system</li>
-                            <li><strong>NEW:</strong> Cashiers can now sell airtime immediately without manager approval
-                                for urgent purchases!</li>
-                            <li>Cashiers can customize airtime amounts using quick sell feature</li>
-                        </ul>
-                    </div>
-                </div>
+          <form method="post">
+            {% csrf_token %}
+            <input type="hidden" name="mode" value="toggle_status">
+
+            <div class="row g-2">
+              <div class="col-12">
+                <label class="form-label">Product</label>
+                <select class="form-select" name="product_id" required>
+                  <option value="" selected disabled>Select</option>
+                  {% for p in airtime_products %}
+                    <option value="{{ p.id }}">{{ p.name }} — {% if p.is_active %}active{% else %}inactive{% endif %}</option>
+                  {% endfor %}
+                </select>
+              </div>
+              <div class="col-12 col-md-6">
+                <label class="form-label">Status</label>
+                <select class="form-select" name="status" required>
+                  <option value="active">Active</option>
+                  <option value="inactive">Inactive</option>
+                </select>
+              </div>
+              <div class="col-12 col-md-6 d-flex align-items-end">
+                <button class="btn btn-outline-secondary w-100" type="submit">
+                  <i class="fas fa-toggle-on"></i> Apply
+                </button>
+              </div>
             </div>
+          </form>
         </div>
+      </div>
     </div>
 
-    <!-- Update Stock Form -->
-    <section class="form-section">
-        <div class="section-header">
-            <div class="section-title">
-                <div class="section-icon warning">
-                    <i class="fas fa-boxes"></i>
-                </div>
-                <div>
-                    <h2>Update Stock</h2>
-                    <p>Add inventory to existing products</p>
-                </div>
-            </div>
-        </div>
-
-        <div class="form-container">
-            <form method="post" class="modern-form">
-                {% csrf_token %}
-                <div class="form-grid">
-                    <div class="form-group">
-                        <label for="update_product_id" class="form-label">Select Product</label>
-                        <div class="input-group">
-                            <span class="input-icon">
-                                <i class="fas fa-search"></i>
-                            </span>
-                            <select class="form-control" id="update_product_id" name="product_id" required>
-                                <option value="">Select Product</option>
-                                {% for product in airtime_products %}
-                                <option value="{{ product.id }}">
-                                    {{ product.get_display_name }} (Current Stock: {{ product.stock }})
-                                </option>
-                                {% endfor %}
-                            </select>
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label for="quantity" class="form-label">Quantity to Add</label>
-                        <div class="input-group">
-                            <span class="input-icon">
-                                <i class="fas fa-plus-circle"></i>
-                            </span>
-                            <input type="number" class="form-control" id="quantity" name="quantity" min="1"
-                                placeholder="10" required>
-                        </div>
-                    </div>
-                </div>
-                <div class="form-actions">
-                    <input type="hidden" name="mode" value="update_stock">
-                    <button type="submit" class="action-btn success">
-                        <i class="fas fa-plus"></i>
-                        <span>Update Stock</span>
-                    </button>
-                </div>
-            </form>
-        </div>
-    </section>
-
-    <!-- Existing Products -->
-    <section class="products-section">
-        <div class="section-header">
-            <div class="section-title">
-                <div class="section-icon">
-                    <i class="fas fa-list"></i>
-                </div>
-                <div>
-                    <h2>Existing Airtime Products</h2>
-                    <p>View and manage your current inventory</p>
-                </div>
-            </div>
-            <a href="{% url 'airtime_dashboard' %}" class="action-btn secondary">
-                <i class="fas fa-arrow-left"></i>
-                <span>Back to Dashboard</span>
-            </a>
-        </div>
-
-        <div class="products-container">
-            {% if airtime_products %}
-            <div class="products-grid">
-                {% for product in airtime_products %}
-                <div class="product-card">
-                    <div class="product-header">
-                        <div class="network-badge {{ product.network }}">
-                            {{ product.get_network_display }}
-                        </div>
-                        <button class="status-toggle-btn {% if product.is_active %}active{% else %}inactive{% endif %}"
-                            data-product-id="{{ product.id }}"
-                            data-current-status="{% if product.is_active %}active{% else %}inactive{% endif %}">
-                            {% if product.is_active %}
-                            <i class="fas fa-check-circle"></i>
-                            <span>Active</span>
-                            {% else %}
-                            <i class="fas fa-pause-circle"></i>
-                            <span>Inactive</span>
-                            {% endif %}
-                        </button>
-                    </div>
-                    <div class="product-body">
-                        <h3 class="product-name">{{ product.name }}</h3>
-                        <div class="product-details">
-                            <div class="detail-item">
-                                <span class="label">Type:</span>
-                                <span class="value">{{ product.get_airtime_type_display }}</span>
-                            </div>
-                            <div class="detail-item">
-                                <span class="label">Value:</span>
-                                <span class="value">R{{ product.value }}</span>
-                            </div>
-                            <div class="detail-item">
-                                <span class="label">Price:</span>
-                                <span class="price">R{{ product.price }}</span>
-                            </div>
-                            <div class="detail-item">
-                                <span class="label">Stock:</span>
-                                <span class="stock {% if product.stock > 0 %}in-stock{% else %}out-of-stock{% endif %}">
-                                    {{ product.stock }} units
-                                </span>
-                            </div>
-                            <div class="detail-item">
-                                <span class="label">Added:</span>
-                                <span class="value">{{ product.date_added|date:"Y-m-d" }}</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+    <div class="col-12 col-xl-7">
+      <div class="card shadow-sm">
+        <div class="card-header fw-bold"><i class="fas fa-list"></i> Products</div>
+        <div class="card-body">
+          {% if airtime_products %}
+          <div class="table-responsive">
+            <table class="table table-sm align-middle">
+              <thead>
+                <tr>
+                  <th>Name</th>
+                  <th>Network</th>
+                  <th>Type</th>
+                  <th class="text-end">Value</th>
+                  <th class="text-end">Price</th>
+                  <th class="text-end">Stock</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for p in airtime_products %}
+                <tr>
+                  <td>{{ p.name }}</td>
+                  <td>{{ p.network }}</td>
+                  <td>{{ p.airtime_type }}</td>
+                  <td class="text-end">{{ p.value }}</td>
+                  <td class="text-end">R{{ p.price }}</td>
+                  <td class="text-end">{{ p.stock }}</td>
+                  <td>
+                    {% if p.is_active %}
+                      <span class="badge bg-success">active</span>
+                    {% else %}
+                      <span class="badge bg-secondary">inactive</span>
+                    {% endif %}
+                  </td>
+                </tr>
                 {% endfor %}
-            </div>
-            {% else %}
-            <div class="empty-state">
-                <div class="empty-icon">
-                    <i class="fas fa-box-open"></i>
-                </div>
-                <h3>No airtime products found</h3>
-                <p>Add your first product using the form above to get started.</p>
-            </div>
-            {% endif %}
+              </tbody>
+            </table>
+          </div>
+          {% else %}
+            <div class="text-muted">No products yet.</div>
+          {% endif %}
         </div>
-    </section>
+      </div>
+    </div>
+  </div>
 </div>
 {% endblock %}
+

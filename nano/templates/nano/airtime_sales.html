@@ -1,753 +1,144 @@
 {% extends 'nano/base.html' %}
 {% load static %}
 
-{% block title %}Airtime Sales - futurePOS{% endblock %}
+{% block title %}Airtime Sales{% endblock %}
 
 {% block extra_css %}
 <link rel="stylesheet" href="{% static 'nano/airtime.css' %}">
-<style>
-    /* Enhanced Earthy Green Theme for Airtime Sales */
-
-    /* Main container with earthy green gradient */
-    .container-fluid {
-        background: linear-gradient(135deg, #588157 0%, #344e41 50%, #2d3e35 100%) !important;
-        min-height: 100vh !important;
-        padding: 2rem !important;
-        border-radius: 1.5rem !important;
-        margin: 0 !important;
-    }
-
-    /* Page title with earthy green styling */
-    .mb-4 h2 {
-        background: linear-gradient(135deg, #a3b18a, #f5f5f0) !important;
-        -webkit-background-clip: text !important;
-        -webkit-text-fill-color: transparent !important;
-        background-clip: text !important;
-        text-shadow: none !important;
-        font-size: 2.5rem !important;
-        font-weight: 800 !important;
-        margin-bottom: 2rem !important;
-        position: relative !important;
-    }
-
-    .mb-4 h2::after {
-        content: '';
-        position: absolute;
-        bottom: -10px;
-        left: 0;
-        width: 100px;
-        height: 4px;
-        background: linear-gradient(90deg, #a3b18a, #588157);
-        border-radius: 2px;
-    }
-
-    .mb-4 h2 i {
-        color: #a3b18a !important;
-        background: linear-gradient(135deg, #a3b18a, #588157) !important;
-        -webkit-background-clip: text !important;
-        -webkit-text-fill-color: transparent !important;
-        background-clip: text !important;
-        font-size: 2rem !important;
-    }
-
-    /* Enhanced cards with earthy green theme */
-    .card {
-        background: rgba(245, 245, 240, 0.95) !important;
-        backdrop-filter: blur(20px) !important;
-        border: 2px solid rgba(163, 177, 138, 0.3) !important;
-        border-radius: 1.5rem !important;
-        box-shadow: 0 8px 32px rgba(52, 78, 65, 0.2) !important;
-        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1) !important;
-        overflow: hidden !important;
-        position: relative !important;
-    }
-
-    .card::before {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        height: 4px;
-        background: linear-gradient(90deg, #588157, #a3b18a, #344e41);
-        border-radius: 1.5rem 1.5rem 0 0;
-    }
-
-    .card:hover {
-        transform: translateY(-8px) !important;
-        box-shadow: 0 16px 48px rgba(52, 78, 65, 0.3) !important;
-        border-color: rgba(88, 129, 87, 0.5) !important;
-    }
-
-    .card-header {
-        background: linear-gradient(135deg, #588157, #344e41) !important;
-        border-bottom: 3px solid #a3b18a !important;
-        padding: 1.5rem !important;
-        color: #f5f5f0 !important;
-        border-radius: 1.5rem 1.5rem 0 0 !important;
-        position: relative !important;
-    }
-
-    .card-header::after {
-        content: '';
-        position: absolute;
-        bottom: 0;
-        left: 1.5rem;
-        right: 1.5rem;
-        height: 2px;
-        background: linear-gradient(90deg, transparent, #a3b18a, transparent);
-    }
-
-    .card-header h5 {
-        margin: 0 !important;
-        display: flex !important;
-        align-items: center !important;
-        font-size: 1.3rem !important;
-        font-weight: 700 !important;
-        color: #f5f5f0 !important;
-    }
-
-    .card-header h5 i {
-        color: #a3b18a !important;
-        margin-right: 0.75rem !important;
-        font-size: 1.2rem !important;
-    }
-
-    .card-body {
-        padding: 2rem !important;
-        background: rgba(245, 245, 240, 0.9) !important;
-    }
-
-    /* Enhanced table styling */
-    .table {
-        background: rgba(255, 255, 255, 0.95) !important;
-        border-radius: 1rem !important;
-        overflow: hidden !important;
-        box-shadow: 0 4px 20px rgba(52, 78, 65, 0.15) !important;
-        border: 1px solid rgba(163, 177, 138, 0.2) !important;
-    }
-
-    .table thead th {
-        background: linear-gradient(135deg, #588157, #344e41) !important;
-        color: #f5f5f0 !important;
-        font-weight: 700 !important;
-        border: none !important;
-        padding: 1.25rem 1rem !important;
-        font-size: 0.95rem !important;
-        text-transform: uppercase !important;
-        letter-spacing: 1px !important;
-        position: relative !important;
-    }
-
-    .table thead th::after {
-        content: '';
-        position: absolute;
-        bottom: 0;
-        left: 1rem;
-        right: 1rem;
-        height: 2px;
-        background: linear-gradient(90deg, #a3b18a, transparent);
-    }
-
-    .table tbody td {
-        padding: 1.25rem 1rem !important;
-        border-bottom: 1px solid rgba(163, 177, 138, 0.2) !important;
-        vertical-align: middle !important;
-        color: #2d3e35 !important;
-        font-weight: 500 !important;
-        transition: all 0.3s ease !important;
-    }
-
-    .table tbody tr:hover {
-        background: linear-gradient(135deg, rgba(88, 129, 87, 0.1), rgba(163, 177, 138, 0.05)) !important;
-        transform: scale(1.01) !important;
-    }
-
-    .table tbody tr:hover td {
-        color: #344e41 !important;
-        font-weight: 600 !important;
-    }
-
-    .table tbody tr:last-child td {
-        border-bottom: none !important;
-    }
-
-    /* Enhanced network badges with earthy green theme */
-    .badge {
-        font-size: 0.85rem !important;
-        font-weight: 700 !important;
-        padding: 0.6rem 1rem !important;
-        border-radius: 0.75rem !important;
-        text-transform: uppercase !important;
-        letter-spacing: 0.5px !important;
-        border: 2px solid transparent !important;
-        transition: all 0.3s ease !important;
-        position: relative !important;
-        overflow: hidden !important;
-    }
-
-    .badge::before {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: -100%;
-        width: 100%;
-        height: 100%;
-        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
-        transition: left 0.6s ease;
-    }
-
-    .badge:hover::before {
-        left: 100%;
-    }
-
-    .badge.bg-mtn {
-        background: linear-gradient(135deg, #f59e0b, #d97706) !important;
-        border-color: #f59e0b !important;
-        color: white !important;
-        box-shadow: 0 2px 8px rgba(245, 158, 11, 0.3) !important;
-    }
-
-    .badge.bg-vodacom {
-        background: linear-gradient(135deg, #dc2626, #b91c1c) !important;
-        border-color: #dc2626 !important;
-        color: white !important;
-        box-shadow: 0 2px 8px rgba(220, 38, 38, 0.3) !important;
-    }
-
-    .badge.bg-cellc {
-        background: linear-gradient(135deg, #059669, #047857) !important;
-        border-color: #059669 !important;
-        color: white !important;
-        box-shadow: 0 2px 8px rgba(5, 150, 105, 0.3) !important;
-    }
-
-    .badge.bg-telkom {
-        background: linear-gradient(135deg, #2563eb, #1d4ed8) !important;
-        border-color: #2563eb !important;
-        color: white !important;
-        box-shadow: 0 2px 8px rgba(37, 99, 235, 0.3) !important;
-    }
-
-    .badge.bg-warning {
-        background: linear-gradient(135deg, #f59e0b, #d97706) !important;
-        border-color: #f59e0b !important;
-        color: white !important;
-        box-shadow: 0 2px 8px rgba(245, 158, 11, 0.3) !important;
-    }
-
-    .badge.bg-info {
-        background: linear-gradient(135deg, #0891b2, #0e7490) !important;
-        border-color: #0891b2 !important;
-        color: white !important;
-        box-shadow: 0 2px 8px rgba(8, 145, 178, 0.3) !important;
-    }
-
-    .badge.bg-success {
-        background: linear-gradient(135deg, #16a34a, #15803d) !important;
-        border-color: #16a34a !important;
-        color: white !important;
-        box-shadow: 0 2px 8px rgba(22, 163, 74, 0.3) !important;
-    }
-
-    .badge.bg-danger {
-        background: linear-gradient(135deg, #dc2626, #b91c1c) !important;
-        border-color: #dc2626 !important;
-        color: white !important;
-        box-shadow: 0 2px 8px rgba(220, 38, 38, 0.3) !important;
-    }
-
-    /* Enhanced buttons with earthy green theme */
-    .btn {
-        border-radius: 0.75rem !important;
-        font-weight: 700 !important;
-        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
-        border: 2px solid transparent !important;
-        padding: 0.75rem 1.5rem !important;
-        font-size: 0.9rem !important;
-        display: inline-flex !important;
-        align-items: center !important;
-        gap: 0.5rem !important;
-        position: relative !important;
-        overflow: hidden !important;
-        text-transform: uppercase !important;
-        letter-spacing: 0.5px !important;
-    }
-
-    .btn::before {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: -100%;
-        width: 100%;
-        height: 100%;
-        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-        transition: left 0.6s ease;
-    }
-
-    .btn:hover::before {
-        left: 100%;
-    }
-
-    .btn:hover {
-        transform: translateY(-3px) !important;
-        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2) !important;
-    }
-
-    .btn:active {
-        transform: translateY(-1px) !important;
-    }
-
-    .btn-primary {
-        background: linear-gradient(135deg, #588157, #344e41) !important;
-        border-color: #588157 !important;
-        color: #f5f5f0 !important;
-        box-shadow: 0 4px 15px rgba(88, 129, 87, 0.3) !important;
-    }
-
-    .btn-primary:hover {
-        background: linear-gradient(135deg, #344e41, #2d3e35) !important;
-        border-color: #344e41 !important;
-        box-shadow: 0 6px 20px rgba(88, 129, 87, 0.4) !important;
-    }
-
-    .btn-success {
-        background: linear-gradient(135deg, #16a34a, #15803d) !important;
-        border-color: #16a34a !important;
-        color: white !important;
-        box-shadow: 0 4px 15px rgba(22, 163, 74, 0.3) !important;
-    }
-
-    .btn-success:hover {
-        background: linear-gradient(135deg, #15803d, #166534) !important;
-        border-color: #15803d !important;
-        box-shadow: 0 6px 20px rgba(22, 163, 74, 0.4) !important;
-    }
-
-    .btn-danger {
-        background: linear-gradient(135deg, #dc2626, #b91c1c) !important;
-        border-color: #dc2626 !important;
-        color: white !important;
-        box-shadow: 0 4px 15px rgba(220, 38, 38, 0.3) !important;
-    }
-
-    .btn-danger:hover {
-        background: linear-gradient(135deg, #b91c1c, #991b1b) !important;
-        border-color: #b91c1c !important;
-        box-shadow: 0 6px 20px rgba(220, 38, 38, 0.4) !important;
-    }
-
-    .btn-info {
-        background: linear-gradient(135deg, #0891b2, #0e7490) !important;
-        border-color: #0891b2 !important;
-        color: white !important;
-        box-shadow: 0 4px 15px rgba(8, 145, 178, 0.3) !important;
-    }
-
-    .btn-info:hover {
-        background: linear-gradient(135deg, #0e7490, #155e75) !important;
-        border-color: #0e7490 !important;
-        box-shadow: 0 6px 20px rgba(8, 145, 178, 0.4) !important;
-    }
-
-    .btn-secondary {
-        background: linear-gradient(135deg, #6b7280, #4b5563) !important;
-        border-color: #6b7280 !important;
-        color: white !important;
-        box-shadow: 0 4px 15px rgba(107, 114, 128, 0.3) !important;
-    }
-
-    .btn-secondary:hover {
-        background: linear-gradient(135deg, #4b5563, #374151) !important;
-        border-color: #4b5563 !important;
-        box-shadow: 0 6px 20px rgba(107, 114, 128, 0.4) !important;
-    }
-
-    .btn-sm {
-        padding: 0.5rem 1rem !important;
-        font-size: 0.8rem !important;
-        border-radius: 0.5rem !important;
-    }
-
-    /* Enhanced form controls */
-    .form-control,
-    .form-select {
-        border: 2px solid rgba(163, 177, 138, 0.3) !important;
-        border-radius: 0.75rem !important;
-        padding: 0.875rem 1.25rem !important;
-        font-size: 1rem !important;
-        transition: all 0.3s ease !important;
-        background: rgba(255, 255, 255, 0.9) !important;
-        color: #2d3e35 !important;
-        font-weight: 500 !important;
-    }
-
-    .form-control:focus,
-    .form-select:focus {
-        border-color: #588157 !important;
-        box-shadow: 0 0 0 4px rgba(88, 129, 87, 0.15) !important;
-        outline: none !important;
-        background: rgba(255, 255, 255, 0.95) !important;
-        transform: translateY(-2px) !important;
-    }
-
-    .form-label {
-        color: #344e41 !important;
-        font-weight: 700 !important;
-        margin-bottom: 0.75rem !important;
-        font-size: 0.95rem !important;
-        text-transform: uppercase !important;
-        letter-spacing: 0.5px !important;
-    }
-
-    /* Enhanced pagination */
-    .pagination {
-        display: flex !important;
-        list-style: none !important;
-        padding: 1rem !important;
-        margin: 2rem 0 !important;
-        border-radius: 1rem !important;
-        background: rgba(255, 255, 255, 0.9) !important;
-        border: 1px solid rgba(163, 177, 138, 0.2) !important;
-        box-shadow: 0 4px 20px rgba(52, 78, 65, 0.1) !important;
-    }
-
-    .page-item {
-        margin: 0 0.25rem !important;
-    }
-
-    .page-link {
-        display: block !important;
-        padding: 0.75rem 1rem !important;
-        background: rgba(255, 255, 255, 0.8) !important;
-        border: 2px solid rgba(163, 177, 138, 0.2) !important;
-        border-radius: 0.5rem !important;
-        color: #344e41 !important;
-        text-decoration: none !important;
-        transition: all 0.3s ease !important;
-        font-weight: 600 !important;
-    }
-
-    .page-link:hover {
-        background: linear-gradient(135deg, #588157, #344e41) !important;
-        color: #f5f5f0 !important;
-        border-color: #588157 !important;
-        transform: translateY(-2px) !important;
-        box-shadow: 0 4px 15px rgba(88, 129, 87, 0.3) !important;
-    }
-
-    .page-item.active .page-link {
-        background: linear-gradient(135deg, #588157, #344e41) !important;
-        color: #f5f5f0 !important;
-        border-color: #588157 !important;
-        box-shadow: 0 4px 15px rgba(88, 129, 87, 0.3) !important;
-    }
-
-    /* Enhanced alert */
-    .alert {
-        border: none !important;
-        border-radius: 1rem !important;
-        padding: 1.5rem 2rem !important;
-        font-weight: 600 !important;
-        backdrop-filter: blur(20px) !important;
-        border: 2px solid rgba(163, 177, 138, 0.2) !important;
-        background: rgba(255, 255, 255, 0.9) !important;
-        color: #344e41 !important;
-        box-shadow: 0 4px 20px rgba(52, 78, 65, 0.1) !important;
-    }
-
-    .alert-info {
-        background: linear-gradient(135deg, rgba(8, 145, 178, 0.1), rgba(14, 116, 144, 0.05)) !important;
-        border-color: #0891b2 !important;
-        color: #0e7490 !important;
-    }
-
-    /* Responsive design */
-    @media (max-width: 768px) {
-        .container-fluid {
-            padding: 1rem !important;
-        }
-
-        .mb-4 h2 {
-            font-size: 2rem !important;
-        }
-
-        .card-body {
-            padding: 1.5rem !important;
-        }
-
-        .table {
-            font-size: 0.85rem !important;
-        }
-
-        .table thead th {
-            padding: 1rem 0.75rem !important;
-            font-size: 0.8rem !important;
-        }
-
-        .table tbody td {
-            padding: 1rem 0.75rem !important;
-        }
-
-        .btn-sm {
-            padding: 0.375rem 0.75rem !important;
-            font-size: 0.75rem !important;
-        }
-    }
-
-    /* Animation classes */
-    @keyframes slideInFromTop {
-        from {
-            opacity: 0;
-            transform: translateY(-30px);
-        }
-
-        to {
-            opacity: 1;
-            transform: translateY(0);
-        }
-    }
-
-    .card {
-        animation: slideInFromTop 0.6s ease-out;
-    }
-
-    .table tbody tr {
-        animation: slideInFromTop 0.4s ease-out;
-    }
-
-    /* Loading state */
-    .btn:disabled {
-        opacity: 0.6 !important;
-        cursor: not-allowed !important;
-        transform: none !important;
-        box-shadow: none !important;
-    }
-
-    .btn:disabled:hover {
-        transform: none !important;
-        box-shadow: none !important;
-    }
-</style>
 {% endblock %}
 
 {% block content %}
 <div class="container-fluid">
-    <div class="row">
-        <div class="col-12">
-            <h2 class="mb-4">
-                <i class="fas fa-shopping-cart"></i> Airtime Sales
-                {% if is_manager %}
-                <a href="{% url 'airtime_management' %}" class="btn btn-sm btn-success float-end">
-                    <i class="fas fa-plus"></i> Manage Products
-                </a>
+  <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
+    <div>
+      <h2 class="mb-0"><i class="fas fa-shopping-cart"></i> Airtime Sales</h2>
+      <div class="text-muted small">
+        {% if is_manager %}All sales{% else %}Your sales{% endif %} with filters.
+      </div>
+    </div>
+    <div class="d-flex gap-2 flex-wrap">
+      <a class="btn btn-outline-primary" href="{% url 'airtime_dashboard' %}">
+        <i class="fas fa-tachometer-alt"></i> Dashboard
+      </a>
+      <a class="btn btn-outline-primary" href="{% url 'airtime_history_review' %}">
+        <i class="fas fa-history"></i> History Review
+      </a>
+    </div>
+  </div>
+
+  <div class="card shadow-sm mb-3">
+    <div class="card-body">
+      <form method="get" class="row g-2 align-items-end">
+        <div class="col-12 col-md-4">
+          <label class="form-label">Status</label>
+          <select class="form-select" name="status">
+            <option value="" {% if not status_filter %}selected{% endif %}>All</option>
+            <option value="pending" {% if status_filter == 'pending' %}selected{% endif %}>Pending</option>
+            <option value="approved" {% if status_filter == 'approved' %}selected{% endif %}>Approved</option>
+            <option value="completed" {% if status_filter == 'completed' %}selected{% endif %}>Completed</option>
+            <option value="cancelled" {% if status_filter == 'cancelled' %}selected{% endif %}>Cancelled</option>
+            <option value="rejected" {% if status_filter == 'rejected' %}selected{% endif %}>Rejected</option>
+          </select>
+        </div>
+        <div class="col-12 col-md-4">
+          <label class="form-label">Network</label>
+          <input class="form-control" name="network" value="{{ network_filter }}" placeholder="e.g. mtn">
+        </div>
+        <div class="col-12 col-md-4 d-flex gap-2">
+          <button class="btn btn-primary flex-fill" type="submit">
+            <i class="fas fa-filter"></i> Filter
+          </button>
+          <a class="btn btn-outline-secondary" href="{% url 'airtime_sales' %}">
+            Clear
+          </a>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="card shadow-sm">
+    <div class="card-header fw-bold"><i class="fas fa-list"></i> Sales</div>
+    <div class="card-body">
+      {% if sales %}
+      <div class="table-responsive">
+        <table class="table table-sm align-middle">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Customer</th>
+              <th>Product</th>
+              <th class="text-end">Qty</th>
+              <th class="text-end">Total</th>
+              <th>Status</th>
+              <th class="text-muted">Created</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for s in sales %}
+            <tr>
+              <td>#{{ s.id }}</td>
+              <td>{{ s.customer_phone }}</td>
+              <td>{{ s.airtime_product.name }}</td>
+              <td class="text-end">{{ s.quantity }}</td>
+              <td class="text-end">R{{ s.total_price }}</td>
+              <td>
+                {% if s.status == 'completed' %}
+                  <span class="badge bg-success">completed</span>
+                {% elif s.status == 'pending' %}
+                  <span class="badge bg-warning text-dark">pending</span>
+                {% elif s.status == 'approved' %}
+                  <span class="badge bg-info text-dark">approved</span>
+                {% else %}
+                  <span class="badge bg-secondary">{{ s.status }}</span>
                 {% endif %}
-            </h2>
-        </div>
+              </td>
+              <td class="small text-muted">{{ s.created_at }}</td>
+              <td class="text-end">
+                {% if is_manager and s.status == 'pending' %}
+                  <a class="btn btn-sm btn-success" href="{% url 'approve_airtime_sale' s.id %}">Approve</a>
+                  <a class="btn btn-sm btn-outline-danger" href="{% url 'reject_airtime_sale' s.id %}">Reject</a>
+                {% else %}
+                  <a class="btn btn-sm btn-outline-secondary" href="{% url 'airtime_history_review' %}?phone={{ s.customer_phone }}">View</a>
+                {% endif %}
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+      {% if is_paginated %}
+      <nav aria-label="Sales pagination">
+        <ul class="pagination">
+          {% if page_obj.has_previous %}
+          <li class="page-item">
+            <a class="page-link" href="?page={{ page_obj.previous_page_number }}&status={{ status_filter }}&network={{ network_filter }}">Previous</a>
+          </li>
+          {% else %}
+          <li class="page-item disabled"><span class="page-link">Previous</span></li>
+          {% endif %}
+
+          <li class="page-item disabled">
+            <span class="page-link">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+          </li>
+
+          {% if page_obj.has_next %}
+          <li class="page-item">
+            <a class="page-link" href="?page={{ page_obj.next_page_number }}&status={{ status_filter }}&network={{ network_filter }}">Next</a>
+          </li>
+          {% else %}
+          <li class="page-item disabled"><span class="page-link">Next</span></li>
+          {% endif %}
+        </ul>
+      </nav>
+      {% endif %}
+
+      {% else %}
+        <div class="text-muted">No sales found.</div>
+      {% endif %}
     </div>
-
-    <!-- Filters -->
-    <div class="row mb-4">
-        <div class="col-12">
-            <div class="card">
-                <div class="card-header">
-                    <h5><i class="fas fa-filter"></i> Filters</h5>
-                </div>
-                <div class="card-body">
-                    <form method="get" class="row g-3">
-                        <div class="col-md-3">
-                            <label for="status_filter" class="form-label">Status:</label>
-                            <select class="form-select" id="status_filter" name="status">
-                                <option value="">All Status</option>
-                                <option value="pending" {% if status_filter=='pending' %}selected{% endif %}>Pending
-                                </option>
-                                <option value="approved" {% if status_filter=='approved' %}selected{% endif %}>Approved
-                                </option>
-                                <option value="completed" {% if status_filter=='completed' %}selected{% endif %}>
-                                    Completed</option>
-                                <option value="cancelled" {% if status_filter=='cancelled' %}selected{% endif %}>
-                                    Cancelled</option>
-                            </select>
-                        </div>
-                        <div class="col-md-3">
-                            <label for="network_filter" class="form-label">Network:</label>
-                            <select class="form-select" id="network_filter" name="network">
-                                <option value="">All Networks</option>
-                                <option value="vodacom" {% if network_filter=='vodacom' %}selected{% endif %}>Vodacom
-                                </option>
-                                <option value="mtn" {% if network_filter=='mtn' %}selected{% endif %}>MTN</option>
-                                <option value="telkom" {% if network_filter=='telkom' %}selected{% endif %}>Telkom
-                                </option>
-                                <option value="cell_c" {% if network_filter=='cell_c' %}selected{% endif %}>Cell C
-                                </option>
-                                <option value="rain" {% if network_filter=='rain' %}selected{% endif %}>Rain</option>
-                                <option value="blu" {% if network_filter=='blu' %}selected{% endif %}>BLU</option>
-                            </select>
-                        </div>
-                        <div class="col-md-3">
-                            <label class="form-label">&nbsp;</label>
-                            <button type="submit" class="btn btn-primary">
-                                <i class="fas fa-search"></i> Apply Filters
-                            </button>
-                            <a href="{% url 'airtime_sales' %}" class="btn btn-secondary">
-                                <i class="fas fa-times"></i> Clear
-                            </a>
-                        </div>
-                        <div class="col-md-3">
-                            <label class="form-label">&nbsp;</label>
-                            <a href="{% url 'airtime_dashboard' %}" class="btn btn-info">
-                                <i class="fas fa-arrow-left"></i> Back to Dashboard
-                            </a>
-                        </div>
-                    </form>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Sales Table -->
-    <div class="row">
-        <div class="col-12">
-            <div class="card">
-                <div class="card-header">
-                    <h5><i class="fas fa-list"></i> Airtime Sales</h5>
-                    <span class="badge bg-info float-end">{{ sales.count }} sales</span>
-                </div>
-                <div class="card-body">
-                    {% if sales %}
-                    <div class="table-responsive">
-                        <table class="table table-striped">
-                            <thead>
-                                <tr>
-                                    <th>ID</th>
-                                    <th>Product</th>
-                                    <th>Network</th>
-                                    <th>Type</th>
-                                    <th>Customer Phone</th>
-                                    <th>Quantity</th>
-                                    <th>Total Price</th>
-                                    <th>Status</th>
-                                    <th>Requested By</th>
-                                    <th>Created</th>
-                                    {% if is_manager %}
-                                    <th>Actions</th>
-                                    {% endif %}
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for sale in sales %}
-                                <tr>
-                                    <td>{{ sale.id }}</td>
-                                    <td>{{ sale.airtime_product.get_display_name }}</td>
-                                    <td>
-                                        <span class="badge bg-{{ sale.airtime_product.network|lower }}">
-                                            {{ sale.airtime_product.get_network_display }}
-                                        </span>
-                                    </td>
-                                    <td>{{ sale.airtime_product.get_airtime_type_display }}</td>
-                                    <td>{{ sale.customer_phone }}</td>
-                                    <td>{{ sale.quantity }}</td>
-                                    <td>R{{ sale.total_price }}</td>
-                                    <td>
-                                        {% if sale.status == 'pending' %}
-                                        <span class="badge bg-warning">Pending</span>
-                                        {% elif sale.status == 'approved' %}
-                                        <span class="badge bg-info">Approved</span>
-                                        {% elif sale.status == 'completed' %}
-                                        <span class="badge bg-success">Completed</span>
-                                        {% elif sale.status == 'cancelled' %}
-                                        <span class="badge bg-danger">Cancelled</span>
-                                        {% endif %}
-                                    </td>
-                                    <td>{{ sale.requested_by.username }}</td>
-                                    <td>{{ sale.created_at|date:"Y-m-d H:i" }}</td>
-                                    {% if is_manager %}
-                                    <td>
-                                        {% if sale.status == 'pending' %}
-                                        <a href="{% url 'approve_airtime_sale' sale.id %}"
-                                            class="btn btn-sm btn-success">
-                                            <i class="fas fa-check"></i> Approve
-                                        </a>
-                                        <a href="{% url 'reject_airtime_sale' sale.id %}" class="btn btn-sm btn-danger">
-                                            <i class="fas fa-times"></i> Reject
-                                        </a>
-                                        {% elif sale.status == 'approved' %}
-                                        <span class="text-muted">Awaiting completion</span>
-                                        {% else %}
-                                        <span class="text-muted">Completed</span>
-                                        {% endif %}
-                                    </td>
-                                    {% endif %}
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
-
-                    <!-- Pagination -->
-                    {% if is_paginated %}
-                    <nav aria-label="Sales pagination">
-                        <ul class="pagination justify-content-center">
-                            {% if page_obj.has_previous %}
-                            <li class="page-item">
-                                <a class="page-link"
-                                    href="?page=1{% if status_filter %}&status={{ status_filter }}{% endif %}{% if network_filter %}&network={{ network_filter }}{% endif %}">
-                                    <i class="fas fa-angle-double-left"></i>
-                                </a>
-                            </li>
-                            <li class="page-item">
-                                <a class="page-link"
-                                    href="?page={{ page_obj.previous_page_number }}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if network_filter %}&network={{ network_filter }}{% endif %}">
-                                    <i class="fas fa-angle-left"></i>
-                                </a>
-                            </li>
-                            {% endif %}
-
-                            {% for num in page_obj.paginator.page_range %}
-                            {% if page_obj.number == num %}
-                            <li class="page-item active">
-                                <span class="page-link">{{ num }}</span>
-                            </li>
-                            {% else %}
-                            <li class="page-item">
-                                <a class="page-link"
-                                    href="?page={{ num }}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if network_filter %}&network={{ network_filter }}{% endif %}">
-                                    {{ num }}
-                                </a>
-                            </li>
-                            {% endif %}
-                            {% endfor %}
-
-                            {% if page_obj.has_next %}
-                            <li class="page-item">
-                                <a class="page-link"
-                                    href="?page={{ page_obj.next_page_number }}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if network_filter %}&network={{ network_filter }}{% endif %}">
-                                    <i class="fas fa-angle-right"></i>
-                                </a>
-                            </li>
-                            <li class="page-item">
-                                <a class="page-link"
-                                    href="?page={{ page_obj.paginator.num_pages }}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if network_filter %}&network={{ network_filter }}{% endif %}">
-                                    <i class="fas fa-angle-double-right"></i>
-                                </a>
-                            </li>
-                            {% endif %}
-                        </ul>
-                    </nav>
-                    {% endif %}
-                    {% else %}
-                    <div class="alert alert-info">
-                        <i class="fas fa-info-circle"></i> No airtime sales found.
-                        {% if is_manager %}
-                        <a href="{% url 'airtime_management' %}">Add some airtime products</a> to get started.
-                        {% else %}
-                        Start selling airtime from the <a href="{% url 'airtime_dashboard' %}">dashboard</a>.
-                        {% endif %}
-                    </div>
-                    {% endif %}
-                </div>
-            </div>
-        </div>
-    </div>
+  </div>
 </div>
 {% endblock %}
+

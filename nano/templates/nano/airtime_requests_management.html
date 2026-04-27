@@ -1,7 +1,7 @@
 {% extends 'nano/base.html' %}
 {% load static %}
 
-{% block title %}Airtime Requests Management - futurePOS{% endblock %}
+{% block title %}Airtime Requests{% endblock %}
 
 {% block extra_css %}
 <link rel="stylesheet" href="{% static 'nano/airtime.css' %}">
@@ -9,139 +9,96 @@
 
 {% block content %}
 <div class="container-fluid">
-    <div class="row">
-        <div class="col-12">
-            <h2 class="mb-4">
-                <i class="fas fa-clipboard-list"></i> Airtime Management Requests
-                <a href="{% url 'airtime_dashboard' %}" class="btn btn-sm btn-info float-end">
-                    <i class="fas fa-arrow-left"></i> Back to Dashboard
-                </a>
-            </h2>
-        </div>
+  <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
+    <div>
+      <h2 class="mb-0"><i class="fas fa-clipboard-list"></i> Airtime Requests</h2>
+      <div class="text-muted small">Approve or reject airtime management requests.</div>
     </div>
-
-    <!-- Requests Table -->
-    <div class="row">
-        <div class="col-12">
-            <div class="card">
-                <div class="card-header">
-                    <h5><i class="fas fa-list"></i> Management Requests</h5>
-                    <span class="badge bg-info float-end">{{ requests.count }} requests</span>
-                </div>
-                <div class="card-body">
-                    {% if requests %}
-                        <div class="table-responsive">
-                            <table class="table table-striped">
-                                <thead>
-                                    <tr>
-                                        <th>ID</th>
-                                        <th>Request Type</th>
-                                        <th>From</th>
-                                        <th>Title</th>
-                                        <th>Message</th>
-                                        <th>Status</th>
-                                        <th>Created</th>
-                                        <th>Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {% for request in requests %}
-                                        <tr>
-                                            <td>{{ request.id }}</td>
-                                            <td>
-                                                <span class="badge bg-info">
-                                                    {{ request.get_request_type_display }}
-                                                </span>
-                                            </td>
-                                            <td>{{ request.requested_by.username }}</td>
-                                            <td>{{ request.title }}</td>
-                                            <td>{{ request.message|truncatewords:10 }}</td>
-                                            <td>
-                                                {% if request.status == 'pending' %}
-                                                    <span class="badge bg-warning">Pending</span>
-                                                {% elif request.status == 'approved' %}
-                                                    <span class="badge bg-success">Approved</span>
-                                                {% elif request.status == 'rejected' %}
-                                                    <span class="badge bg-danger">Rejected</span>
-                                                {% endif %}
-                                            </td>
-                                            <td>{{ request.created_at|date:"Y-m-d H:i" }}</td>
-                                            <td>
-                                                {% if request.status == 'pending' %}
-                                                    <a href="{% url 'approve_airtime_request' request.id %}" 
-                                                           class="btn btn-sm btn-success">
-                                                        <i class="fas fa-check"></i> Approve
-                                                    </a>
-                                                    <a href="{% url 'reject_airtime_request' request.id %}" 
-                                                           class="btn btn-sm btn-danger">
-                                                        <i class="fas fa-times"></i> Reject
-                                                    </a>
-                                                {% else %}
-                                                    <span class="text-muted">Completed</span>
-                                                {% endif %}
-                                            </td>
-                                        </tr>
-                                    {% endfor %}
-                                </tbody>
-                            </table>
-                        </div>
-
-                        <!-- Pagination -->
-                        {% if is_paginated %}
-                            <nav aria-label="Requests pagination">
-                                <ul class="pagination justify-content-center">
-                                    {% if page_obj.has_previous %}
-                                        <li class="page-item">
-                                            <a class="page-link" href="?page=1">
-                                                <i class="fas fa-angle-double-left"></i>
-                                            </a>
-                                        </li>
-                                        <li class="page-item">
-                                            <a class="page-link" href="?page={{ page_obj.previous_page_number }}">
-                                                <i class="fas fa-angle-left"></i>
-                                            </a>
-                                        </li>
-                                    {% endif %}
-
-                                    {% for num in page_obj.paginator.page_range %}
-                                        {% if page_obj.number == num %}
-                                            <li class="page-item active">
-                                                <span class="page-link">{{ num }}</span>
-                                            </li>
-                                        {% else %}
-                                            <li class="page-item">
-                                                <a class="page-link" href="?page={{ num }}">
-                                                    {{ num }}
-                                                </a>
-                                            </li>
-                                        {% endif %}
-                                    {% endfor %}
-
-                                    {% if page_obj.has_next %}
-                                        <li class="page-item">
-                                            <a class="page-link" href="?page={{ page_obj.next_page_number }}">
-                                                <i class="fas fa-angle-right"></i>
-                                            </a>
-                                        </li>
-                                        <li class="page-item">
-                                            <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}">
-                                                <i class="fas fa-angle-double-right"></i>
-                                            </a>
-                                        </li>
-                                    {% endif %}
-                                </ul>
-                            </nav>
-                        {% endif %}
-                    {% else %}
-                        <div class="alert alert-info">
-                            <i class="fas fa-info-circle"></i> No airtime management requests found.
-                            <br>
-                            When cashiers need to add airtime products or update stock, their requests will appear here for approval.
-                        </div>
-                    {% endif %}
-                </div>
-            </div>
-        </div>
+    <div class="d-flex gap-2 flex-wrap">
+      <a class="btn btn-outline-primary" href="{% url 'airtime_dashboard' %}">
+        <i class="fas fa-tachometer-alt"></i> Dashboard
+      </a>
+      <a class="btn btn-outline-primary" href="{% url 'airtime_management' %}">
+        <i class="fas fa-cogs"></i> Manage Products
+      </a>
     </div>
+  </div>
+
+  <div class="card shadow-sm">
+    <div class="card-header fw-bold"><i class="fas fa-list"></i> Requests</div>
+    <div class="card-body">
+      {% if requests %}
+      <div class="table-responsive">
+        <table class="table table-sm align-middle">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Requested by</th>
+              <th>Status</th>
+              <th class="text-muted">Created</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for r in requests %}
+            <tr>
+              <td>#{{ r.id }}</td>
+              <td>{{ r.requested_by.username }}</td>
+              <td>
+                {% if r.status == 'pending' %}
+                  <span class="badge bg-warning text-dark">pending</span>
+                {% elif r.status == 'approved' %}
+                  <span class="badge bg-success">approved</span>
+                {% else %}
+                  <span class="badge bg-secondary">{{ r.status }}</span>
+                {% endif %}
+              </td>
+              <td class="small text-muted">{{ r.created_at }}</td>
+              <td class="text-end">
+                {% if r.status == 'pending' %}
+                  <a class="btn btn-sm btn-success" href="{% url 'approve_airtime_request' r.id %}">Approve</a>
+                  <a class="btn btn-sm btn-outline-danger" href="{% url 'reject_airtime_request' r.id %}">Reject</a>
+                {% else %}
+                  <span class="text-muted small">No actions</span>
+                {% endif %}
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+      {% if is_paginated %}
+      <nav aria-label="Requests pagination">
+        <ul class="pagination">
+          {% if page_obj.has_previous %}
+          <li class="page-item">
+            <a class="page-link" href="?page={{ page_obj.previous_page_number }}">Previous</a>
+          </li>
+          {% else %}
+          <li class="page-item disabled"><span class="page-link">Previous</span></li>
+          {% endif %}
+
+          <li class="page-item disabled">
+            <span class="page-link">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+          </li>
+
+          {% if page_obj.has_next %}
+          <li class="page-item">
+            <a class="page-link" href="?page={{ page_obj.next_page_number }}">Next</a>
+          </li>
+          {% else %}
+          <li class="page-item disabled"><span class="page-link">Next</span></li>
+          {% endif %}
+        </ul>
+      </nav>
+      {% endif %}
+
+      {% else %}
+        <div class="text-muted">No requests found.</div>
+      {% endif %}
+    </div>
+  </div>
 </div>
 {% endblock %}
+

@@ -1,503 +1,209 @@
 {% extends 'nano/base.html' %}
 {% load static %}
 
-{% block title %}Airtime Dashboard - NDtech{% endblock %}
+{% block title %}Airtime Dashboard{% endblock %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="{% static 'nano/airtime-modern.css' %}">
-<style>
-/* Enhanced Earthy Green Theme for Airtime Dashboard */
+<link rel="stylesheet" href="{% static 'nano/airtime.css' %}">
+{% endblock %}
 
-/* Fix help guide text visibility */
-.help-card {
-    background: rgba(245, 245, 240, 0.95) !important;
-    backdrop-filter: blur(20px) !important;
-    border: 2px solid rgba(163, 177, 138, 0.3) !important;
-    color: #344e41 !important;
-}
+{% block content %}
+<div class="container-fluid">
+  <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
+    <div>
+      <h2 class="mb-0"><i class="fas fa-mobile-alt"></i> Airtime Dashboard</h2>
+      <div class="text-muted small">Buy airtime, review sales, and manage approvals.</div>
+    </div>
+    <div class="d-flex gap-2 flex-wrap">
+      <a class="btn btn-outline-primary" href="{% url 'airtime_history_review' %}">
+        <i class="fas fa-history"></i> History Review
+      </a>
+      {% if is_manager %}
+      <a class="btn btn-outline-secondary" href="{% url 'airtime_management' %}">
+        <i class="fas fa-cogs"></i> Manage Products
+      </a>
+      <a class="btn btn-outline-secondary" href="{% url 'airtime_sales' %}">
+        <i class="fas fa-shopping-cart"></i> Sales
+      </a>
+      <a class="btn btn-outline-secondary" href="{% url 'airtime_requests_management' %}">
+        <i class="fas fa-clipboard-list"></i> Requests
+      </a>
+      {% endif %}
+    </div>
+  </div>
 
-.help-header {
-    background: linear-gradient(135deg, #588157, #344e41) !important;
-    color: #f5f5f0 !important;
-}
+  <div class="row g-3">
+    <div class="col-12 col-lg-6">
+      <div class="card shadow-sm">
+        <div class="card-header d-flex align-items-center justify-content-between">
+          <div class="fw-bold"><i class="fas fa-sim-card"></i> Sell Airtime</div>
+          <span class="badge bg-light text-dark">Role: {{ user_role|default:"user" }}</span>
+        </div>
+        <div class="card-body">
+          <form id="airtimeSaleForm">
+            <div class="row g-2">
+              <div class="col-12">
+                <label class="form-label">Product</label>
+                <select class="form-select" name="product_id" required>
+                  <option value="" selected disabled>Select a product</option>
+                  {% for p in airtime_products %}
+                    <option value="{{ p.id }}">
+                      {{ p.get_display_name|default:p.name }} — R{{ p.price }} (Stock: {{ p.stock }})
+                    </option>
+                  {% endfor %}
+                </select>
+              </div>
+              <div class="col-12 col-md-6">
+                <label class="form-label">Customer phone</label>
+                <input class="form-control" name="customer_phone" inputmode="numeric" autocomplete="tel" placeholder="e.g. 0712345678" required>
+              </div>
+              <div class="col-12 col-md-3">
+                <label class="form-label">Qty</label>
+                <input class="form-control" name="quantity" type="number" min="1" value="1" required>
+              </div>
+              <div class="col-12 col-md-3 d-flex align-items-end">
+                <button class="btn btn-primary w-100" type="submit">
+                  <i class="fas fa-bolt"></i> Process
+                </button>
+              </div>
+            </div>
+            <div class="mt-3">
+              <div id="airtimeSaleResult" class="airtime-result" style="display:none;"></div>
+              <div class="text-muted small">
+                Note: this endpoint currently completes sales immediately (no approval) per `process_airtime_sale`.
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
 
-.help-header h3 {
-    color: #f5f5f0 !important;
-}
+    <div class="col-12 col-lg-6">
+      <div class="card shadow-sm">
+        <div class="card-header fw-bold"><i class="fas fa-list"></i> Active Products</div>
+        <div class="card-body">
+          {% if airtime_products %}
+            <div class="table-responsive">
+              <table class="table table-sm align-middle">
+                <thead>
+                  <tr>
+                    <th>Product</th>
+                    <th>Network</th>
+                    <th>Type</th>
+                    <th class="text-end">Value</th>
+                    <th class="text-end">Price</th>
+                    <th class="text-end">Stock</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for p in airtime_products %}
+                  <tr>
+                    <td>{{ p.name }}</td>
+                    <td>{{ p.network }}</td>
+                    <td>{{ p.airtime_type }}</td>
+                    <td class="text-end">{{ p.value }}</td>
+                    <td class="text-end">R{{ p.price }}</td>
+                    <td class="text-end">{{ p.stock }}</td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          {% else %}
+            <div class="alert alert-warning mb-0">
+              No active airtime products found.
+              {% if is_manager %}
+                <a href="{% url 'airtime_management' %}" class="alert-link">Add products</a>.
+              {% endif %}
+            </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
 
-.help-header i {
-    color: #a3b18a !important;
-}
-
-.help-content {
-    background: rgba(245, 245, 240, 0.9) !important;
-    color: #344e41 !important;
-}
-
-.help-item {
-    background: rgba(255, 255, 255, 0.8) !important;
-    border: 1px solid rgba(163, 177, 138, 0.2) !important;
-    color: #344e41 !important;
-}
-
-.help-item h4 {
-    color: #344e41 !important;
-}
-
-.help-item ul {
-    color: #344e41 !important;
-}
-
-.help-item li {
-    color: #344e41 !important;
-}
-
-.help-item li strong {
-    color: #588157 !important;
-}
-
-.tips-section {
-    background: rgba(255, 255, 255, 0.8) !important;
-    border: 1px solid rgba(163, 177, 138, 0.2) !important;
-    color: #344e41 !important;
-}
-
-.tips-header h4 {
-    color: #344e41 !important;
-}
-
-.tips-header i {
-    color: #588157 !important;
-}
-
-.tip-item {
-    color: #344e41 !important;
-}
-
-.tip-item i {
-    color: #588157 !important;
-}
-
-.help-close {
-    background: rgba(163, 177, 138, 0.2) !important;
-    color: #344e41 !important;
-}
-
-.help-close:hover {
-    background: rgba(163, 177, 138, 0.3) !important;
-    color: #2d3e35 !important;
-}
-</style>
+  {% if is_manager %}
+  <div class="row g-3 mt-1">
+    <div class="col-12 col-lg-6">
+      <div class="card shadow-sm">
+        <div class="card-header fw-bold"><i class="fas fa-hourglass-half"></i> Pending Sales (legacy)</div>
+        <div class="card-body">
+          {% if pending_sales %}
+            <div class="table-responsive">
+              <table class="table table-sm align-middle">
+                <thead>
+                  <tr>
+                    <th>Customer</th>
+                    <th>Product</th>
+                    <th class="text-end">Qty</th>
+                    <th class="text-end">Total</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for s in pending_sales %}
+                  <tr>
+                    <td>{{ s.customer_phone }}</td>
+                    <td>{{ s.airtime_product.name }}</td>
+                    <td class="text-end">{{ s.quantity }}</td>
+                    <td class="text-end">R{{ s.total_price }}</td>
+                    <td class="text-end">
+                      <a class="btn btn-sm btn-success" href="{% url 'approve_airtime_sale' s.id %}">Approve</a>
+                      <a class="btn btn-sm btn-outline-danger" href="{% url 'reject_airtime_sale' s.id %}">Reject</a>
+                    </td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          {% else %}
+            <div class="text-muted">No pending sales.</div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+    <div class="col-12 col-lg-6">
+      <div class="card shadow-sm">
+        <div class="card-header fw-bold"><i class="fas fa-clipboard-check"></i> Pending Requests</div>
+        <div class="card-body">
+          {% if airtime_requests %}
+            <div class="table-responsive">
+              <table class="table table-sm align-middle">
+                <thead>
+                  <tr>
+                    <th>Requested by</th>
+                    <th>Status</th>
+                    <th>Created</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for r in airtime_requests %}
+                  <tr>
+                    <td>{{ r.requested_by.username }}</td>
+                    <td><span class="badge bg-warning text-dark">{{ r.status }}</span></td>
+                    <td class="small text-muted">{{ r.created_at }}</td>
+                    <td class="text-end">
+                      <a class="btn btn-sm btn-success" href="{% url 'approve_airtime_request' r.id %}">Approve</a>
+                      <a class="btn btn-sm btn-outline-danger" href="{% url 'reject_airtime_request' r.id %}">Reject</a>
+                    </td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          {% else %}
+            <div class="text-muted">No pending requests.</div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+</div>
 {% endblock %}
 
 {% block extra_js %}
 <script src="{% static 'nano/airtime.js' %}"></script>
 {% endblock %}
 
-{% block content %}
-<div class="airtime-container">
-    <!-- Header Section -->
-    <header class="airtime-header">
-        <div class="header-content">
-            <div class="header-title">
-                <div class="title-icon">
-                    <i class="fas fa-mobile-alt"></i>
-                </div>
-                <div class="title-text">
-                    <h1>Airtime Dashboard</h1>
-                    <p class="subtitle">Manage your mobile airtime products and sales</p>
-                </div>
-            </div>
-            <div class="header-actions">
-                <a href="{% url 'cashier_airtime_quick_sell' %}" class="action-btn success" style="background: linear-gradient(135deg, #588157, #344e41);">
-                    <i class="fas fa-bolt"></i>
-                    <span>Quick Sell</span>
-                </a>
-                <button class="guide-btn" data-bs-toggle="collapse" data-bs-target="#dashboardHelp">
-                    <i class="fas fa-question-circle"></i>
-                    <span>Quick Guide</span>
-                </button>
-                {% if is_manager %}
-                    <a href="{% url 'airtime_management' %}" class="action-btn primary">
-                        <i class="fas fa-plus"></i>
-                        <span>Manage Products</span>
-                    </a>
-                {% endif %}
-            </div>
-        </div>
-    </header>
-
-    <!-- Dashboard Help Guide -->
-    <div class="help-section" id="dashboardHelp">
-        <div class="help-card">
-            <div class="help-header">
-                <div class="help-icon">
-                    <i class="fas fa-info-circle"></i>
-                </div>
-                <h3>Airtime Dashboard Guide</h3>
-                <button class="help-close" data-bs-toggle="collapse" data-bs-target="#dashboardHelp">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-            <div class="help-content">
-                <div class="help-grid">
-                    <div class="help-item">
-                        <div class="help-item-icon cashier">
-                            <i class="fas fa-shopping-cart"></i>
-                        </div>
-                        <h4>For Cashiers</h4>
-                        <ul>
-                            <li><strong>Enhanced Interface:</strong> Navigate the new earthy green themed dashboard with modern glassmorphism design</li>
-                            <li><strong>Quick Sell:</strong> Use the enhanced Quick Sell button for instant airtime sales with custom amounts</li>
-                            <li><strong>Product Cards:</strong> View products with improved visual hierarchy and hover effects</li>
-                            <li><strong>Modern Forms:</strong> Experience enhanced input fields with smooth animations and focus states</li>
-                            <li><strong>Network Selection:</strong> Choose from beautifully styled network buttons with earthy green accents</li>
-                        </ul>
-                    </div>
-                    <div class="help-item">
-                        <div class="help-item-icon manager">
-                            <i class="fas fa-user-tie"></i>
-                        </div>
-                        <h4>For Managers</h4>
-                        <ul>
-                            <li><strong>Enhanced Dashboard:</strong> Manage airtime operations with new earthy green themed interface</li>
-                            <li><strong>Modern Sales Review:</strong> Approve/reject sales in beautifully styled cards with smooth animations</li>
-                            <li><strong>Product Management:</strong> Add/edit products with enhanced form controls and better UX</li>
-                            <li><strong>Visual Statistics:</strong> Monitor performance with gradient-styled stat cards and improved readability</li>
-                            <li><strong>Request Processing:</strong> Handle team requests through modern, responsive interface</li>
-                        </ul>
-                    </div>
-                    <div class="help-item">
-                        <div class="help-item-icon stats">
-                            <i class="fas fa-chart-line"></i>
-                        </div>
-                        <h4>Quick Stats</h4>
-                        <ul>
-                            <li><strong>Total Products:</strong> All active airtime items with enhanced visual display</li>
-                            <li><strong>Pending Sales:</strong> Awaiting approval with modern card-based layout</li>
-                            <li><strong>Requests:</strong> Product/stock requests with improved tracking interface</li>
-                            <li><strong>Your Role:</strong> Current permission level with earthy green themed indicators</li>
-                        </ul>
-                    </div>
-                </div>
-                <div class="tips-section">
-                    <div class="tips-header">
-                        <i class="fas fa-lightbulb"></i>
-                        <h4>Pro Tips</h4>
-                    </div>
-                    <div class="tips-grid">
-                        <div class="tip-item">
-                            <i class="fas fa-palette"></i>
-                            <span>Enjoy the new earthy green theme with calming forest colors and modern glassmorphism effects</span>
-                        </div>
-                        <div class="tip-item">
-                            <i class="fas fa-mobile"></i>
-                            <span>Use 10-15 digit phone numbers (no spaces or dashes) in enhanced form fields</span>
-                        </div>
-                        <div class="tip-item">
-                            <i class="fas fa-hand-pointer"></i>
-                            <span>Experience smooth hover animations and micro-interactions on all interactive elements</span>
-                        </div>
-                        <div class="tip-item">
-                            <i class="fas fa-bolt"></i>
-                            <span>Quick Sell now features custom amount creation with real-time price calculation</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Stats Overview -->
-    <section class="stats-overview">
-        <div class="stats-grid">
-            <div class="stat-card primary">
-                <div class="stat-icon">
-                    <i class="fas fa-box"></i>
-                </div>
-                <div class="stat-content">
-                    <div class="stat-value">{{ airtime_products.count }}</div>
-                    <div class="stat-label">Total Products</div>
-                </div>
-                <div class="stat-trend">
-                    <i class="fas fa-arrow-up"></i>
-                </div>
-            </div>
-            <div class="stat-card warning">
-                <div class="stat-icon">
-                    <i class="fas fa-clock"></i>
-                </div>
-                <div class="stat-content">
-                    <div class="stat-value">{{ pending_sales.count }}</div>
-                    <div class="stat-label">Pending Sales</div>
-                </div>
-                <div class="stat-trend">
-                    <i class="fas fa-hourglass-half"></i>
-                </div>
-            </div>
-            <div class="stat-card success">
-                <div class="stat-icon">
-                    <i class="fas fa-clipboard-list"></i>
-                </div>
-                <div class="stat-content">
-                    <div class="stat-value">{{ airtime_requests.count }}</div>
-                    <div class="stat-label">Pending Requests</div>
-                </div>
-                <div class="stat-trend">
-                    <i class="fas fa-list"></i>
-                </div>
-            </div>
-            <div class="stat-card info">
-                <div class="stat-icon">
-                    <i class="fas fa-user-tag"></i>
-                </div>
-                <div class="stat-content">
-                    <div class="stat-value">{{ user_role|title }}</div>
-                    <div class="stat-label">Your Role</div>
-                </div>
-                <div class="stat-trend">
-                    <i class="fas fa-shield-alt"></i>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Airtime Products -->
-    <section class="products-section">
-        <div class="section-header">
-            <div class="section-title">
-                <div class="section-icon">
-                    <i class="fas fa-box"></i>
-                </div>
-                <div>
-                    <h2>Available Airtime Products</h2>
-                    <p>Browse and manage your airtime inventory</p>
-                </div>
-            </div>
-        </div>
-        
-        <div class="products-container">
-            {% if airtime_products %}
-                <div class="products-grid">
-                    {% for product in airtime_products %}
-                        <div class="product-card">
-                            <div class="product-header">
-                                <div class="network-badge {{ product.network }}">
-                                    {{ product.get_network_display }}
-                                </div>
-                                <div class="product-type">
-                                    {{ product.get_airtime_type_display }}
-                                </div>
-                            </div>
-                            <div class="product-body">
-                                <h3 class="product-name">{{ product.get_display_name }}</h3>
-                                <div class="product-details">
-                                    <div class="detail-item">
-                                        <span class="label">Value:</span>
-                                        <span class="value">R{{ product.value }}</span>
-                                    </div>
-                                    <div class="detail-item">
-                                        <span class="label">Price:</span>
-                                        <span class="price">R{{ product.price }}</span>
-                                    </div>
-                                    <div class="detail-item">
-                                        <span class="label">Stock:</span>
-                                        <span class="stock {% if product.stock > 0 %}in-stock{% else %}out-of-stock{% endif %}">
-                                            {{ product.stock }} units
-                                        </span>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="product-footer">
-                                <button type="button" class="sell-btn {% if product.stock <= 0 %}disabled{% endif %}" 
-                                        data-product-id="{{ product.id }}"
-                                        data-product-name="{{ product.get_display_name }}"
-                                        data-product-price="{{ product.price }}"
-                                        {% if product.stock <= 0 %}disabled{% endif %}>
-                                    <i class="fas fa-shopping-cart"></i>
-                                    {% if is_manager or user_role == 'cashier' %}Sell{% else %}Add to Cart{% endif %}
-                                </button>
-                            </div>
-                        </div>
-                    {% endfor %}
-                </div>
-            {% else %}
-                <div class="empty-state">
-                    <div class="empty-icon">
-                        <i class="fas fa-box-open"></i>
-                    </div>
-                    <h3>No airtime products available</h3>
-                    <p>Get started by adding your first airtime products to the system.</p>
-                    {% if is_manager %}
-                        <a href="{% url 'airtime_management' %}" class="action-btn primary">
-                            <i class="fas fa-plus"></i>
-                            Add Products
-                        </a>
-                    {% endif %}
-                </div>
-            {% endif %}
-        </div>
-    </section>
-
-    <!-- Pending Sales (for managers) -->
-    {% if is_manager and pending_sales %}
-        <section class="pending-section">
-            <div class="section-header">
-                <div class="section-title">
-                    <div class="section-icon warning">
-                        <i class="fas fa-clock"></i>
-                    </div>
-                    <div>
-                        <h2>Pending Airtime Sales</h2>
-                        <p>Review and approve sales awaiting your attention</p>
-                    </div>
-                </div>
-                <a href="{% url 'airtime_sales' %}" class="action-btn secondary">
-                    <i class="fas fa-list"></i>
-                    View All
-                </a>
-            </div>
-            
-            <div class="pending-grid">
-                {% for sale in pending_sales|slice:":5" %}
-                    <div class="pending-card">
-                        <div class="pending-header">
-                            <div class="pending-info">
-                                <h4>{{ sale.airtime_product.get_display_name }}</h4>
-                                <div class="network-badge {{ sale.airtime_product.network }}">
-                                    {{ sale.airtime_product.get_network_display }}
-                                </div>
-                            </div>
-                            <div class="pending-status pending">
-                                <i class="fas fa-hourglass-half"></i>
-                                <span>Pending</span>
-                            </div>
-                        </div>
-                        <div class="pending-body">
-                            <div class="pending-details">
-                                <div class="detail-row">
-                                    <span class="label">Customer:</span>
-                                    <span class="value">{{ sale.customer_phone }}</span>
-                                </div>
-                                <div class="detail-row">
-                                    <span class="label">Quantity:</span>
-                                    <span class="value">{{ sale.quantity }}</span>
-                                </div>
-                                <div class="detail-row">
-                                    <span class="label">Total:</span>
-                                    <span class="price">R{{ sale.total_price }}</span>
-                                </div>
-                                <div class="detail-row">
-                                    <span class="label">Requested by:</span>
-                                    <span class="value">{{ sale.requested_by.username }}</span>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="pending-actions">
-                            <a href="{% url 'approve_airtime_sale' sale.id %}" class="action-btn success">
-                                <i class="fas fa-check"></i>
-                                Approve
-                            </a>
-                            <a href="{% url 'reject_airtime_sale' sale.id %}" class="action-btn danger">
-                                <i class="fas fa-times"></i>
-                                Reject
-                            </a>
-                        </div>
-                    </div>
-                {% endfor %}
-            </div>
-        </section>
-    {% endif %}
-
-    <!-- Airtime Requests (for managers) -->
-    {% if is_manager and airtime_requests %}
-        <section class="requests-section">
-            <div class="section-header">
-                <div class="section-title">
-                    <div class="section-icon info">
-                        <i class="fas fa-clipboard-list"></i>
-                    </div>
-                    <div>
-                        <h2>Airtime Management Requests</h2>
-                        <p>Process product and stock change requests from your team</p>
-                    </div>
-                </div>
-                <a href="{% url 'airtime_requests_management' %}" class="action-btn secondary">
-                    <i class="fas fa-list"></i>
-                    View All
-                </a>
-            </div>
-            
-            <div class="requests-grid">
-                {% for request in airtime_requests|slice:":5" %}
-                    <div class="request-card">
-                        <div class="request-header">
-                            <div class="request-type {{ request.get_request_type_display|lower }}">
-                                <i class="fas fa-file-alt"></i>
-                                <span>{{ request.get_request_type_display }}</span>
-                            </div>
-                            <div class="request-meta">
-                                <span class="requester">{{ request.requested_by.username }}</span>
-                                <span class="time">{{ request.created_at|date:"Y-m-d H:i" }}</span>
-                            </div>
-                        </div>
-                        <div class="request-body">
-                            <p class="request-message">{{ request.message|truncatewords:15 }}</p>
-                        </div>
-                        <div class="request-actions">
-                            <a href="{% url 'approve_airtime_request' request.id %}" class="action-btn success">
-                                <i class="fas fa-check"></i>
-                                Approve
-                            </a>
-                            <a href="{% url 'reject_airtime_request' request.id %}" class="action-btn danger">
-                                <i class="fas fa-times"></i>
-                                Reject
-                            </a>
-                        </div>
-                    </div>
-                {% endfor %}
-            </div>
-        </section>
-    {% endif %}
-</div>
-
-<!-- Quick Sale Form (Hidden by default) -->
-<div class="quick-sale-form" id="quickSaleForm" style="display: none;">
-    <div class="sale-overlay" id="saleOverlay"></div>
-    <div class="sale-panel">
-        <div class="sale-header">
-            <h3>Quick Sale</h3>
-            <button class="close-btn" id="closeSaleForm">
-                <i class="fas fa-times"></i>
-            </button>
-        </div>
-        <div class="sale-body">
-            <div class="product-info">
-                <h4 id="quickProductName">Product Name</h4>
-                <p id="quickProductPrice">R0.00</p>
-            </div>
-            <form id="quickSaleFormElement">
-                <div class="form-group">
-                    <label>Customer Phone</label>
-                    <input type="tel" id="quickCustomerPhone" placeholder="Enter phone number" required>
-                </div>
-                <div class="form-group">
-                    <label>Quantity</label>
-                    <input type="number" id="quickQuantity" value="1" min="1" required>
-                </div>
-                <div class="total-display">
-                    <label>Total</label>
-                    <span id="quickTotal">R0.00</span>
-                </div>
-            </form>
-        </div>
-        <div class="sale-footer">
-            <button class="action-btn secondary" id="cancelQuickSale">Cancel</button>
-            <button class="action-btn primary" id="processQuickSale">
-                <i class="fas fa-shopping-cart"></i>
-                Process Sale
-            </button>
-        </div>
-    </div>
-</div>
-{% endblock %}
