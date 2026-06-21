@@ -1,0 +1,616 @@
+diff --git a/nano/templates/nano/spaza_pos.html b/nano/templates/nano/spaza_pos.html
+new file mode 100644
+index 0000000..addd48c
+--- /dev/null
++++ b/nano/templates/nano/spaza_pos.html
+@@ -0,0 +1,409 @@
++{% load static %}
++<!DOCTYPE html>
++<html lang="en">
++<head>
++    <meta charset="UTF-8">
++    <meta name="viewport" content="width=device-width, initial-scale=1.0">
++    <title>Spaza POS | NDtech</title>
++    <style>
++        * { box-sizing: border-box; }
++        body { margin: 0; font-family: Inter, Arial, sans-serif; background: #f4f7fb; color: #1f2937; }
++        .app { min-height: 100vh; display: grid; grid-template-columns: 78px 1fr 405px; }
++        .sidebar { background: #111827; color: white; padding: 18px 12px; display: flex; flex-direction: column; gap: 16px; align-items: center; }
++        .logo { width: 48px; height: 48px; border-radius: 14px; background: linear-gradient(135deg, #ff7a45, #ff3157); display: grid; place-items: center; font-weight: 900; box-shadow: 0 10px 20px rgba(255,49,87,.25); }
++        .nav-btn { width: 48px; height: 48px; border-radius: 15px; display: grid; place-items: center; color: #cbd5e1; background: rgba(255,255,255,.06); font-size: 21px; text-decoration: none; }
++        .nav-btn.active, .nav-btn:hover { background: #ff5a3c; color: #fff; }
++        .main { padding: 22px; overflow: auto; }
++        .topbar { display: flex; justify-content: space-between; align-items: center; gap: 16px; margin-bottom: 18px; }
++        .hello h1 { margin: 0; font-size: 25px; }
++        .hello p { margin: 5px 0 0; color: #6b7280; font-size: 14px; }
++        .search { flex: 1; max-width: 560px; position: relative; }
++        .search input { width: 100%; border: 0; background: #fff; padding: 15px 18px 15px 45px; border-radius: 16px; font-size: 15px; outline: none; box-shadow: 0 10px 28px rgba(15,23,42,.06); }
++        .search span { position: absolute; left: 17px; top: 13px; color: #6b7280; }
++        .cashier { background: #fff; border-radius: 16px; padding: 10px 14px; display: flex; gap: 10px; align-items: center; box-shadow: 0 10px 28px rgba(15,23,42,.06); }
++        .avatar { width: 38px; height: 38px; border-radius: 50%; background: #dbeafe; display: grid; place-items: center; }
++        .category-row { display: flex; gap: 12px; overflow-x: auto; padding-bottom: 12px; margin-bottom: 14px; }
++        .cat { min-width: 124px; background: #fff; border: 2px solid transparent; border-radius: 18px; padding: 14px 12px; text-align: center; cursor: pointer; box-shadow: 0 10px 28px rgba(15,23,42,.05); user-select: none; }
++        .cat.active { border-color: #ff5a3c; background: #fff7f4; color: #e04427; }
++        .cat .icon { font-size: 26px; display: block; margin-bottom: 6px; }
++        .section-title { display: flex; align-items: center; justify-content: space-between; margin: 8px 0 15px; }
++        .section-title h2 { margin: 0; font-size: 20px; }
++        .pill { background: #eef2ff; color: #4f46e5; padding: 8px 12px; border-radius: 999px; font-size: 13px; font-weight: 700; }
++        .products { display: grid; grid-template-columns: repeat(auto-fill, minmax(165px, 1fr)); gap: 15px; }
++        .product { border: 0; background: #fff; border-radius: 20px; overflow: hidden; padding: 12px; text-align: left; cursor: pointer; box-shadow: 0 10px 28px rgba(15,23,42,.06); transition: transform .15s ease, box-shadow .15s ease; }
++        .product:hover { transform: translateY(-3px); box-shadow: 0 16px 35px rgba(15,23,42,.1); }
++        .product-img { height: 112px; border-radius: 16px; display: grid; place-items: center; font-size: 46px; background: linear-gradient(135deg, #f8fafc, #e0f2fe); margin-bottom: 10px; position: relative; }
++        .sale-badge { position: absolute; top: 9px; right: 9px; background: #ef4444; color: #fff; padding: 4px 7px; border-radius: 999px; font-size: 11px; font-weight: 900; }
++        .product small { color: #6b7280; font-weight: 700; }
++        .product h3 { margin: 6px 0; font-size: 15px; min-height: 36px; }
++        .price-row { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
++        .price { color: #111827; font-size: 17px; font-weight: 900; }
++        .stock { color: #64748b; font-size: 12px; margin-top: 7px; }
++        .add { background: #111827; color: #fff; border-radius: 12px; padding: 7px 10px; font-weight: 800; }
++        .cart-panel { background: #fff; padding: 20px; border-left: 1px solid #e5e7eb; min-height: 100vh; display: flex; flex-direction: column; }
++        .cart-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; margin-bottom: 14px; }
++        .cart-head h2 { margin: 0; font-size: 22px; }
++        .cart-head p { margin: 5px 0 0; color: #6b7280; font-size: 13px; }
++        .clear-btn { border: 0; background: #fee2e2; color: #dc2626; border-radius: 12px; padding: 9px 12px; font-weight: 800; cursor: pointer; }
++        .customer-box { background: #f8fafc; border: 1px solid #e5e7eb; border-radius: 16px; padding: 13px; margin-bottom: 12px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
++        .customer-box label { font-size: 12px; color: #6b7280; font-weight: 800; }
++        .customer-box input, .customer-box select { width: 100%; margin-top: 5px; border: 1px solid #e5e7eb; background: white; border-radius: 12px; padding: 10px; outline: none; }
++        .cart-items { flex: 1; overflow-y: auto; padding-right: 4px; min-height: 180px; }
++        .empty { height: 230px; border: 2px dashed #e5e7eb; border-radius: 18px; display: grid; place-items: center; text-align: center; color: #6b7280; padding: 20px; }
++        .cart-item { display: grid; grid-template-columns: 44px 1fr auto; gap: 10px; align-items: center; padding: 12px 0; border-bottom: 1px solid #f1f5f9; }
++        .mini-img { width: 44px; height: 44px; border-radius: 14px; background: #f1f5f9; display: grid; place-items: center; font-size: 23px; }
++        .cart-item h4 { margin: 0 0 4px; font-size: 14px; }
++        .cart-item small { color: #6b7280; }
++        .qty { display: flex; align-items: center; gap: 7px; justify-content: flex-start; margin-top: 6px; }
++        .qty button { width: 26px; height: 26px; border: 0; border-radius: 8px; background: #e5e7eb; cursor: pointer; font-weight: 900; }
++        .line-total { font-weight: 900; text-align: right; }
++        .summary { border-top: 1px solid #e5e7eb; padding-top: 14px; margin-top: 12px; }
++        .sum-row { display: flex; justify-content: space-between; margin: 9px 0; color: #4b5563; }
++        .sum-row.total { font-size: 23px; color: #111827; font-weight: 900; border-top: 1px dashed #d1d5db; padding-top: 12px; margin-top: 12px; }
++        .pay-input { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 12px 0; }
++        .pay-input input, .pay-input select { width: 100%; border: 1px solid #d1d5db; border-radius: 14px; padding: 12px; outline: none; font-size: 14px; }
++        .actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 12px; }
++        .action { border: 0; border-radius: 15px; padding: 13px 10px; font-weight: 900; cursor: pointer; text-decoration: none; text-align: center; font-size: 14px; }
++        .hold { background: #fef3c7; color: #92400e; }
++        .void { background: #fee2e2; color: #b91c1c; }
++        .orders { background: #e0f2fe; color: #0369a1; }
++        .pay { grid-column: 1 / -1; background: linear-gradient(135deg, #ff7043, #ff3157); color: white; font-size: 16px; box-shadow: 0 12px 25px rgba(255,49,87,.25); }
++        .toast { position: fixed; bottom: 22px; left: 50%; transform: translateX(-50%) translateY(120px); background: #111827; color: white; padding: 13px 18px; border-radius: 14px; box-shadow: 0 20px 40px rgba(0,0,0,.22); transition: .25s ease; z-index: 10; font-weight: 800; max-width: min(92vw, 620px); text-align: center; }
++        .toast.show { transform: translateX(-50%) translateY(0); }
++        .modal { display: none; position: fixed; inset: 0; background: rgba(15,23,42,.55); z-index: 20; align-items: center; justify-content: center; padding: 18px; }
++        .modal.show { display: flex; }
++        .modal-card { background: #fff; border-radius: 22px; padding: 22px; width: min(460px, 100%); box-shadow: 0 30px 80px rgba(0,0,0,.25); text-align: center; }
++        .modal-card h2 { margin: 0 0 8px; }
++        .modal-card .big { font-size: 34px; font-weight: 900; color: #16a34a; margin: 10px 0; }
++        .modal-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 16px; }
++        .modal-actions a, .modal-actions button { border: 0; border-radius: 14px; padding: 12px; font-weight: 900; text-decoration: none; cursor: pointer; }
++        .primary { background: #111827; color: #fff; }
++        .secondary { background: #eef2ff; color: #4338ca; }
++        @media (max-width: 1100px) { .app { grid-template-columns: 70px 1fr; } .cart-panel { grid-column: 1 / -1; min-height: auto; border-left: 0; } }
++        @media (max-width: 700px) { .app { display: block; } .sidebar { flex-direction: row; height: auto; justify-content: center; } .topbar { flex-direction: column; align-items: stretch; } .products { grid-template-columns: repeat(2, minmax(0, 1fr)); } .cart-panel { padding: 16px; } .customer-box, .pay-input { grid-template-columns: 1fr; } }
++    </style>
++</head>
++<body>
++    <div class="app">
++        <aside class="sidebar">
++            <div class="logo">ND</div>
++            <a class="nav-btn active" href="{% url 'spaza_pos' %}" title="POS">🛒</a>
++            <a class="nav-btn" href="{% url 'add_stock' %}" title="Products / Stock">📦</a>
++            <a class="nav-btn" href="{% url 'completed_orders' %}" title="Sales">📊</a>
++            <a class="nav-btn" href="{% url 'pending_orders' %}" title="Orders">🧾</a>
++            <a class="nav-btn" href="{% url 'home' %}" title="Dashboard">🏠</a>
++        </aside>
++
++        <main class="main">
++            <div class="topbar">
++                <div class="hello">
++                    <h1>Spaza Shop POS</h1>
++                    <p>Welcome, {{ request.user.username }} • Today: <span id="dateText"></span></p>
++                </div>
++                <div class="search">
++                    <span>🔎</span>
++                    <input id="searchInput" placeholder="Search product, category, or barcode..." autofocus>
++                </div>
++                <div class="cashier">
++                    <div class="avatar">👨‍💼</div>
++                    <div>
++                        <strong>{{ request.user.username }}</strong><br>
++                        <small style="color:#6b7280">Cashier online</small>
++                    </div>
++                </div>
++            </div>
++
++            <div class="category-row" id="categoryRow"></div>
++
++            <div class="section-title">
++                <h2>Products</h2>
++                <span class="pill" id="countPill">{{ products_count }} items</span>
++            </div>
++            <div class="products" id="products"></div>
++        </main>
++
++        <aside class="cart-panel">
++            <div class="cart-head">
++                <div>
++                    <h2>Current Sale</h2>
++                    <p>Add items, take manual payment, complete sale.</p>
++                </div>
++                <button class="clear-btn" onclick="clearCart()">Reset</button>
++            </div>
++
++            <div class="customer-box">
++                <div>
++                    <label>Customer</label>
++                    <input id="customerName" value="Walk-in">
++                </div>
++                <div>
++                    <label>Phone optional</label>
++                    <input id="customerPhone" placeholder="Optional">
++                </div>
++            </div>
++
++            <div class="cart-items" id="cartItems"></div>
++
++            <div class="summary">
++                <div class="sum-row"><span>Subtotal</span><strong id="subtotal">R0.00</strong></div>
++                <div class="sum-row"><span>Discount</span><strong>R0.00</strong></div>
++                <div class="sum-row"><span>VAT/Tax</span><strong>R0.00</strong></div>
++                <div class="sum-row total"><span>Total</span><span id="total">R0.00</span></div>
++
++                <div class="pay-input">
++                    <select id="payMethod" onchange="handlePayMethodChange()">
++                        <option value="cash">Cash</option>
++                        <option value="card">Card</option>
++                        <option value="eft">EFT / Mobile</option>
++                        <option value="other">Other</option>
++                    </select>
++                    <input id="amountPaid" type="number" min="0" step="0.01" placeholder="Amount paid" oninput="renderCart()">
++                </div>
++                <div class="sum-row"><span>Change</span><strong id="change">R0.00</strong></div>
++
++                <div class="actions">
++                    <button class="action hold" onclick="showToast('Hold sale feature can be connected next')">Hold</button>
++                    <button class="action void" onclick="clearCart(); showToast('Transaction voided')">Void</button>
++                    <a class="action orders" href="{% url 'completed_orders' %}">View Orders</a>
++                    <button class="action pay" id="payButton" onclick="completeSale()">Payment / Complete Sale</button>
++                </div>
++            </div>
++        </aside>
++    </div>
++
++    <div class="modal" id="successModal">
++        <div class="modal-card">
++            <h2>Sale Completed</h2>
++            <p>Receipt created successfully.</p>
++            <div class="big" id="modalTotal">R0.00</div>
++            <p>Change: <strong id="modalChange">R0.00</strong></p>
++            <div class="modal-actions">
++                <a class="primary" id="receiptLink" href="#">View Receipt</a>
++                <button class="secondary" onclick="closeSuccessModal()">New Sale</button>
++            </div>
++        </div>
++    </div>
++
++    <div class="toast" id="toast">Done</div>
++
++    <script>
++        const products = {{ products_json|safe }};
++        const categoryData = {{ categories_json|safe }};
++        const categoryIcons = {
++            all: '🏪', staple_foods: '🌽', snacks_chips: '🍟', cold_drinks: '🥤', sweets_treats: '🍫',
++            basic_groceries: '🛒', dairy_eggs: '🥛', bread_baked: '🍞', canned_goods: '🥫',
++            personal_care: '🧴', household_items: '🧼', airtime_data: '📱', frozen_goods: '🧊',
++            tuckshop_packs: '🍬', stationery: '✏️', baby_products: '🍼', seasonal_items: '🎁'
++        };
++        const productIcons = {
++            staple_foods: '🌽', snacks_chips: '🍟', cold_drinks: '🥤', sweets_treats: '🍫',
++            basic_groceries: '🛒', dairy_eggs: '🥛', bread_baked: '🍞', canned_goods: '🥫',
++            personal_care: '🧴', household_items: '🧼', airtime_data: '📱', frozen_goods: '🧊',
++            tuckshop_packs: '🍬', stationery: '✏️', baby_products: '🍼', seasonal_items: '🎁'
++        };
++        let selectedCategory = 'all';
++        let cart = [];
++        let lastReceiptUrl = '#';
++        const money = n => 'R' + Number(n || 0).toFixed(2);
++
++        document.getElementById('dateText').textContent = new Date().toLocaleDateString('en-ZA', { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' });
++
++        function getCookie(name) {
++            let cookieValue = null;
++            if (document.cookie && document.cookie !== '') {
++                const cookies = document.cookie.split(';');
++                for (let i = 0; i < cookies.length; i++) {
++                    const cookie = cookies[i].trim();
++                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
++                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
++                        break;
++                    }
++                }
++            }
++            return cookieValue;
++        }
++
++        function renderCategories() {
++            const cats = [{ value: 'all', label: 'All' }, ...categoryData];
++            document.getElementById('categoryRow').innerHTML = cats.map(cat => `
++                <div class="cat ${cat.value === selectedCategory ? 'active' : ''}" onclick="selectCategory('${cat.value}')">
++                    <span class="icon">${categoryIcons[cat.value] || '📦'}</span>
++                    <strong>${cat.label}</strong>
++                </div>
++            `).join('');
++        }
++
++        function selectCategory(value) {
++            selectedCategory = value;
++            renderCategories();
++            renderProducts();
++        }
++
++        function filteredProducts() {
++            const q = document.getElementById('searchInput').value.trim().toLowerCase();
++            return products.filter(p => {
++                const matchCat = selectedCategory === 'all' || p.category === selectedCategory;
++                const matchSearch = !q || p.name.toLowerCase().includes(q) || p.category_display.toLowerCase().includes(q) || String(p.barcode || '').toLowerCase().includes(q);
++                return matchCat && matchSearch;
++            });
++        }
++
++        function renderProducts() {
++            const list = filteredProducts();
++            document.getElementById('countPill').textContent = `${list.length} items`;
++            document.getElementById('products').innerHTML = list.length ? list.map(p => `
++                <button class="product" onclick="addToCart(${p.id})">
++                    <div class="product-img">
++                        ${productIcons[p.category] || '📦'}
++                        ${p.on_sale ? '<span class="sale-badge">SALE</span>' : ''}
++                    </div>
++                    <small>${p.category_display}</small>
++                    <h3>${escapeHtml(p.name)}</h3>
++                    <div class="price-row">
++                        <span class="price">${money(p.price)}</span>
++                        <span class="add">+ Add</span>
++                    </div>
++                    <div class="stock">Stock: ${p.stock}${p.barcode ? ' • ' + escapeHtml(p.barcode) : ''}</div>
++                </button>
++            `).join('') : '<div class="empty" style="grid-column:1/-1">No products found. Add stock/products first.</div>';
++        }
++
++        function escapeHtml(text) {
++            const div = document.createElement('div');
++            div.textContent = text == null ? '' : text;
++            return div.innerHTML;
++        }
++
++        function addToCart(id) {
++            const product = products.find(p => p.id === id);
++            if (!product) return;
++            const item = cart.find(i => i.product_id === id);
++            if (item) {
++                if (item.quantity >= product.stock) return showToast(`Only ${product.stock} in stock for ${product.name}`);
++                item.quantity += 1;
++            } else {
++                if (product.stock <= 0) return showToast(`${product.name} is out of stock`);
++                cart.push({ product_id: product.id, product: product.name, price: product.price, quantity: 1, category: product.category, category_display: product.category_display, stock: product.stock });
++            }
++            renderCart();
++            showToast(`${product.name} added`);
++        }
++
++        function changeQty(id, delta) {
++            const item = cart.find(i => i.product_id === id);
++            if (!item) return;
++            if (delta > 0 && item.quantity >= item.stock) return showToast(`Only ${item.stock} in stock`);
++            item.quantity += delta;
++            if (item.quantity <= 0) cart = cart.filter(i => i.product_id !== id);
++            renderCart();
++        }
++
++        function clearCart() {
++            cart = [];
++            document.getElementById('amountPaid').value = '';
++            renderCart();
++        }
++
++        function cartTotal() {
++            return cart.reduce((sum, i) => sum + Number(i.price) * Number(i.quantity), 0);
++        }
++
++        function renderCart() {
++            const box = document.getElementById('cartItems');
++            if (!cart.length) {
++                box.innerHTML = `<div class="empty"><div><strong>No items in cart</strong><br><br>Click products on the left to start a sale.</div></div>`;
++            } else {
++                box.innerHTML = cart.map(i => `
++                    <div class="cart-item">
++                        <div class="mini-img">${productIcons[i.category] || '📦'}</div>
++                        <div>
++                            <h4>${escapeHtml(i.product)}</h4>
++                            <small>${money(i.price)} each</small>
++                            <div class="qty">
++                                <button onclick="changeQty(${i.product_id}, -1)">−</button>
++                                <strong>${i.quantity}</strong>
++                                <button onclick="changeQty(${i.product_id}, 1)">+</button>
++                            </div>
++                        </div>
++                        <div class="line-total">${money(i.price * i.quantity)}</div>
++                    </div>
++                `).join('');
++            }
++            const total = cartTotal();
++            const paid = Number(document.getElementById('amountPaid').value || 0);
++            document.getElementById('subtotal').textContent = money(total);
++            document.getElementById('total').textContent = money(total);
++            document.getElementById('change').textContent = money(Math.max(0, paid - total));
++        }
++
++        function handlePayMethodChange() {
++            const method = document.getElementById('payMethod').value;
++            if (method !== 'cash' && cartTotal() > 0) {
++                document.getElementById('amountPaid').value = cartTotal().toFixed(2);
++            }
++            renderCart();
++        }
++
++        async function completeSale() {
++            if (!cart.length) return showToast('Cart is empty');
++            const total = cartTotal();
++            const method = document.getElementById('payMethod').value;
++            let paid = Number(document.getElementById('amountPaid').value || 0);
++            if (method !== 'cash' && paid <= 0) {
++                paid = total;
++                document.getElementById('amountPaid').value = total.toFixed(2);
++            }
++            if (method === 'cash' && paid < total) return showToast('Cash paid is less than total');
++
++            const btn = document.getElementById('payButton');
++            btn.disabled = true;
++            btn.textContent = 'Processing...';
++            try {
++                const response = await fetch('{% url "spaza_pos_complete_sale" %}', {
++                    method: 'POST',
++                    headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken') },
++                    body: JSON.stringify({
++                        items: cart,
++                        customer_name: document.getElementById('customerName').value,
++                        customer_phone: document.getElementById('customerPhone').value,
++                        payment_method: method,
++                        cash_received: paid
++                    })
++                });
++                const data = await response.json();
++                if (!data.success) throw new Error(data.error || 'Sale failed');
++                lastReceiptUrl = data.receipt_url;
++                document.getElementById('receiptLink').href = data.receipt_url;
++                document.getElementById('modalTotal').textContent = money(data.total);
++                document.getElementById('modalChange').textContent = money(data.change);
++                document.getElementById('successModal').classList.add('show');
++                clearCart();
++            } catch (error) {
++                showToast(error.message);
++            } finally {
++                btn.disabled = false;
++                btn.textContent = 'Payment / Complete Sale';
++            }
++        }
++
++        function closeSuccessModal() {
++            document.getElementById('successModal').classList.remove('show');
++            window.location.reload();
++        }
++
++        let toastTimer;
++        function showToast(msg) {
++            const toast = document.getElementById('toast');
++            toast.textContent = msg;
++            toast.classList.add('show');
++            clearTimeout(toastTimer);
++            toastTimer = setTimeout(() => toast.classList.remove('show'), 2300);
++        }
++
++        document.getElementById('searchInput').addEventListener('input', renderProducts);
++        renderCategories();
++        renderProducts();
++        renderCart();
++    </script>
++</body>
++</html>
+diff --git a/nano/urls.py b/nano/urls.py
+index db48ef4..7468097 100644
+--- a/nano/urls.py
++++ b/nano/urls.py
+@@ -20,6 +20,8 @@ urlpatterns = [
+     path('edit_user/<int:user_id>/', views.edit_user, name='edit_user'),
+     path('delete_user/<int:user_id>/', views.delete_user, name='delete_user'),
+     path('bulk_delete_users/', views.bulk_delete_users, name='bulk_delete_users'),
++    path('pos/', views.spaza_pos, name='spaza_pos'),
++    path('pos/complete-sale/', views.spaza_pos_complete_sale, name='spaza_pos_complete_sale'),
+     path('pending_orders/', views.pending_orders, name='pending_orders'),
+     path('save_order/', views.save_order, name='save_order'),
+     path('pending_orders/<int:order_id>/complete/', views.complete_order, name='complete_order'),
+diff --git a/nano/views.py b/nano/views.py
+index a0c4885..e5247b9 100644
+--- a/nano/views.py
++++ b/nano/views.py
+@@ -64,6 +64,8 @@ __all__ = [
+     'manage_sales',
+     
+     # Order management (from views_legacy)
++    'spaza_pos',
++    'spaza_pos_complete_sale',
+     'pending_orders',
+     'save_order',
+     'complete_order',
+diff --git a/nano/views/__init__.py b/nano/views/__init__.py
+index 7bae448..bca7ef7 100644
+--- a/nano/views/__init__.py
++++ b/nano/views/__init__.py
+@@ -44,6 +44,8 @@ from .user_views import (
+ from ..views_legacy import (
+     add_stock,
+     manage_sales,
++    spaza_pos,
++    spaza_pos_complete_sale,
+     save_order,
+     pending_orders,
+     complete_order,
+diff --git a/nano/views_legacy.py b/nano/views_legacy.py
+index 5fddfc5..91a6932 100644
+--- a/nano/views_legacy.py
++++ b/nano/views_legacy.py
+@@ -899,6 +899,157 @@ def bulk_delete_users(request):
+ 
+     return redirect('manage_users')
+ 
++
++
++@login_required
++def spaza_pos(request):
++    """DreamsPOS-style cashier screen for quick spaza shop counter sales."""
++    if not (request.user.is_superuser or (hasattr(request.user, 'userprofile') and request.user.userprofile.role in ['admin', 'manager', 'cashier'])):
++        return HttpResponseForbidden("You do not have permission to access this page.")
++
++    products = Product.objects.filter(stock__gt=0).order_by('category', 'name')
++    product_payload = []
++    for product in products:
++        current_price = product.get_current_price()
++        product_payload.append({
++            'id': product.id,
++            'name': product.name,
++            'price': float(current_price),
++            'regular_price': float(product.price),
++            'category': product.category,
++            'category_display': product.get_category_display(),
++            'stock': product.stock,
++            'barcode': product.barcode or '',
++            'on_sale': product.is_currently_on_sale(),
++        })
++
++    categories = [
++        {'value': value, 'label': label}
++        for value, label in Product.CATEGORY_CHOICES
++        if products.filter(category=value).exists()
++    ]
++
++    return render(request, 'nano/spaza_pos.html', {
++        'products_json': json.dumps(product_payload),
++        'categories_json': json.dumps(categories),
++        'products_count': products.count(),
++    })
++
++
++@login_required
++def spaza_pos_complete_sale(request):
++    """Create a completed order directly from the cashier POS cart and reduce stock."""
++    if not (request.user.is_superuser or (hasattr(request.user, 'userprofile') and request.user.userprofile.role in ['admin', 'manager', 'cashier'])):
++        return JsonResponse({'success': False, 'error': 'Permission denied'}, status=403)
++
++    if request.method != 'POST':
++        return JsonResponse({'success': False, 'error': 'Invalid request method'}, status=405)
++
++    try:
++        from django.db import transaction
++
++        data = json.loads(request.body)
++        cart_items = data.get('items', [])
++        customer_name = (data.get('customer_name') or 'Walk-in').strip() or 'Walk-in'
++        customer_phone = (data.get('customer_phone') or '').strip()
++        payment_method = (data.get('payment_method') or 'cash').strip().lower()
++        cash_received = Decimal(str(data.get('cash_received') or 0))
++
++        payment_map = {
++            'cash': 'cash',
++            'card': 'card',
++            'eft': 'mobile',
++            'mobile': 'mobile',
++            'other': 'mobile',
++        }
++        payment_method = payment_map.get(payment_method, 'cash')
++
++        if not cart_items:
++            return JsonResponse({'success': False, 'error': 'Cart is empty'})
++
++        normalized_items = []
++        calculated_total = Decimal('0.00')
++
++        with transaction.atomic():
++            # Lock product rows while checking and updating stock.
++            for item in cart_items:
++                product_id = item.get('product_id') or item.get('id')
++                try:
++                    quantity = int(item.get('quantity') or item.get('qty') or 0)
++                except (TypeError, ValueError):
++                    return JsonResponse({'success': False, 'error': 'Invalid quantity in cart'})
++
++                if not product_id or quantity <= 0:
++                    return JsonResponse({'success': False, 'error': 'Invalid cart item'})
++
++                product = Product.objects.select_for_update().get(id=product_id)
++                if product.stock < quantity:
++                    return JsonResponse({
++                        'success': False,
++                        'error': f'Insufficient stock for {product.name}. Available: {product.stock}, Required: {quantity}'
++                    })
++
++                unit_price = Decimal(str(product.get_current_price())).quantize(Decimal('0.01'))
++                line_total = (unit_price * quantity).quantize(Decimal('0.01'))
++                calculated_total += line_total
++
++                normalized_items.append({
++                    'product_id': product.id,
++                    'product': product.name,
++                    'quantity': quantity,
++                    'price': float(unit_price),
++                    'total': float(line_total),
++                    'category': product.get_category_display(),
++                    'barcode': product.barcode or '',
++                })
++
++            calculated_total = calculated_total.quantize(Decimal('0.01'))
++            if payment_method != 'cash' and cash_received <= 0:
++                cash_received = calculated_total
++
++            if payment_method == 'cash' and cash_received < calculated_total:
++                return JsonResponse({'success': False, 'error': 'Cash received is less than the sale total'})
++
++            change_given = max(Decimal('0.00'), cash_received - calculated_total).quantize(Decimal('0.01'))
++
++            completed_order = CompletedOrder.objects.create(
++                customer_name=customer_name,
++                customer_phone=customer_phone,
++                items=normalized_items,
++                total=calculated_total,
++                cash_received=cash_received,
++                change_given=change_given,
++                payment_method=payment_method,
++                processed_by=request.user,
++            )
++
++            for item in normalized_items:
++                product = Product.objects.select_for_update().get(id=item['product_id'])
++                product.stock -= item['quantity']
++                product.save(update_fields=['stock'])
++                Sale.objects.create(
++                    product=product,
++                    quantity=item['quantity'],
++                    total_price=Decimal(str(item['total']))
++                )
++
++        return JsonResponse({
++            'success': True,
++            'order_id': completed_order.id,
++            'receipt_url': f'/completed_order_details/{completed_order.id}/',
++            'total': str(calculated_total),
++            'change': str(change_given),
++            'message': f'Sale completed successfully. Receipt #{completed_order.id}'
++        })
++
++    except Product.DoesNotExist:
++        return JsonResponse({'success': False, 'error': 'One of the products no longer exists'})
++    except (json.JSONDecodeError, InvalidOperation):
++        return JsonResponse({'success': False, 'error': 'Invalid sale data'})
++    except Exception as e:
++        logger.exception('Error completing spaza POS sale')
++        return JsonResponse({'success': False, 'error': str(e)})
++
+ @login_required
+ def pending_orders(request):
+     workspace = getattr(request.user.userprofile, 'workspace', None) if hasattr(getattr(request, 'user', None), 'userprofile') else None
