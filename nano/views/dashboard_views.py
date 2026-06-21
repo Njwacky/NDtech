@@ -28,7 +28,7 @@ def check_low_stock():
                 target_role='admin',  # Default to admin role
                 target_user=admin_user,
                 product=product
-            )
+            , workspace=workspace)
 
             # Send FCM notification
             send_fcm_notification_to_user(notification.target_user, notification.title, notification.message)
@@ -36,6 +36,7 @@ def check_low_stock():
 
 @login_required
 def home(request):
+    workspace = getattr(request.user.userprofile, 'workspace', None) if hasattr(getattr(request, 'user', None), 'userprofile') else None
     """POS Dashboard - Main view"""
     # POS Dashboard
     products = Product.objects.all()

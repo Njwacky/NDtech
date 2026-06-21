@@ -354,7 +354,7 @@ class CompletedOrderSerializer(serializers.ModelSerializer):
                 request_url=request.build_absolute_uri(),
                 access_reason=f'Order {action_type} operation',
                 legal_basis='legitimate_interest'
-            )
+            , workspace=workspace)
         except Exception as e:
             # Don't let logging errors break the main functionality
             import logging
@@ -407,7 +407,7 @@ class CustomerDataExportSerializer(serializers.Serializer):
                     request_url=request.build_absolute_uri(),
                     access_reason='Customer data export',
                     legal_basis='legitimate_interest'
-                )
+                , workspace=workspace)
             
             # Return encrypted data
             return {

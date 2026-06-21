@@ -1,68 +1,207 @@
 {% extends 'nano/base.html' %}
 {% load static %}
-
-{% block title %}Import Warehouse Prices{% endblock %}
+{% block title %}Warehouse Import - NDtech POS{% endblock %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="{% static 'nano/warehouse.css' %}">
-{% endblock %}
+<style>
+  .page-wrap { padding: 2rem 1.5rem; max-width: 1100px; margin: 0 auto; }
+  .page-header { display: flex; align-items: center; gap: 1rem; margin-bottom: 2rem; }
+  .page-header-icon { width: 52px; height: 52px; border-radius: 14px; background: linear-gradient(135deg, #7c3aed, #6d28d9); display: flex; align-items: center; justify-content: center; font-size: 1.3rem; color: #fff; flex-shrink: 0; }
+  .page-header-text h1 { font-size: 1.6rem; font-weight: 700; color: #fff; margin: 0; }
+  .page-header-text p { font-size: 0.875rem; color: rgba(255,255,255,0.5); margin: 0.2rem 0 0; }
 
-{% block extra_js %}
-<script src="{% static 'nano/warehouse.js' %}"></script>
+  .panels { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+  .panel { background: rgba(255,255,255,0.05); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.12); border-radius: 16px; padding: 1.75rem; }
+  .panel-title { font-size: 1.05rem; font-weight: 600; color: #fff; margin: 0 0 0.35rem; display: flex; align-items: center; gap: 0.6rem; }
+  .panel-title i { color: #7c3aed; }
+  .panel-subtitle { font-size: 0.82rem; color: rgba(255,255,255,0.45); margin-bottom: 1.5rem; }
+
+  /* Upload area */
+  .upload-zone { border: 2px dashed rgba(124,58,237,0.45); border-radius: 12px; padding: 2rem; text-align: center; cursor: pointer; transition: border-color 0.2s, background 0.2s; margin-bottom: 1.25rem; }
+  .upload-zone:hover, .upload-zone.drag-over { border-color: #7c3aed; background: rgba(124,58,237,0.08); }
+  .upload-zone i { font-size: 2.5rem; color: rgba(124,58,237,0.7); display: block; margin-bottom: 0.75rem; }
+  .upload-zone p { margin: 0; color: rgba(255,255,255,0.6); font-size: 0.9rem; }
+  .upload-zone span { color: #7c3aed; font-weight: 600; cursor: pointer; }
+  .upload-zone small { color: rgba(255,255,255,0.35); font-size: 0.78rem; display: block; margin-top: 0.4rem; }
+  .file-input-hidden { display: none; }
+  .selected-file { background: rgba(124,58,237,0.12); border: 1px solid rgba(124,58,237,0.3); border-radius: 8px; padding: 0.6rem 0.9rem; font-size: 0.85rem; color: rgba(255,255,255,0.8); display: none; align-items: center; gap: 0.6rem; margin-bottom: 1rem; }
+  .selected-file i { color: #10b981; }
+
+  .form-group { margin-bottom: 1rem; }
+  .form-label { display: block; font-size: 0.82rem; color: rgba(255,255,255,0.6); margin-bottom: 0.4rem; font-weight: 500; }
+  .form-control { width: 100%; background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.12); border-radius: 8px; padding: 0.6rem 0.85rem; color: #fff; font-size: 0.9rem; outline: none; box-sizing: border-box; transition: border-color 0.2s; }
+  .form-control:focus { border-color: rgba(124,58,237,0.6); }
+
+  .btn { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.65rem 1.25rem; border-radius: 10px; font-size: 0.9rem; font-weight: 600; cursor: pointer; border: none; transition: opacity 0.2s, transform 0.15s; }
+  .btn:hover { opacity: 0.88; transform: translateY(-1px); }
+  .btn-primary { background: linear-gradient(135deg, #7c3aed, #6d28d9); color: #fff; }
+  .btn-ghost { background: transparent; border: 1px solid rgba(255,255,255,0.18); color: rgba(255,255,255,0.8); }
+  .btn-success { background: linear-gradient(135deg, #10b981, #059669); color: #fff; }
+  .btn-full { width: 100%; justify-content: center; }
+
+  /* Instructions panel */
+  .format-table { width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: 0.85rem; }
+  .format-table th { background: rgba(124,58,237,0.2); color: rgba(255,255,255,0.8); padding: 0.55rem 0.75rem; text-align: left; border-bottom: 1px solid rgba(255,255,255,0.08); }
+  .format-table td { padding: 0.5rem 0.75rem; color: rgba(255,255,255,0.65); border-bottom: 1px solid rgba(255,255,255,0.05); font-family: monospace; }
+  .format-table tr:last-child td { border-bottom: none; }
+
+  .info-list { list-style: none; padding: 0; margin: 0.75rem 0 1.25rem; }
+  .info-list li { display: flex; align-items: flex-start; gap: 0.6rem; color: rgba(255,255,255,0.6); font-size: 0.85rem; padding: 0.35rem 0; }
+  .info-list li i { color: #7c3aed; margin-top: 0.1rem; flex-shrink: 0; font-size: 0.8rem; }
+
+  .divider { border: none; border-top: 1px solid rgba(255,255,255,0.07); margin: 1.5rem 0; }
+
+  .sync-box { background: rgba(16,185,129,0.07); border: 1px solid rgba(16,185,129,0.2); border-radius: 12px; padding: 1.25rem; margin-top: 1.25rem; }
+  .sync-box-title { font-size: 0.9rem; font-weight: 600; color: #10b981; display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem; }
+  .sync-box-desc { font-size: 0.82rem; color: rgba(255,255,255,0.5); margin-bottom: 1rem; }
+
+  .download-link { display: inline-flex; align-items: center; gap: 0.5rem; color: #7c3aed; font-size: 0.85rem; font-weight: 600; text-decoration: none; padding: 0.5rem 0.85rem; border: 1px solid rgba(124,58,237,0.3); border-radius: 8px; transition: background 0.2s; }
+  .download-link:hover { background: rgba(124,58,237,0.1); }
+
+  .messages { margin-bottom: 1.5rem; }
+  .alert { padding: 0.85rem 1rem; border-radius: 10px; font-size: 0.88rem; display: flex; align-items: center; gap: 0.6rem; margin-bottom: 0.5rem; }
+  .alert-success { background: rgba(16,185,129,0.12); border: 1px solid rgba(16,185,129,0.25); color: #10b981; }
+  .alert-danger { background: rgba(239,68,68,0.12); border: 1px solid rgba(239,68,68,0.25); color: #ef4444; }
+  .alert-info { background: rgba(99,102,241,0.12); border: 1px solid rgba(99,102,241,0.25); color: #818cf8; }
+
+  @media (max-width: 768px) {
+    .page-wrap { padding: 1rem; }
+    .panels { grid-template-columns: 1fr; }
+    .page-header { flex-direction: column; align-items: flex-start; gap: 0.75rem; }
+  }
+</style>
 {% endblock %}
 
 {% block content %}
-<div class="warehouse-container">
-    <div class="warehouse-import-card">
-        <div class="warehouse-import-header">
-            <h4>
-                <i class="fas fa-upload"></i> Import Warehouse Prices
-            </h4>
-        </div>
-        <div class="warehouse-import-body">
-            <form method="post" enctype="multipart/form-data">
-                {% csrf_token %}
-                
-                <div class="warehouse-form-group">
-                    <label for="warehouse_name" class="warehouse-form-label">Warehouse Name</label>
-                    <input type="text" class="warehouse-form-control" id="warehouse_name" name="warehouse_name" required>
-                    <div class="warehouse-form-text">Enter the name of the warehouse these prices are from</div>
-                </div>
-                
-                <div class="warehouse-form-group">
-                    <label for="file" class="warehouse-form-label">Select File</label>
-                    <input type="file" class="warehouse-form-control" id="file" name="file" accept=".csv,.xlsx,.xls" required>
-                    <div class="warehouse-form-text">Supported formats: CSV, Excel (.xlsx, .xls)</div>
-                </div>
-                
-                <div class="warehouse-alert warehouse-alert-info">
-                    <h6><i class="fas fa-info-circle"></i> Required Columns:</h6>
-                    <ul class="mb-0">
-                        <li><strong>product_name</strong> - Name of the product</li>
-                        <li><strong>price</strong> - Price of the product</li>
-                    </ul>
-                </div>
-                
-                <div class="warehouse-alert warehouse-alert-secondary">
-                    <h6><i class="fas fa-list"></i> Optional Columns:</h6>
-                    <ul class="mb-0">
-                        <li><strong>barcode</strong> - Product barcode</li>
-                        <li><strong>category</strong> - Product category</li>
-                        <li><strong>stock_quantity</strong> - Available stock</li>
-                        <li><strong>unit_size</strong> - Unit size (e.g., "500ml", "1kg")</li>
-                    </ul>
-                </div>
-                
-                <div class="warehouse-actions">
-                    <a href="{% url 'warehouse_prices' %}" class="warehouse-btn warehouse-btn-secondary">
-                        <i class="fas fa-arrow-left"></i> Back to Prices
-                    </a>
-                    <button type="submit" class="warehouse-btn warehouse-btn-primary">
-                        <i class="fas fa-upload"></i> Import Prices
-                    </button>
-                </div>
-            </form>
-        </div>
+<div class="page-wrap">
+  <!-- Page Header -->
+  <div class="page-header">
+    <div class="page-header-icon"><i class="fas fa-file-import"></i></div>
+    <div class="page-header-text">
+      <h1>Warehouse Import</h1>
+      <p>Upload product data from CSV or Excel files to sync your warehouse catalogue.</p>
     </div>
+  </div>
+
+  {% if messages %}
+  <div class="messages">
+    {% for message in messages %}
+    <div class="alert alert-{{ message.tags }}"><i class="fas fa-info-circle"></i> {{ message }}</div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <div class="panels">
+    <!-- Panel 1: Upload Form -->
+    <div class="panel">
+      <div class="panel-title"><i class="fas fa-upload"></i> Upload File</div>
+      <div class="panel-subtitle">Supported formats: CSV (.csv) and Excel (.xlsx, .xls)</div>
+
+      <form method="POST" action="{% url 'warehouse_import' %}" enctype="multipart/form-data" id="importForm">
+        {% csrf_token %}
+
+        <div class="upload-zone" id="uploadZone" onclick="document.getElementById('fileInput').click()">
+          <i class="fas fa-cloud-upload-alt"></i>
+          <p>Drag & drop your file here or <span>browse</span></p>
+          <small>CSV, XLSX, XLS &mdash; max 10 MB</small>
+        </div>
+        <input type="file" id="fileInput" name="file" class="file-input-hidden" accept=".csv,.xlsx,.xls" onchange="handleFileSelect(event)">
+
+        <div class="selected-file" id="selectedFile">
+          <i class="fas fa-file-check"></i>
+          <span id="selectedFileName"></span>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="sheetName">Sheet name (Excel only, optional)</label>
+          <input type="text" class="form-control" id="sheetName" name="sheet_name" placeholder="e.g. Sheet1">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="skipRows">Skip rows (header offset)</label>
+          <input type="number" class="form-control" id="skipRows" name="skip_rows" value="0" min="0">
+        </div>
+
+        <button type="submit" class="btn btn-primary btn-full">
+          <i class="fas fa-file-import"></i> Import Data
+        </button>
+      </form>
+    </div>
+
+    <!-- Panel 2: Instructions & Sync -->
+    <div class="panel">
+      <div class="panel-title"><i class="fas fa-info-circle"></i> File Format Guide</div>
+      <div class="panel-subtitle">Your file must contain the following columns:</div>
+
+      <table class="format-table">
+        <thead>
+          <tr>
+            <th>Column Name</th>
+            <th>Type</th>
+            <th>Required</th>
+            <th>Example</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>Product Name</td><td>Text</td><td>Yes</td><td>White Rice 2kg</td></tr>
+          <tr><td>Price</td><td>Decimal</td><td>Yes</td><td>45.99</td></tr>
+          <tr><td>Category</td><td>Text</td><td>No</td><td>Groceries</td></tr>
+          <tr><td>Stock</td><td>Integer</td><td>No</td><td>120</td></tr>
+          <tr><td>Barcode</td><td>Text</td><td>No</td><td>6001234567890</td></tr>
+        </tbody>
+      </table>
+
+      <ul class="info-list">
+        <li><i class="fas fa-check-circle"></i> The first row must be a header row with column names.</li>
+        <li><i class="fas fa-check-circle"></i> Prices should be numeric — do not include currency symbols.</li>
+        <li><i class="fas fa-check-circle"></i> Duplicate barcodes will update the existing product.</li>
+        <li><i class="fas fa-check-circle"></i> Blank rows will be skipped automatically.</li>
+      </ul>
+
+      <a href="{% url 'download_sample_csv' %}" class="download-link">
+        <i class="fas fa-download"></i> Download Sample CSV
+      </a>
+
+      <hr class="divider">
+
+      <!-- Sync Section -->
+      <div class="sync-box">
+        <div class="sync-box-title"><i class="fas fa-sync-alt"></i> Sync Warehouse Data</div>
+        <div class="sync-box-desc">Pull the latest product data directly from your connected warehouse system. This will update prices and stock levels automatically.</div>
+        <form method="POST" action="{% url 'sync_warehouse_data' %}">
+          {% csrf_token %}
+          <button type="submit" class="btn btn-success btn-full">
+            <i class="fas fa-cloud-download-alt"></i> Sync Now
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
 </div>
+
+<script>
+  // Drag & drop
+  const zone = document.getElementById('uploadZone');
+  zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('drag-over'); });
+  zone.addEventListener('dragleave', () => zone.classList.remove('drag-over'));
+  zone.addEventListener('drop', e => {
+    e.preventDefault();
+    zone.classList.remove('drag-over');
+    const file = e.dataTransfer.files[0];
+    if (file) showFile(file);
+  });
+
+  function handleFileSelect(e) {
+    const file = e.target.files[0];
+    if (file) showFile(file);
+  }
+
+  function showFile(file) {
+    const el = document.getElementById('selectedFile');
+    document.getElementById('selectedFileName').textContent = file.name + ' (' + (file.size / 1024).toFixed(1) + ' KB)';
+    el.style.display = 'flex';
+    // Also update zone text
+    document.querySelector('.upload-zone p').textContent = 'File selected — ready to import';
+  }
+</script>
 {% endblock %}

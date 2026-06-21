@@ -4,6 +4,15 @@ from django.contrib.auth.models import User
 
 # Create your models here.
 
+class Workspace(models.Model):
+    name = models.CharField(max_length=100)
+    description = models.TextField(blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    is_active = models.BooleanField(default=True)
+
+    def __str__(self):
+        return self.name
+
 class UserProfile(models.Model):
     ROLE_CHOICES = [
         ('superuser', 'Superuser'),
@@ -17,6 +26,7 @@ class UserProfile(models.Model):
     is_active = models.BooleanField(default=True)
     date_created = models.DateTimeField(auto_now_add=True)
     company_name = models.CharField(max_length=100, blank=True, null=True, help_text="Company name for display purposes")
+    workspace = models.ForeignKey(Workspace, on_delete=models.CASCADE, null=True, blank=True, related_name='user_profiles')
 
     def __str__(self):
         return f"{self.user.username} - {self.role}"
@@ -67,6 +77,7 @@ class Product(models.Model):
     expiry_date = models.DateField(null=True, blank=True)
     stock = models.IntegerField(default=0)  # Add stock field
     barcode = models.CharField(max_length=50, unique=True, null=True, blank=True)  # Add barcode field
+    workspace = models.ForeignKey(Workspace, on_delete=models.CASCADE, null=True, blank=True, related_name='products')
     date_added = models.DateTimeField(default=timezone.now)
     
     # Sale fields
@@ -127,6 +138,12 @@ class Sale(models.Model):
     quantity = models.IntegerField()
     total_price = models.DecimalField(max_digits=10, decimal_places=2)
     sale_date = models.DateTimeField(auto_now_add=True)
+    # Track which cashier/user processed this sale (audit trail)
+    processed_by = models.ForeignKey(
+        User, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='processed_sales'
+    )
+    workspace = models.ForeignKey(Workspace, on_delete=models.CASCADE, null=True, blank=True, related_name='sales')
 
     def __str__(self):
         return f"{self.product.name} - {self.quantity} units"
@@ -139,6 +156,7 @@ class PendingOrder(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     status = models.CharField(max_length=20, default='pending')  # pending, completed, cancelled
     user = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True)
+    workspace = models.ForeignKey(Workspace, on_delete=models.CASCADE, null=True, blank=True, related_name='pending_orders')
 
     def __str__(self):
         return f"Order for {self.customer_name} - {self.total}"
@@ -162,6 +180,7 @@ class CompletedOrder(models.Model):
     payment_method = models.CharField(max_length=10, choices=PAYMENT_METHOD_CHOICES, default='cash')
     completed_at = models.DateTimeField(auto_now_add=True)
     processed_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
+    workspace = models.ForeignKey(Workspace, on_delete=models.CASCADE, null=True, blank=True, related_name='completed_orders')
 
     def __str__(self):
         return f"Completed Order for {self.customer_name} - R{self.total}"
@@ -180,7 +199,7 @@ class CompletedOrder(models.Model):
             self.customer_name_encrypted = encrypt_sensitive_value(name, 'customer_name')
             self.customer_name = ''
         else:
-            self.customer_name = name
+            self.customer_name = ''          # Always store explicit empty string
             self.customer_name_encrypted = None
     
     def get_customer_phone(self):
@@ -197,7 +216,7 @@ class CompletedOrder(models.Model):
             self.customer_phone_encrypted = encrypt_sensitive_value(phone, 'customer_phone')
             self.customer_phone = ''
         else:
-            self.customer_phone = phone
+            self.customer_phone = ''         # Always store explicit empty string
             self.customer_phone_encrypted = None
     
     def get_customer_email(self):
@@ -214,7 +233,7 @@ class CompletedOrder(models.Model):
             self.customer_email_encrypted = encrypt_sensitive_value(email, 'customer_email')
             self.customer_email = ''
         else:
-            self.customer_email = email
+            self.customer_email = ''         # Always store explicit empty string
             self.customer_email_encrypted = None
 
 class WarehousePrice(models.Model):
@@ -228,6 +247,7 @@ class WarehousePrice(models.Model):
     unit_size = models.CharField(max_length=50, null=True, blank=True)
     date_imported = models.DateTimeField(auto_now_add=True)
     imported_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
+    workspace = models.ForeignKey(Workspace, on_delete=models.CASCADE, null=True, blank=True, related_name='warehouse_prices')
     file_name = models.CharField(max_length=255, null=True, blank=True)
     
     class Meta:
@@ -249,6 +269,7 @@ class PriceComparison(models.Model):
     price_difference = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     compared_warehouses = models.JSONField(default=list)  # List of warehouse names compared
     all_prices = models.JSONField(default=dict)  # Dictionary of warehouse: price pairs
+    workspace = models.ForeignKey(Workspace, on_delete=models.CASCADE, null=True, blank=True, related_name='price_comparisons')
     comparison_date = models.DateTimeField(auto_now_add=True)
     
     class Meta:
@@ -292,6 +313,7 @@ class Notification(models.Model):
     last_reminded = models.DateTimeField(null=True, blank=True)
     reminder_count = models.IntegerField(default=0)
     created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='created_notifications')
+    workspace = models.ForeignKey(Workspace, on_delete=models.CASCADE, null=True, blank=True, related_name='notifications')
     target_user = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True, related_name='received_notifications')
     
     # For low stock notifications
@@ -337,6 +359,7 @@ class FCMToken(models.Model):
     ], default='web')
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
+    workspace = models.ForeignKey(Workspace, on_delete=models.CASCADE, null=True, blank=True, related_name='fcm_tokens')
     last_used = models.DateTimeField(auto_now=True)
     
     class Meta:
@@ -373,6 +396,7 @@ class DeviceConnection(models.Model):
     session_start = models.DateTimeField(auto_now_add=True)
     last_activity = models.DateTimeField(auto_now=True)
     session_duration_seconds = models.PositiveIntegerField(default=0)
+    workspace = models.ForeignKey(Workspace, on_delete=models.CASCADE, null=True, blank=True, related_name='device_connections')
     is_active = models.BooleanField(default=True)
     
     # Usage statistics
@@ -468,6 +492,7 @@ class ErrorLog(models.Model):
     
     # Timestamps
     created_at = models.DateTimeField(auto_now_add=True)
+    workspace = models.ForeignKey(Workspace, on_delete=models.CASCADE, null=True, blank=True, related_name='error_logs')
     updated_at = models.DateTimeField(auto_now=True)
     
     class Meta:
@@ -537,6 +562,7 @@ class UserActivity(models.Model):
     duration_ms = models.PositiveIntegerField(null=True, blank=True, help_text="Activity duration in milliseconds")
     
     created_at = models.DateTimeField(auto_now_add=True)
+    workspace = models.ForeignKey(Workspace, on_delete=models.CASCADE, null=True, blank=True, related_name='user_activities')
     
     class Meta:
         ordering = ['-created_at']
@@ -575,6 +601,7 @@ class AirtimeProduct(models.Model):
     description = models.TextField(blank=True)
     stock = models.IntegerField(default=0)
     is_active = models.BooleanField(default=True)
+    workspace = models.ForeignKey(Workspace, on_delete=models.CASCADE, null=True, blank=True, related_name='airtime_products')
     date_added = models.DateTimeField(auto_now_add=True)
     
     def __str__(self):
@@ -610,6 +637,7 @@ class AirtimeSale(models.Model):
     voucher_code = models.CharField(max_length=100, blank=True)
     
     created_at = models.DateTimeField(auto_now_add=True)
+    workspace = models.ForeignKey(Workspace, on_delete=models.CASCADE, null=True, blank=True, related_name='airtime_sales')
     
     def __str__(self):
         return f"{self.airtime_product.name} - {self.customer_phone} ({self.get_status_display()})"
@@ -649,6 +677,7 @@ class AirtimeRequest(models.Model):
     approval_notes = models.TextField(blank=True)
     
     created_at = models.DateTimeField(auto_now_add=True)
+    workspace = models.ForeignKey(Workspace, on_delete=models.CASCADE, null=True, blank=True, related_name='airtime_requests')
     
     def __str__(self):
         return f"{self.title} - {self.requested_by.username} ({self.get_status_display()})"
@@ -712,6 +741,7 @@ class SecurityAuditLog(models.Model):
     resolution_notes = models.TextField(blank=True)
     
     created_at = models.DateTimeField(auto_now_add=True)
+    workspace = models.ForeignKey(Workspace, on_delete=models.CASCADE, null=True, blank=True, related_name='security_audit_logs')
     
     class Meta:
         ordering = ['-created_at']
@@ -777,6 +807,7 @@ class DataModificationLog(models.Model):
     batch_id = models.CharField(max_length=50, blank=True, help_text="ID for batch operations")
     
     created_at = models.DateTimeField(auto_now_add=True)
+    workspace = models.ForeignKey(Workspace, on_delete=models.CASCADE, null=True, blank=True, related_name='data_modification_logs')
     
     class Meta:
         ordering = ['-created_at']
@@ -831,6 +862,7 @@ class AdminActionLog(models.Model):
     request_data = models.JSONField(default=dict)
     
     created_at = models.DateTimeField(auto_now_add=True)
+    workspace = models.ForeignKey(Workspace, on_delete=models.CASCADE, null=True, blank=True, related_name='admin_action_logs')
     
     class Meta:
         ordering = ['-created_at']
@@ -896,6 +928,7 @@ class APICallLog(models.Model):
     security_flags = models.JSONField(default=list, help_text="List of security concerns detected")
     
     created_at = models.DateTimeField(auto_now_add=True)
+    workspace = models.ForeignKey(Workspace, on_delete=models.CASCADE, null=True, blank=True, related_name='api_call_logs')
     
     class Meta:
         ordering = ['-created_at']
@@ -966,6 +999,7 @@ class SensitiveDataAccessLog(models.Model):
     expires_at = models.DateTimeField(null=True, blank=True, help_text="When this log should be deleted")
     
     created_at = models.DateTimeField(auto_now_add=True)
+    workspace = models.ForeignKey(Workspace, on_delete=models.CASCADE, null=True, blank=True, related_name='sensitive_data_access_logs')
     
     class Meta:
         ordering = ['-created_at']

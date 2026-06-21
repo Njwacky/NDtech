@@ -1,89 +1,57 @@
-{% extends 'nano/base.html' %}
+{% extends 'nano/base_auth.html' %}
 {% load static %}
 
-{% block title %}Sign Up - NDtech{% endblock %}
-
-{% block extra_css %}
-<link rel="stylesheet" href="{% static 'nano/auth.css' %}">
-{% endblock %}
+{% block title %}Register - NDtech POS{% endblock %}
 
 {% block content %}
-<div class="auth-container">
-    {% if is_first_user %}
-        <div class="first-user-registration">
-            <h1><i class="fas fa-user-shield"></i> Create Admin Account</h1>
-            <div class="superuser-info">
-                <p><strong>Welcome to NDtech POS System!</strong></p>
-                <p>You are the first user to register. This account will be created as an <strong>Administrator</strong> with full system access.</p>
-                <p>As an administrator, you will be able to:</p>
-                <ul>
-                    <li>Create and manage other user accounts</li>
-                    <li>Assign roles (Admin, Manager, Cashier)</li>
-                    <li>Manage products and inventory</li>
-                    <li>Access all system features and reports</li>
-                </ul>
-            </div>
-            <form action="{% url 'sign_up' %}" method="post">
-                {% csrf_token %}
-                {% if messages %}
-                    {% for message in messages %}
-                        <div class="message {{ message.tags }}">{{ message }}</div>
-                    {% endfor %}
-                {% endif %}
-                <label for="username">Username:</label>
-                <input type="text" id="username" name="username" required><br><br>
-                <label for="email">Email:</label>
-                <input type="email" id="email" name="email" required><br><br>
-                <label for="company_name">Company Name:</label>
-                <input type="text" id="company_name" name="company_name" required placeholder="Your company name" minlength="2"><br><br>
-                <label for="password">Password:</label>
-                <input type="password" id="password" name="password" required><br><br>
-                <label for="confirm_password">Confirm Password:</label>
-                <input type="password" id="confirm_password" name="confirm_password" required><br><br>
-                <button type="submit"><i class="fas fa-user-plus"></i> Create Admin Account</button>
-            </form>
-            <div class="back-to-login">
-                <p>Already have an account? <a href="{% url 'sign_in' %}">Sign In</a></p>
-            </div>
-        </div>
-    {% else %}
-        <div class="regular-user-registration">
-            <h1><i class="fas fa-user-plus"></i> Create Your Workspace</h1>
-            <div class="workspace-info">
-                <p><strong>Create your own workspace on NDtech POS System!</strong></p>
-                <p>When you register, you'll get a <strong>Manager</strong> account that allows you to:</p>
-                <ul>
-                    <li>Create and manage your own team members</li>
-                    <li>Add cashiers and managers to your workspace</li>
-                    <li>Manage products and inventory for your business</li>
-                    <li>Track sales and generate reports</li>
-                    <li>Run your own independent POS system</li>
-                </ul>
-                <p><em>Each manager runs their own separate workspace - your data and team are completely private!</em></p>
-            </div>
-            <form action="{% url 'sign_up' %}" method="post">
-                {% csrf_token %}
-                {% if messages %}
-                    {% for message in messages %}
-                        <div class="message {{ message.tags }}">{{ message }}</div>
-                    {% endfor %}
-                {% endif %}
-                <label for="username">Username:</label>
-                <input type="text" id="username" name="username" required><br><br>
-                <label for="email">Email:</label>
-                <input type="email" id="email" name="email" required><br><br>
-                <label for="company_name">Company Name:</label>
-                <input type="text" id="company_name" name="company_name" required placeholder="Your company name" minlength="2"><br><br>
-                <label for="password">Password:</label>
-                <input type="password" id="password" name="password" required><br><br>
-                <label for="confirm_password">Confirm Password:</label>
-                <input type="password" id="confirm_password" name="confirm_password" required><br><br>
-                <button type="submit"><i class="fas fa-rocket"></i> Create My Workspace</button>
-            </form>
-            <div class="back-to-login">
-                <p>Already have an account? <a href="{% url 'sign_in' %}">Sign In</a></p>
-            </div>
-        </div>
+  <div class="auth-header">
+    <a class="brand" href="{% url 'home' %}">
+      <img class="brand-logo" src="{% static 'nano/icon-96.png' %}" alt="NDtech" />
+      <span>NDtech POS</span>
+    </a>
+    <h1>Register</h1>
+    <p class="muted">Create the admin account.</p>
+  </div>
+
+  <form class="auth-form" method="post" action="{% url 'sign_up' %}">
+    {% csrf_token %}
+
+    <label class="field">
+      <span>Username</span>
+      <input name="username" type="text" autocomplete="username" required value="{{ request.POST.username|default:'' }}" />
+    </label>
+
+    <label class="field">
+      <span>Email</span>
+      <input name="email" type="email" autocomplete="email" required value="{{ request.POST.email|default:'' }}" />
+    </label>
+
+    <label class="field">
+      <span>Company Name</span>
+      <input name="company_name" type="text" autocomplete="organization" required value="{{ request.POST.company_name|default:'' }}" placeholder="Your business name" />
+    </label>
+
+    <label class="field">
+      <span>Password</span>
+      <input name="password" type="password" autocomplete="new-password" required />
+    </label>
+
+    <label class="field">
+      <span>Confirm password</span>
+      <input name="confirm_password" type="password" autocomplete="new-password" required />
+    </label>
+
+    <button class="btn btn-primary" type="submit">Create admin</button>
+
+    <div class="auth-links">
+      <a href="{% url 'sign_in' %}" class="link">Already have an account?</a>
+    </div>
+
+    {% if existing_users %}
+      <div class="alert alert-info">
+        Registration is closed. An admin already exists.
+      </div>
     {% endif %}
-</div>
+  </form>
 {% endblock %}
+

@@ -1,24 +1,10 @@
-# TODO: Add Manage Users Page, Input Validation, and Product Categories
+# TODO
 
-- [x] Add UserProfile model with role field (admin, manager, cashier) to models.py
-- [x] Create signals.py to auto-create UserProfile on user creation
-- [x] Update apps.py to import signals
-- [x] Run migrations for new model
-- [x] Add manage_users view (list users, bulk delete) with permission check (admin/manager only)
-- [x] Add edit_user view with permission check
-- [x] Add delete_user view with permission check
-- [x] Update urls.py with new paths
-- [x] Create manage_users.html template with checkboxes for bulk delete
-- [x] Create edit_user.html template
-- [x] Create delete_user.html template
-- [x] Add link to manage_users in home.html for admin/manager
-- [x] Test access restrictions (only admin/manager can access)
-- [x] Add input validation for sign_up (username, email, password)
-- [x] Add input validation for sign_in (username, password)
-- [x] Add input validation for add_stock (name, price, expiry_date)
-- [x] Add input validation for edit_user (username, email, role)
-- [x] Update templates to display validation errors (messages already displayed via Django messages)
-- [x] Add category field to Product model with specified choices (excluding alcohol)
-- [x] Run migrations for category field
-- [x] Update add_stock view and template to include category dropdown
-- [x] Update home template to display products grouped by category or with category labels
+- [ ] Create a minimal Next.js+React+TS frontend scaffold under `frontend/`
+- [ ] Add Tailwind CSS + base styles compatible with shadcn-like `/components/ui` structure
+- [ ] Add a `frontend/src/components/ui/` folder (and `button` shim if shadcn scaffold isn’t used)
+- [ ] Copy `interactive-checkout.tsx` into `frontend/src/components/ui/interactive-checkout.tsx`
+- [ ] Ensure required dependencies are installed
+- [ ] Add a simple cart page (demo usage) under `frontend/src/app/` or `frontend/pages/`
+- [ ] Run `npm install` and `npm run dev` and verify cart UI styling
+

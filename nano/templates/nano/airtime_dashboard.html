@@ -1,209 +1,478 @@
 {% extends 'nano/base.html' %}
 {% load static %}
-
-{% block title %}Airtime Dashboard{% endblock %}
+{% block title %}Airtime Dashboard - NDtech POS{% endblock %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="{% static 'nano/airtime.css' %}">
+<style>
+  .page-wrap { padding: 2rem 1.5rem; max-width: 1400px; margin: 0 auto; }
+
+  /* Page Header */
+  .page-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 2rem; flex-wrap: wrap; gap: 1rem; }
+  .page-header-left { display: flex; align-items: center; gap: 1rem; }
+  .page-header-icon { width: 52px; height: 52px; background: linear-gradient(135deg, #7c3aed, #6d28d9); border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 1.4rem; color: #fff; flex-shrink: 0; }
+  .page-header-title { font-size: 1.6rem; font-weight: 700; color: #fff; margin: 0; }
+  .page-header-sub { font-size: 0.85rem; color: rgba(255,255,255,0.5); margin: 0; }
+  .page-header-actions { display: flex; gap: 0.75rem; flex-wrap: wrap; }
+
+  /* Buttons */
+  .btn { display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.55rem 1.1rem; border-radius: 10px; font-size: 0.85rem; font-weight: 600; cursor: pointer; border: none; text-decoration: none; transition: all 0.2s; }
+  .btn-primary { background: linear-gradient(135deg, #7c3aed, #6d28d9); color: #fff; }
+  .btn-primary:hover { opacity: 0.88; transform: translateY(-1px); }
+  .btn-ghost { background: transparent; color: rgba(255,255,255,0.7); border: 1px solid rgba(255,255,255,0.2); }
+  .btn-ghost:hover { background: rgba(255,255,255,0.07); color: #fff; }
+  .btn-success { background: linear-gradient(135deg, #10b981, #059669); color: #fff; }
+  .btn-success:hover { opacity: 0.88; }
+  .btn-sm { padding: 0.35rem 0.75rem; font-size: 0.78rem; }
+
+  /* Section */
+  .section-card { background: rgba(255,255,255,0.05); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.12); border-radius: 16px; padding: 1.5rem; margin-bottom: 2rem; }
+  .section-title { font-size: 1.05rem; font-weight: 600; color: #fff; margin: 0 0 0.25rem 0; }
+  .section-sub { font-size: 0.8rem; color: rgba(255,255,255,0.45); margin: 0 0 1.25rem 0; }
+  .section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.25rem; flex-wrap: wrap; gap: 0.75rem; }
+
+  /* Network legend */
+  .network-filter { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1.5rem; }
+  .net-pill { padding: 0.3rem 0.85rem; border-radius: 999px; font-size: 0.75rem; font-weight: 600; cursor: pointer; border: 2px solid transparent; transition: all 0.2s; }
+  .net-pill.active, .net-pill:hover { border-color: rgba(255,255,255,0.4); }
+  .net-vodacom { background: rgba(220,38,38,0.2); color: #f87171; }
+  .net-mtn { background: rgba(234,179,8,0.2); color: #fde047; }
+  .net-telkom { background: rgba(59,130,246,0.2); color: #93c5fd; }
+  .net-cellc { background: rgba(107,114,128,0.25); color: #d1d5db; }
+  .net-other { background: rgba(124,58,237,0.2); color: #c4b5fd; }
+
+  /* Product Grid */
+  .product-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 1rem; }
+  .product-card { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1); border-radius: 14px; padding: 1.2rem; display: flex; flex-direction: column; gap: 0.6rem; transition: all 0.2s; cursor: default; }
+  .product-card:hover { background: rgba(255,255,255,0.08); transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.3); }
+  .product-card-network { font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; padding: 0.25rem 0.65rem; border-radius: 999px; display: inline-flex; align-items: center; gap: 0.35rem; width: fit-content; }
+  .product-card-name { font-size: 0.9rem; font-weight: 600; color: #fff; }
+  .product-card-value { font-size: 1.5rem; font-weight: 800; color: #fff; }
+  .product-card-price { font-size: 0.8rem; color: rgba(255,255,255,0.55); }
+  .product-card-stock { font-size: 0.78rem; color: rgba(255,255,255,0.45); display: flex; align-items: center; gap: 0.3rem; }
+  .stock-low { color: #f59e0b; }
+  .stock-out { color: #ef4444; }
+  .product-card-footer { margin-top: auto; }
+  .badge { display: inline-flex; align-items: center; padding: 0.22rem 0.65rem; border-radius: 999px; font-size: 0.7rem; font-weight: 600; }
+  .badge-airtime { background: rgba(16,185,129,0.15); color: #34d399; border: 1px solid rgba(16,185,129,0.3); }
+  .badge-data { background: rgba(99,102,241,0.15); color: #a5b4fc; border: 1px solid rgba(99,102,241,0.3); }
+  .badge-combo { background: rgba(245,158,11,0.15); color: #fcd34d; border: 1px solid rgba(245,158,11,0.3); }
+
+  /* Quick sell button per network */
+  .btn-sell-vodacom { background: linear-gradient(135deg, #dc2626, #b91c1c); color: #fff; }
+  .btn-sell-mtn { background: linear-gradient(135deg, #ca8a04, #a16207); color: #fff; }
+  .btn-sell-telkom { background: linear-gradient(135deg, #2563eb, #1d4ed8); color: #fff; }
+  .btn-sell-cellc { background: linear-gradient(135deg, #4b5563, #374151); color: #fff; }
+  .btn-sell-other { background: linear-gradient(135deg, #7c3aed, #6d28d9); color: #fff; }
+  .btn-sell { width: 100%; justify-content: center; margin-top: 0.5rem; padding: 0.55rem; border-radius: 10px; font-size: 0.82rem; font-weight: 600; cursor: pointer; border: none; display: inline-flex; align-items: center; gap: 0.4rem; transition: all 0.2s; }
+  .btn-sell:hover { opacity: 0.85; transform: translateY(-1px); }
+  .btn-sell:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+  /* Empty state */
+  .empty-state { text-align: center; padding: 3rem 1rem; color: rgba(255,255,255,0.35); }
+  .empty-state i { font-size: 2.5rem; margin-bottom: 0.75rem; display: block; }
+  .empty-state p { margin: 0; font-size: 0.9rem; }
+
+  /* Manager Section */
+  .manager-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+
+  /* Table */
+  .data-table { width: 100%; border-collapse: collapse; }
+  .data-table th { padding: 0.7rem 1rem; font-size: 0.72rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: rgba(255,255,255,0.45); text-align: left; border-bottom: 1px solid rgba(255,255,255,0.08); }
+  .data-table td { padding: 0.8rem 1rem; font-size: 0.85rem; color: rgba(255,255,255,0.8); border-bottom: 1px solid rgba(255,255,255,0.05); vertical-align: middle; }
+  .data-table tr:last-child td { border-bottom: none; }
+  .data-table tbody tr:hover td { background: rgba(255,255,255,0.04); }
+  .table-wrap { overflow-x: auto; }
+
+  /* Status badges */
+  .badge-pending { background: rgba(245,158,11,0.15); color: #fcd34d; border: 1px solid rgba(245,158,11,0.3); }
+  .badge-approved { background: rgba(16,185,129,0.15); color: #34d399; border: 1px solid rgba(16,185,129,0.3); }
+  .badge-rejected { background: rgba(239,68,68,0.15); color: #fca5a5; border: 1px solid rgba(239,68,68,0.3); }
+  .badge-completed { background: rgba(99,102,241,0.15); color: #a5b4fc; border: 1px solid rgba(99,102,241,0.3); }
+
+  /* Quick link cards */
+  .quick-links { display: flex; gap: 0.75rem; flex-wrap: wrap; margin-bottom: 1.5rem; }
+  .quick-link-card { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 0.9rem 1.2rem; display: flex; align-items: center; gap: 0.75rem; text-decoration: none; color: rgba(255,255,255,0.8); font-size: 0.85rem; font-weight: 500; transition: all 0.2s; flex: 1; min-width: 160px; }
+  .quick-link-card:hover { background: rgba(124,58,237,0.15); border-color: rgba(124,58,237,0.4); color: #fff; }
+  .quick-link-card i { font-size: 1.1rem; color: #a78bfa; }
+
+  /* Modal */
+  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); backdrop-filter: blur(4px); z-index: 1000; align-items: center; justify-content: center; padding: 1rem; }
+  .modal-overlay.open { display: flex; }
+  .modal { background: #1a1030; border: 1px solid rgba(255,255,255,0.15); border-radius: 20px; padding: 2rem; width: 100%; max-width: 460px; animation: modalIn 0.2s ease; }
+  @keyframes modalIn { from { opacity: 0; transform: scale(0.94) translateY(10px); } to { opacity: 1; transform: scale(1) translateY(0); } }
+  .modal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem; }
+  .modal-title { font-size: 1.1rem; font-weight: 700; color: #fff; }
+  .modal-close { background: none; border: none; color: rgba(255,255,255,0.5); font-size: 1.2rem; cursor: pointer; padding: 0.25rem; line-height: 1; }
+  .modal-close:hover { color: #fff; }
+  .modal-product-info { background: rgba(255,255,255,0.05); border-radius: 12px; padding: 1rem; margin-bottom: 1.25rem; }
+  .modal-product-info .label { font-size: 0.75rem; color: rgba(255,255,255,0.45); margin-bottom: 0.25rem; }
+  .modal-product-info .value { font-size: 1rem; font-weight: 600; color: #fff; }
+  .form-group { margin-bottom: 1rem; }
+  .form-label { display: block; font-size: 0.8rem; font-weight: 500; color: rgba(255,255,255,0.6); margin-bottom: 0.4rem; }
+  .form-input { width: 100%; background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.15); border-radius: 10px; padding: 0.65rem 0.9rem; color: #fff; font-size: 0.9rem; outline: none; transition: border-color 0.2s; box-sizing: border-box; }
+  .form-input:focus { border-color: #7c3aed; background: rgba(124,58,237,0.1); }
+  .modal-actions { display: flex; gap: 0.75rem; margin-top: 1.5rem; }
+  .modal-actions .btn { flex: 1; justify-content: center; }
+  .modal-feedback { display: none; padding: 0.75rem 1rem; border-radius: 10px; font-size: 0.85rem; margin-top: 1rem; }
+  .modal-feedback.success { background: rgba(16,185,129,0.15); border: 1px solid rgba(16,185,129,0.3); color: #34d399; display: block; }
+  .modal-feedback.error { background: rgba(239,68,68,0.12); border: 1px solid rgba(239,68,68,0.3); color: #fca5a5; display: block; }
+
+  @media (max-width: 900px) {
+    .manager-grid { grid-template-columns: 1fr; }
+  }
+  @media (max-width: 768px) {
+    .page-wrap { padding: 1rem; }
+    .page-header { flex-direction: column; align-items: flex-start; }
+    .page-header-actions { width: 100%; }
+    .page-header-actions .btn { flex: 1; justify-content: center; }
+    .product-grid { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); }
+    .quick-links { flex-direction: column; }
+    .quick-link-card { min-width: 0; }
+    .data-table th, .data-table td { padding: 0.6rem 0.65rem; font-size: 0.8rem; }
+  }
+  @media (max-width: 480px) {
+    .product-grid { grid-template-columns: 1fr 1fr; }
+    .modal { padding: 1.5rem; }
+    .modal-actions { flex-direction: column; }
+  }
+</style>
 {% endblock %}
 
 {% block content %}
-<div class="container-fluid airtime-dashboard">
-  <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
-    <div>
-      <h2 class="mb-0 airtime-page-title"><i class="fas fa-mobile-alt"></i> Airtime Dashboard</h2>
-      <div class="text-muted small">Buy airtime, review sales, and manage approvals.</div>
+<div class="page-wrap">
+
+  <!-- Page Header -->
+  <div class="page-header">
+    <div class="page-header-left">
+      <div class="page-header-icon"><i class="fas fa-sim-card"></i></div>
+      <div>
+        <h1 class="page-header-title">Airtime Dashboard</h1>
+        <p class="page-header-sub">Sell airtime &amp; data products quickly</p>
+      </div>
     </div>
-    <div class="d-flex gap-2 flex-wrap">
-      <a class="btn btn-outline-primary" href="{% url 'airtime_history_review' %}">
-        <i class="fas fa-history"></i> History Review
-      </a>
+    <div class="page-header-actions">
       {% if is_manager %}
-      <a class="btn btn-outline-secondary" href="{% url 'airtime_management' %}">
-        <i class="fas fa-cogs"></i> Manage Products
-      </a>
-      <a class="btn btn-outline-secondary" href="{% url 'airtime_sales' %}">
-        <i class="fas fa-shopping-cart"></i> Sales
-      </a>
-      <a class="btn btn-outline-secondary" href="{% url 'airtime_requests_management' %}">
-        <i class="fas fa-clipboard-list"></i> Requests
-      </a>
+      <a href="{% url 'airtime_management' %}" class="btn btn-ghost"><i class="fas fa-cog"></i> Manage Products</a>
+      <a href="{% url 'airtime_sales' %}" class="btn btn-ghost"><i class="fas fa-list"></i> All Sales</a>
       {% endif %}
+      <a href="{% url 'cashier_airtime_quick_sell' %}" class="btn btn-primary"><i class="fas fa-bolt"></i> Quick Sell Mode</a>
     </div>
   </div>
 
-  <div class="row g-3">
-    <div class="col-12 col-lg-6">
-      <div class="card shadow-sm airtime-card">
-        <div class="card-header d-flex align-items-center justify-content-between">
-          <div class="fw-bold"><i class="fas fa-sim-card"></i> Sell Airtime</div>
-          <span class="badge bg-light text-dark">Role: {{ user_role|default:"user" }}</span>
-        </div>
-        <div class="card-body">
-          <form id="airtimeSaleForm">
-            <div class="row g-2">
-              <div class="col-12">
-                <label class="form-label">Product</label>
-                <select class="form-select" name="product_id" required>
-                  <option value="" selected disabled>Select a product</option>
-                  {% for p in airtime_products %}
-                    <option value="{{ p.id }}">
-                      {{ p.get_display_name|default:p.name }} — R{{ p.price }} (Stock: {{ p.stock }})
-                    </option>
-                  {% endfor %}
-                </select>
-              </div>
-              <div class="col-12 col-md-6">
-                <label class="form-label">Customer phone</label>
-                <input class="form-control" name="customer_phone" inputmode="numeric" autocomplete="tel" placeholder="e.g. 0712345678" required>
-              </div>
-              <div class="col-12 col-md-3">
-                <label class="form-label">Qty</label>
-                <input class="form-control" name="quantity" type="number" min="1" value="1" required>
-              </div>
-              <div class="col-12 col-md-3 d-flex align-items-end">
-                <button class="btn btn-primary w-100" type="submit">
-                  <i class="fas fa-bolt"></i> Process
-                </button>
-              </div>
-            </div>
-            <div class="mt-3">
-              <div id="airtimeSaleResult" class="airtime-result" style="display:none;"></div>
-              <div class="airtime-form-note">
-                Note: this endpoint currently completes sales immediately (no approval) per `process_airtime_sale`.
-              </div>
-            </div>
-          </form>
-        </div>
-      </div>
-    </div>
-
-    <div class="col-12 col-lg-6">
-      <div class="card shadow-sm airtime-card">
-        <div class="card-header fw-bold"><i class="fas fa-list"></i> Active Products</div>
-        <div class="card-body">
-          {% if airtime_products %}
-            <div class="table-responsive">
-              <table class="table table-sm align-middle airtime-table">
-                <thead>
-                  <tr>
-                    <th>Product</th>
-                    <th>Network</th>
-                    <th>Type</th>
-                    <th class="text-end">Value</th>
-                    <th class="text-end">Price</th>
-                    <th class="text-end">Stock</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {% for p in airtime_products %}
-                  <tr>
-                    <td>{{ p.name }}</td>
-                    <td>{{ p.network }}</td>
-                    <td>{{ p.airtime_type }}</td>
-                    <td class="text-end">{{ p.value }}</td>
-                    <td class="text-end">R{{ p.price }}</td>
-                    <td class="text-end">{{ p.stock }}</td>
-                  </tr>
-                  {% endfor %}
-                </tbody>
-              </table>
-            </div>
-          {% else %}
-            <div class="alert alert-warning mb-0">
-              No active airtime products found.
-              {% if is_manager %}
-                <a href="{% url 'airtime_management' %}" class="alert-link">Add products</a>.
-              {% endif %}
-            </div>
-          {% endif %}
-        </div>
-      </div>
-    </div>
-  </div>
-
+  <!-- Manager Quick Links -->
   {% if is_manager %}
-  <div class="row g-3 mt-1">
-    <div class="col-12 col-lg-6">
-      <div class="card shadow-sm">
-        <div class="card-header fw-bold"><i class="fas fa-hourglass-half"></i> Pending Sales (legacy)</div>
-        <div class="card-body">
-          {% if pending_sales %}
-            <div class="table-responsive">
-              <table class="table table-sm align-middle">
-                <thead>
-                  <tr>
-                    <th>Customer</th>
-                    <th>Product</th>
-                    <th class="text-end">Qty</th>
-                    <th class="text-end">Total</th>
-                    <th></th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {% for s in pending_sales %}
-                  <tr>
-                    <td>{{ s.customer_phone }}</td>
-                    <td>{{ s.airtime_product.name }}</td>
-                    <td class="text-end">{{ s.quantity }}</td>
-                    <td class="text-end">R{{ s.total_price }}</td>
-                    <td class="text-end">
-                      <a class="btn btn-sm btn-success" href="{% url 'approve_airtime_sale' s.id %}">Approve</a>
-                      <a class="btn btn-sm btn-outline-danger" href="{% url 'reject_airtime_sale' s.id %}">Reject</a>
-                    </td>
-                  </tr>
-                  {% endfor %}
-                </tbody>
-              </table>
-            </div>
-          {% else %}
-            <div class="text-muted">No pending sales.</div>
-          {% endif %}
-        </div>
-      </div>
-    </div>
-    <div class="col-12 col-lg-6">
-      <div class="card shadow-sm">
-        <div class="card-header fw-bold"><i class="fas fa-clipboard-check"></i> Pending Requests</div>
-        <div class="card-body">
-          {% if airtime_requests %}
-            <div class="table-responsive">
-              <table class="table table-sm align-middle">
-                <thead>
-                  <tr>
-                    <th>Requested by</th>
-                    <th>Status</th>
-                    <th>Created</th>
-                    <th></th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {% for r in airtime_requests %}
-                  <tr>
-                    <td>{{ r.requested_by.username }}</td>
-                    <td><span class="badge bg-warning text-dark">{{ r.status }}</span></td>
-                    <td class="small text-muted">{{ r.created_at }}</td>
-                    <td class="text-end">
-                      <a class="btn btn-sm btn-success" href="{% url 'approve_airtime_request' r.id %}">Approve</a>
-                      <a class="btn btn-sm btn-outline-danger" href="{% url 'reject_airtime_request' r.id %}">Reject</a>
-                    </td>
-                  </tr>
-                  {% endfor %}
-                </tbody>
-              </table>
-            </div>
-          {% else %}
-            <div class="text-muted">No pending requests.</div>
-          {% endif %}
-        </div>
-      </div>
-    </div>
+  <div class="quick-links">
+    <a href="{% url 'airtime_management' %}" class="quick-link-card">
+      <i class="fas fa-boxes"></i> Product Management
+    </a>
+    <a href="{% url 'airtime_sales' %}" class="quick-link-card">
+      <i class="fas fa-receipt"></i> Sales Records
+    </a>
+    <a href="{% url 'airtime_requests_management' %}" class="quick-link-card">
+      <i class="fas fa-inbox"></i> Airtime Requests
+    </a>
+    <a href="{% url 'airtime_history_review' %}" class="quick-link-card">
+      <i class="fas fa-history"></i> History &amp; Review
+    </a>
   </div>
   {% endif %}
+
+  <!-- Product Grid Section -->
+  <div class="section-card">
+    <div class="section-header">
+      <div>
+        <h2 class="section-title"><i class="fas fa-th-large" style="color:#a78bfa;margin-right:0.5rem;"></i>Available Products</h2>
+        <p class="section-sub">Click 'Quick Sell' on any product to process a sale</p>
+      </div>
+    </div>
+
+    <!-- Network Filter Pills -->
+    <div class="network-filter">
+      <span class="net-pill net-vodacom active" onclick="filterNetwork(this, 'vodacom')"><i class="fas fa-circle" style="font-size:0.5rem;"></i> Vodacom</span>
+      <span class="net-pill net-mtn" onclick="filterNetwork(this, 'mtn')"><i class="fas fa-circle" style="font-size:0.5rem;"></i> MTN</span>
+      <span class="net-pill net-telkom" onclick="filterNetwork(this, 'telkom')"><i class="fas fa-circle" style="font-size:0.5rem;"></i> Telkom</span>
+      <span class="net-pill net-cellc" onclick="filterNetwork(this, 'cellc')"><i class="fas fa-circle" style="font-size:0.5rem;"></i> Cell C</span>
+      <span class="net-pill net-other" onclick="filterNetwork(this, 'other')"><i class="fas fa-circle" style="font-size:0.5rem;"></i> Other</span>
+      <span class="net-pill" style="background:rgba(255,255,255,0.07);color:rgba(255,255,255,0.6);" onclick="filterNetwork(this, 'all')">All</span>
+    </div>
+
+    {% if airtime_products %}
+    <div class="product-grid" id="productGrid">
+      {% for product in airtime_products %}
+      <div class="product-card" data-network="{{ product.network|lower }}">
+        <div class="product-card-network
+          {% if product.network == 'vodacom' %}net-vodacom
+          {% elif product.network == 'mtn' %}net-mtn
+          {% elif product.network == 'telkom' %}net-telkom
+          {% elif product.network == 'cell_c' %}net-cellc
+          {% else %}net-other{% endif %}">
+          <i class="fas fa-signal"></i>
+{{ product.network|title }}
+        </div>
+        <div class="product-card-name">{{ product.name }}</div>
+        <span class="badge
+          {% if product.airtime_type == 'airtime' %}badge-airtime
+          {% elif product.airtime_type == 'data' %}badge-data
+          {% else %}badge-combo{% endif %}">
+          {{ product.airtime_type|title }}
+        </span>
+        <div class="product-card-value">R{{ product.value }}</div>
+        <div class="product-card-price">Sell Price: <strong style="color:#fff;">R{{ product.price }}</strong></div>
+        <div class="product-card-stock {% if product.stock == 0 %}stock-out{% elif product.stock < 5 %}stock-low{% endif %}">
+          <i class="fas fa-layer-group"></i>
+          {% if product.stock == 0 %}Out of stock
+          {% elif product.stock < 5 %}Low: {{ product.stock }} left
+          {% else %}Stock: {{ product.stock }}{% endif %}
+        </div>
+        <div class="product-card-footer">
+          <button class="btn-sell
+            {% if product.network == 'vodacom' %}btn-sell-vodacom
+            {% elif product.network == 'mtn' %}btn-sell-mtn
+            {% elif product.network == 'telkom' %}btn-sell-telkom
+            {% elif product.network == 'cell_c' %}btn-sell-cellc
+            {% else %}btn-sell-other{% endif %}"
+            {% if product.stock == 0 %}disabled{% endif %}
+            onclick="openSellModal({{ product.id }}, '{{ product.name|escapejs }}', '{{ product.network|title|escapejs }}', 'R{{ product.value }}', 'R{{ product.price }}')">
+            <i class="fas fa-bolt"></i>
+            {% if product.stock == 0 %}Out of Stock{% else %}Quick Sell{% endif %}
+          </button>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty-state">
+      <i class="fas fa-sim-card"></i>
+      <p>No airtime products available.<br>
+        {% if is_manager %}<a href="{% url 'airtime_management' %}" style="color:#a78bfa;">Add products</a> to get started.{% else %}Contact a manager to add products.{% endif %}
+      </p>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- Manager: Pending Approvals & Requests -->
+  {% if is_manager %}
+  <div class="manager-grid">
+
+    <!-- Pending Sales -->
+    <div class="section-card">
+      <div class="section-header">
+        <div>
+          <h2 class="section-title"><i class="fas fa-clock" style="color:#f59e0b;margin-right:0.5rem;"></i>Pending Sales</h2>
+          <p class="section-sub">Sales awaiting your approval</p>
+        </div>
+        <a href="{% url 'airtime_sales' %}?status=pending" class="btn btn-ghost btn-sm">View All</a>
+      </div>
+      {% if pending_sales %}
+      <div class="table-wrap">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Product</th>
+              <th>Phone</th>
+              <th>Amount</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for sale in pending_sales|slice:":8" %}
+            <tr>
+              <td style="color:rgba(255,255,255,0.45);">#{{ sale.id }}</td>
+              <td>{{ sale.airtime_product.name }}</td>
+              <td>{{ sale.customer_phone }}</td>
+              <td style="color:#34d399;font-weight:600;">R{{ sale.total_price }}</td>
+              <td>
+                <div style="display:flex;gap:0.4rem;">
+                  <a href="{% url 'approve_airtime_sale' sale.id %}" class="btn btn-success btn-sm"><i class="fas fa-check"></i></a>
+                  <a href="{% url 'reject_airtime_sale' sale.id %}" class="btn btn-sm" style="background:rgba(239,68,68,0.15);color:#fca5a5;border:1px solid rgba(239,68,68,0.3);"><i class="fas fa-times"></i></a>
+                </div>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <div class="empty-state" style="padding:2rem 1rem;">
+        <i class="fas fa-check-circle" style="color:#10b981;"></i>
+        <p>No pending sales. All caught up!</p>
+      </div>
+      {% endif %}
+    </div>
+
+    <!-- Airtime Requests -->
+    <div class="section-card">
+      <div class="section-header">
+        <div>
+          <h2 class="section-title"><i class="fas fa-inbox" style="color:#6366f1;margin-right:0.5rem;"></i>Airtime Requests</h2>
+          <p class="section-sub">Stock requests from cashiers</p>
+        </div>
+        <a href="{% url 'airtime_requests_management' %}" class="btn btn-ghost btn-sm">View All</a>
+      </div>
+      {% if airtime_requests %}
+      <div class="table-wrap">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Product</th>
+              <th>By</th>
+              <th>Qty</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for req in airtime_requests|slice:":8" %}
+            <tr>
+              <td style="color:rgba(255,255,255,0.45);">#{{ req.id }}</td>
+              <td>{{ req.product.name }}</td>
+              <td>{{ req.requested_by.get_full_name|default:req.requested_by.username }}</td>
+              <td>{{ req.quantity }}</td>
+              <td>
+                <span class="badge
+                  {% if req.status == 'pending' %}badge-pending
+                  {% elif req.status == 'approved' %}badge-approved
+                  {% elif req.status == 'rejected' %}badge-rejected
+                  {% else %}badge-completed{% endif %}">
+                  {{ req.status|title }}
+                </span>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <div class="empty-state" style="padding:2rem 1rem;">
+        <i class="fas fa-inbox"></i>
+        <p>No airtime requests at the moment.</p>
+      </div>
+      {% endif %}
+    </div>
+
+  </div><!-- /manager-grid -->
+  {% endif %}
+
+</div><!-- /page-wrap -->
+
+<!-- Quick Sell Modal -->
+<div class="modal-overlay" id="sellModal">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+    <div class="modal-header">
+      <span class="modal-title" id="modalTitle"><i class="fas fa-bolt" style="color:#a78bfa;margin-right:0.5rem;"></i>Quick Sell</span>
+      <button class="modal-close" onclick="closeSellModal()" aria-label="Close">&times;</button>
+    </div>
+    <div class="modal-product-info">
+      <div class="label">Product</div>
+      <div class="value" id="modalProductName">—</div>
+      <div style="display:flex;gap:1.5rem;margin-top:0.65rem;">
+        <div>
+          <div class="label">Network</div>
+          <div class="value" id="modalNetwork">—</div>
+        </div>
+        <div>
+          <div class="label">Value</div>
+          <div class="value" id="modalValue">—</div>
+        </div>
+        <div>
+          <div class="label">Price</div>
+          <div class="value" id="modalPrice">—</div>
+        </div>
+      </div>
+    </div>
+    <form id="sellForm" onsubmit="submitSell(event)">
+      {% csrf_token %}
+      <input type="hidden" id="modalProductId" name="product_id" value="">
+      <div class="form-group">
+        <label class="form-label" for="customerPhone">Customer Phone Number <span style="color:#ef4444;">*</span></label>
+        <input class="form-input" type="tel" id="customerPhone" name="customer_phone" placeholder="e.g. 0821234567" required pattern="[0-9]{10}" maxlength="15">
+      </div>
+      <div id="modalFeedback" class="modal-feedback"></div>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-ghost" onclick="closeSellModal()">Cancel</button>
+        <button type="submit" class="btn btn-primary" id="modalSubmitBtn"><i class="fas fa-paper-plane"></i> Confirm Sale</button>
+      </div>
+    </form>
+  </div>
 </div>
-{% endblock %}
 
-{% block extra_js %}
-<script src="{% static 'nano/airtime.js' %}"></script>
-{% endblock %}
+<script>
+function filterNetwork(el, network) {
+  document.querySelectorAll('.net-pill').forEach(p => p.classList.remove('active'));
+  el.classList.add('active');
+  document.querySelectorAll('.product-card').forEach(card => {
+    if (network === 'all') {
+      card.style.display = '';
+    } else {
+      const cn = card.dataset.network.replace('_', '');
+      card.style.display = (cn === network.replace('_', '')) ? '' : 'none';
+    }
+  });
+}
 
+function openSellModal(id, name, network, value, price) {
+  document.getElementById('modalProductId').value = id;
+  document.getElementById('modalProductName').textContent = name;
+  document.getElementById('modalNetwork').textContent = network;
+  document.getElementById('modalValue').textContent = value;
+  document.getElementById('modalPrice').textContent = price;
+  document.getElementById('customerPhone').value = '';
+  const fb = document.getElementById('modalFeedback');
+  fb.className = 'modal-feedback';
+  fb.textContent = '';
+  document.getElementById('modalSubmitBtn').disabled = false;
+  document.getElementById('sellModal').classList.add('open');
+  setTimeout(() => document.getElementById('customerPhone').focus(), 100);
+}
+
+function closeSellModal() {
+  document.getElementById('sellModal').classList.remove('open');
+}
+
+document.getElementById('sellModal').addEventListener('click', function(e) {
+  if (e.target === this) closeSellModal();
+});
+
+function getCsrfToken() {
+  return document.querySelector('[name=csrfmiddlewaretoken]').value;
+}
+
+async function submitSell(e) {
+  e.preventDefault();
+  const btn = document.getElementById('modalSubmitBtn');
+  const fb = document.getElementById('modalFeedback');
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+  fb.className = 'modal-feedback';
+  fb.textContent = '';
+
+  const payload = {
+    product_id: document.getElementById('modalProductId').value,
+    customer_phone: document.getElementById('customerPhone').value
+  };
+
+  try {
+    const res = await fetch('/api/airtime/cashier-process/', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCsrfToken() },
+      body: JSON.stringify(payload)
+    });
+    const data = await res.json();
+    if (res.ok && (data.success || data.status === 'ok')) {
+      fb.className = 'modal-feedback success';
+      fb.innerHTML = '<i class="fas fa-check-circle"></i> Sale submitted successfully!';
+      btn.innerHTML = '<i class="fas fa-check"></i> Done';
+      setTimeout(closeSellModal, 1800);
+    } else {
+      throw new Error(data.message || data.error || 'Sale failed. Please try again.');
+    }
+  } catch (err) {
+    fb.className = 'modal-feedback error';
+    fb.innerHTML = '<i class="fas fa-exclamation-circle"></i> ' + err.message;
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fas fa-paper-plane"></i> Confirm Sale';
+  }
+}
+</script>
+{% endblock %}

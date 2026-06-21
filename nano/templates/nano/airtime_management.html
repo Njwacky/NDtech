@@ -1,206 +1,316 @@
 {% extends 'nano/base.html' %}
 {% load static %}
-
-{% block title %}Airtime Management{% endblock %}
+{% block title %}Airtime Management - NDtech POS{% endblock %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="{% static 'nano/airtime.css' %}">
+<style>
+  .page-wrap { padding: 2rem 1.5rem; max-width: 1400px; margin: 0 auto; }
+
+  /* Page Header */
+  .page-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 2rem; flex-wrap: wrap; gap: 1rem; }
+  .page-header-left { display: flex; align-items: center; gap: 1rem; }
+  .page-header-icon { width: 52px; height: 52px; background: linear-gradient(135deg, #7c3aed, #6d28d9); border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 1.4rem; color: #fff; flex-shrink: 0; }
+  .page-header-title { font-size: 1.6rem; font-weight: 700; color: #fff; margin: 0; }
+  .page-header-sub { font-size: 0.85rem; color: rgba(255,255,255,0.5); margin: 0; }
+  .page-header-actions { display: flex; gap: 0.75rem; flex-wrap: wrap; }
+
+  /* Buttons */
+  .btn { display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.55rem 1.1rem; border-radius: 10px; font-size: 0.85rem; font-weight: 600; cursor: pointer; border: none; text-decoration: none; transition: all 0.2s; }
+  .btn-primary { background: linear-gradient(135deg, #7c3aed, #6d28d9); color: #fff; }
+  .btn-primary:hover { opacity: 0.88; transform: translateY(-1px); }
+  .btn-ghost { background: transparent; color: rgba(255,255,255,0.7); border: 1px solid rgba(255,255,255,0.2); }
+  .btn-ghost:hover { background: rgba(255,255,255,0.07); color: #fff; }
+  .btn-success { background: linear-gradient(135deg, #10b981, #059669); color: #fff; }
+  .btn-success:hover { opacity: 0.88; }
+  .btn-danger { background: linear-gradient(135deg, #ef4444, #dc2626); color: #fff; }
+  .btn-danger:hover { opacity: 0.88; }
+  .btn-sm { padding: 0.35rem 0.75rem; font-size: 0.78rem; }
+
+  /* Section */
+  .section-card { background: rgba(255,255,255,0.05); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.12); border-radius: 16px; padding: 1.5rem; margin-bottom: 2rem; }
+  .section-title { font-size: 1.05rem; font-weight: 600; color: #fff; margin: 0 0 0.25rem 0; }
+  .section-sub { font-size: 0.8rem; color: rgba(255,255,255,0.45); margin: 0 0 1.25rem 0; }
+  .section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.25rem; flex-wrap: wrap; gap: 0.75rem; }
+
+  /* Table */
+  .data-table { width: 100%; border-collapse: collapse; }
+  .data-table th { padding: 0.7rem 1rem; font-size: 0.72rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: rgba(255,255,255,0.45); text-align: left; border-bottom: 1px solid rgba(255,255,255,0.08); }
+  .data-table td { padding: 0.8rem 1rem; font-size: 0.85rem; color: rgba(255,255,255,0.8); border-bottom: 1px solid rgba(255,255,255,0.05); vertical-align: middle; }
+  .data-table tr:last-child td { border-bottom: none; }
+  .data-table tbody tr:hover td { background: rgba(255,255,255,0.04); }
+  .table-wrap { overflow-x: auto; }
+
+  /* Status badges */
+  .badge { display: inline-flex; align-items: center; padding: 0.22rem 0.65rem; border-radius: 999px; font-size: 0.7rem; font-weight: 600; }
+  .badge-active { background: rgba(16,185,129,0.15); color: #34d399; border: 1px solid rgba(16,185,129,0.3); }
+  .badge-inactive { background: rgba(239,68,68,0.15); color: #fca5a5; border: 1px solid rgba(239,68,68,0.3); }
+  .badge-airtime { background: rgba(16,185,129,0.15); color: #34d399; border: 1px solid rgba(16,185,129,0.3); }
+  .badge-data { background: rgba(99,102,241,0.15); color: #a5b4fc; border: 1px solid rgba(99,102,241,0.3); }
+  .badge-combo { background: rgba(245,158,11,0.15); color: #fcd34d; border: 1px solid rgba(245,158,11,0.3); }
+
+  /* Form */
+  .form-group { margin-bottom: 1rem; }
+  .form-label { display: block; font-size: 0.8rem; font-weight: 500; color: rgba(255,255,255,0.6); margin-bottom: 0.4rem; }
+  .form-input, .form-select { width: 100%; background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.15); border-radius: 10px; padding: 0.65rem 0.9rem; color: #fff; font-size: 0.9rem; outline: none; transition: border-color 0.2s; box-sizing: border-box; }
+  .form-input:focus, .form-select:focus { border-color: #7c3aed; background: rgba(124,58,237,0.1); }
+  .form-select { cursor: pointer; }
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+
+  /* Modal */
+  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); backdrop-filter: blur(4px); z-index: 1000; align-items: center; justify-content: center; padding: 1rem; }
+  .modal-overlay.open { display: flex; }
+  .modal { background: #1a1030; border: 1px solid rgba(255,255,255,0.15); border-radius: 20px; padding: 2rem; width: 100%; max-width: 500px; animation: modalIn 0.2s ease; }
+  @keyframes modalIn { from { opacity: 0; transform: scale(0.94) translateY(10px); } to { opacity: 1; transform: scale(1) translateY(0); } }
+  .modal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem; }
+  .modal-title { font-size: 1.1rem; font-weight: 700; color: #fff; }
+  .modal-close { background: none; border: none; color: rgba(255,255,255,0.5); font-size: 1.2rem; cursor: pointer; padding: 0.25rem; line-height: 1; }
+  .modal-close:hover { color: #fff; }
+  .modal-actions { display: flex; gap: 0.75rem; margin-top: 1.5rem; }
+  .modal-actions .btn { flex: 1; justify-content: center; }
+
+  /* Empty state */
+  .empty-state { text-align: center; padding: 3rem 1rem; color: rgba(255,255,255,0.35); }
+  .empty-state i { font-size: 2.5rem; margin-bottom: 0.75rem; display: block; }
+  .empty-state p { margin: 0; font-size: 0.9rem; }
+
+  @media (max-width: 768px) {
+    .page-wrap { padding: 1rem; }
+    .page-header { flex-direction: column; align-items: flex-start; }
+    .page-header-actions { width: 100%; }
+    .page-header-actions .btn { flex: 1; justify-content: center; }
+    .form-row { grid-template-columns: 1fr; }
+    .data-table th, .data-table td { padding: 0.6rem 0.65rem; font-size: 0.8rem; }
+  }
+</style>
 {% endblock %}
 
 {% block content %}
-<div class="container-fluid">
-  <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
-    <div>
-      <h2 class="mb-0"><i class="fas fa-cogs"></i> Airtime Management</h2>
-      <div class="text-muted small">Add products, update stock, and toggle active status.</div>
+<div class="page-wrap">
+
+  <!-- Page Header -->
+  <div class="page-header">
+    <div class="page-header-left">
+      <div class="page-header-icon"><i class="fas fa-cog"></i></div>
+      <div>
+        <h1 class="page-header-title">Airtime Management</h1>
+        <p class="page-header-sub">Add, update, and manage airtime products</p>
+      </div>
     </div>
-    <div class="d-flex gap-2 flex-wrap">
-      <a class="btn btn-outline-primary" href="{% url 'airtime_dashboard' %}">
-        <i class="fas fa-tachometer-alt"></i> Dashboard
-      </a>
-      <a class="btn btn-outline-primary" href="{% url 'airtime_sales' %}">
-        <i class="fas fa-shopping-cart"></i> Sales
-      </a>
-      <a class="btn btn-outline-primary" href="{% url 'airtime_requests_management' %}">
-        <i class="fas fa-clipboard-list"></i> Requests
-      </a>
+    <div class="page-header-actions">
+      <a href="{% url 'airtime_dashboard' %}" class="btn btn-ghost"><i class="fas fa-arrow-left"></i> Back to Dashboard</a>
+      <a href="{% url 'airtime_sales' %}" class="btn btn-ghost"><i class="fas fa-list"></i> Sales Records</a>
+      <button class="btn btn-primary" onclick="openAddModal()"><i class="fas fa-plus"></i> Add Product</button>
     </div>
   </div>
 
-  <div class="row g-3">
-    <div class="col-12 col-xl-5">
-      <div class="card shadow-sm mb-3">
-        <div class="card-header fw-bold"><i class="fas fa-plus-circle"></i> Add Product</div>
-        <div class="card-body">
-          <form method="post">
-            {% csrf_token %}
-            <input type="hidden" name="mode" value="add_product">
-
-            <div class="mb-2">
-              <label class="form-label">Name</label>
-              <input class="form-control" name="name" required>
-            </div>
-
-            <div class="row g-2">
-              <div class="col-12 col-md-6">
-                <label class="form-label">Network</label>
-                <select class="form-select" name="network" required>
-                  <option value="" selected disabled>Select</option>
-                  <option value="mtn">MTN</option>
-                  <option value="vodacom">Vodacom</option>
-                  <option value="cellc">Cell C</option>
-                  <option value="telkom">Telkom</option>
-                  <option value="other">Other</option>
-                </select>
-              </div>
-              <div class="col-12 col-md-6">
-                <label class="form-label">Type</label>
-                <select class="form-select" name="airtime_type" required>
-                  <option value="" selected disabled>Select</option>
-                  <option value="airtime">Airtime</option>
-                  <option value="data">Data</option>
-                  <option value="electricity">Electricity</option>
-                </select>
-              </div>
-            </div>
-
-            <div class="row g-2 mt-0">
-              <div class="col-12 col-md-4">
-                <label class="form-label">Value</label>
-                <input class="form-control" name="value" inputmode="decimal" required>
-              </div>
-              <div class="col-12 col-md-4">
-                <label class="form-label">Price</label>
-                <input class="form-control" name="price" inputmode="decimal" required>
-              </div>
-              <div class="col-12 col-md-4">
-                <label class="form-label">Stock</label>
-                <input class="form-control" name="stock" type="number" min="0" required>
-              </div>
-            </div>
-
-            <div class="mt-2">
-              <label class="form-label">Description (optional)</label>
-              <textarea class="form-control" name="description" rows="2"></textarea>
-            </div>
-
-            <div class="mt-3">
-              <button class="btn btn-primary" type="submit">
-                <i class="fas fa-save"></i> Create
-              </button>
-            </div>
-          </form>
-        </div>
-      </div>
-
-      <div class="card shadow-sm">
-        <div class="card-header fw-bold"><i class="fas fa-sync"></i> Update Stock / Toggle Status</div>
-        <div class="card-body">
-          <form method="post" class="mb-3">
-            {% csrf_token %}
-            <input type="hidden" name="mode" value="update_stock">
-
-            <div class="mb-2">
-              <label class="form-label">Product</label>
-              <select class="form-select" name="product_id" required>
-                <option value="" selected disabled>Select</option>
-                {% for p in airtime_products %}
-                  <option value="{{ p.id }}">{{ p.name }} — Stock {{ p.stock }}</option>
-                {% endfor %}
-              </select>
-            </div>
-
-            <div class="row g-2">
-              <div class="col-12 col-md-6">
-                <label class="form-label">Quantity to add</label>
-                <input class="form-control" name="quantity" type="number" min="0" required>
-              </div>
-              <div class="col-12 col-md-6 d-flex align-items-end">
-                <button class="btn btn-outline-primary w-100" type="submit">
-                  <i class="fas fa-plus"></i> Add Stock
-                </button>
-              </div>
-            </div>
-          </form>
-
-          <form method="post">
-            {% csrf_token %}
-            <input type="hidden" name="mode" value="toggle_status">
-
-            <div class="row g-2">
-              <div class="col-12">
-                <label class="form-label">Product</label>
-                <select class="form-select" name="product_id" required>
-                  <option value="" selected disabled>Select</option>
-                  {% for p in airtime_products %}
-                    <option value="{{ p.id }}">{{ p.name }} — {% if p.is_active %}active{% else %}inactive{% endif %}</option>
-                  {% endfor %}
-                </select>
-              </div>
-              <div class="col-12 col-md-6">
-                <label class="form-label">Status</label>
-                <select class="form-select" name="status" required>
-                  <option value="active">Active</option>
-                  <option value="inactive">Inactive</option>
-                </select>
-              </div>
-              <div class="col-12 col-md-6 d-flex align-items-end">
-                <button class="btn btn-outline-secondary w-100" type="submit">
-                  <i class="fas fa-toggle-on"></i> Apply
-                </button>
-              </div>
-            </div>
-          </form>
-        </div>
+  <!-- Products Table -->
+  <div class="section-card">
+    <div class="section-header">
+      <div>
+        <h2 class="section-title"><i class="fas fa-boxes" style="color:#a78bfa;margin-right:0.5rem;"></i>All Products</h2>
+        <p class="section-sub">Manage your airtime product inventory</p>
       </div>
     </div>
 
-    <div class="col-12 col-xl-7">
-      <div class="card shadow-sm">
-        <div class="card-header fw-bold"><i class="fas fa-list"></i> Products</div>
-        <div class="card-body">
-          {% if airtime_products %}
-          <div class="table-responsive">
-            <table class="table table-sm align-middle">
-              <thead>
-                <tr>
-                  <th>Name</th>
-                  <th>Network</th>
-                  <th>Type</th>
-                  <th class="text-end">Value</th>
-                  <th class="text-end">Price</th>
-                  <th class="text-end">Stock</th>
-                  <th>Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {% for p in airtime_products %}
-                <tr>
-                  <td>{{ p.name }}</td>
-                  <td>{{ p.network }}</td>
-                  <td>{{ p.airtime_type }}</td>
-                  <td class="text-end">{{ p.value }}</td>
-                  <td class="text-end">R{{ p.price }}</td>
-                  <td class="text-end">{{ p.stock }}</td>
-                  <td>
-                    {% if p.is_active %}
-                      <span class="badge bg-success">active</span>
-                    {% else %}
-                      <span class="badge bg-secondary">inactive</span>
-                    {% endif %}
-                  </td>
-                </tr>
-                {% endfor %}
-              </tbody>
-            </table>
-          </div>
-          {% else %}
-            <div class="text-muted">No products yet.</div>
-          {% endif %}
+    {% if airtime_products %}
+    <div class="table-wrap">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Name</th>
+            <th>Network</th>
+            <th>Type</th>
+            <th>Value</th>
+            <th>Price</th>
+            <th>Stock</th>
+            <th>Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for product in airtime_products %}
+          <tr>
+            <td style="color:rgba(255,255,255,0.45);">#{{ product.id }}</td>
+            <td>{{ product.name }}</td>
+            <td>{{ product.network|title }}</td>
+            <td>
+              <span class="badge
+                {% if product.airtime_type == 'airtime' %}badge-airtime
+                {% elif product.airtime_type == 'data' %}badge-data
+                {% else %}badge-combo{% endif %}">
+                {{ product.airtime_type|title }}
+              </span>
+            </td>
+            <td>R{{ product.value }}</td>
+            <td style="color:#34d399;font-weight:600;">R{{ product.price }}</td>
+            <td>{{ product.stock }}</td>
+            <td>
+              <span class="badge {% if product.is_active %}badge-active{% else %}badge-inactive{% endif %}">
+                {% if product.is_active %}Active{% else %}Inactive{% endif %}
+              </span>
+            </td>
+            <td>
+              <div style="display:flex;gap:0.4rem;">
+                <button class="btn btn-ghost btn-sm" onclick="openStockModal({{ product.id }}, '{{ product.name|escapejs }}', {{ product.stock }})" title="Update Stock">
+                  <i class="fas fa-boxes"></i>
+                </button>
+                <button class="btn btn-ghost btn-sm" onclick="toggleStatus({{ product.id }})" title="{% if product.is_active %}Deactivate{% else %}Activate{% endif %}">
+                  <i class="fas fa-{% if product.is_active %}toggle-on{% else %}toggle-off{% endif %}"></i>
+                </button>
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="empty-state">
+      <i class="fas fa-boxes"></i>
+      <p>No airtime products found.<br>Click "Add Product" to get started.</p>
+    </div>
+    {% endif %}
+  </div>
+
+</div>
+
+<!-- Add Product Modal -->
+<div class="modal-overlay" id="addModal">
+  <div class="modal" role="dialog" aria-modal="true">
+    <div class="modal-header">
+      <span class="modal-title"><i class="fas fa-plus" style="color:#a78bfa;margin-right:0.5rem;"></i>Add Airtime Product</span>
+      <button class="modal-close" onclick="closeAddModal()" aria-label="Close">&times;</button>
+    </div>
+    <form method="post" onsubmit="submitAddForm(event)">
+      {% csrf_token %}
+      <input type="hidden" name="mode" value="add_product">
+      <div class="form-group">
+        <label class="form-label" for="name">Product Name <span style="color:#ef4444;">*</span></label>
+        <input class="form-input" type="text" id="name" name="name" placeholder="e.g. Vodacom R10 Airtime" required>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label" for="network">Network <span style="color:#ef4444;">*</span></label>
+          <select class="form-select" id="network" name="network" required>
+            <option value="">Select Network</option>
+            <option value="vodacom">Vodacom</option>
+            <option value="mtn">MTN</option>
+            <option value="telkom">Telkom</option>
+            <option value="cell_c">Cell C</option>
+            <option value="other">Other</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="airtime_type">Type <span style="color:#ef4444;">*</span></label>
+          <select class="form-select" id="airtime_type" name="airtime_type" required>
+            <option value="">Select Type</option>
+            <option value="airtime">Airtime</option>
+            <option value="data">Data</option>
+            <option value="combo">Combo</option>
+          </select>
         </div>
       </div>
-    </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label" for="value">Value (R) <span style="color:#ef4444;">*</span></label>
+          <input class="form-input" type="number" id="value" name="value" placeholder="e.g. 10" step="0.01" min="0" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="price">Sell Price (R) <span style="color:#ef4444;">*</span></label>
+          <input class="form-input" type="number" id="price" name="price" placeholder="e.g. 10.50" step="0.01" min="0" required>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="stock">Initial Stock <span style="color:#ef4444;">*</span></label>
+        <input class="form-input" type="number" id="stock" name="stock" placeholder="e.g. 50" min="0" required>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-ghost" onclick="closeAddModal()">Cancel</button>
+        <button type="submit" class="btn btn-primary"><i class="fas fa-plus"></i> Add Product</button>
+      </div>
+    </form>
   </div>
 </div>
-{% endblock %}
 
+<!-- Update Stock Modal -->
+<div class="modal-overlay" id="stockModal">
+  <div class="modal" role="dialog" aria-modal="true">
+    <div class="modal-header">
+      <span class="modal-title"><i class="fas fa-boxes" style="color:#a78bfa;margin-right:0.5rem;"></i>Update Stock</span>
+      <button class="modal-close" onclick="closeStockModal()" aria-label="Close">&times;</button>
+    </div>
+    <form method="post" onsubmit="submitStockForm(event)">
+      {% csrf_token %}
+      <input type="hidden" name="mode" value="update_stock">
+      <input type="hidden" id="stockProductId" name="product_id" value="">
+      <div class="form-group">
+        <label class="form-label">Product</label>
+        <div style="background:rgba(255,255,255,0.05);padding:0.75rem;border-radius:8px;color:#fff;" id="stockProductName">—</div>
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="newStock">New Stock Quantity <span style="color:#ef4444;">*</span></label>
+        <input class="form-input" type="number" id="newStock" name="quantity" placeholder="e.g. 100" min="0" required>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-ghost" onclick="closeStockModal()">Cancel</button>
+        <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Update Stock</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+function openAddModal() {
+  document.getElementById('addModal').classList.add('open');
+}
+
+function closeAddModal() {
+  document.getElementById('addModal').classList.remove('open');
+  document.querySelector('#addModal form').reset();
+}
+
+function openStockModal(productId, productName, currentStock) {
+  document.getElementById('stockProductId').value = productId;
+  document.getElementById('stockProductName').textContent = productName;
+  document.getElementById('newStock').value = currentStock;
+  document.getElementById('stockModal').classList.add('open');
+}
+
+function closeStockModal() {
+  document.getElementById('stockModal').classList.remove('open');
+}
+
+function toggleStatus(productId) {
+  if (!confirm('Are you sure you want to toggle the status of this product?')) return;
+  
+  const form = document.createElement('form');
+  form.method = 'post';
+  form.innerHTML = `
+    <input type="hidden" name="csrfmiddlewaretoken" value="${document.querySelector('[name=csrfmiddlewaretoken]').value}">
+    <input type="hidden" name="mode" value="toggle_status">
+    <input type="hidden" name="product_id" value="${productId}">
+  `;
+  document.body.appendChild(form);
+  form.submit();
+}
+
+document.getElementById('addModal').addEventListener('click', function(e) {
+  if (e.target === this) closeAddModal();
+});
+
+document.getElementById('stockModal').addEventListener('click', function(e) {
+  if (e.target === this) closeStockModal();
+});
+
+function submitAddForm(e) {
+  e.preventDefault();
+  e.target.submit();
+}
+
+function submitStockForm(e) {
+  e.preventDefault();
+  e.target.submit();
+}
+</script>
+{% endblock %}

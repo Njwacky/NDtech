@@ -16,6 +16,7 @@ from .auth_views import (
     sign_in,
     logout_view,
     forgot_password,
+    verify_admin_password,
 )
 
 # ============================================================================
@@ -138,6 +139,7 @@ __all__ = [
     'sign_in',
     'logout_view',
     'forgot_password',
+    'verify_admin_password',
     
     # Dashboard
     'home',

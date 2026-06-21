@@ -1,31 +1,38 @@
-{% extends 'nano/base.html' %}
+{% extends 'nano/base_auth.html' %}
 {% load static %}
 
-{% block title %}Sign In - NDtech{% endblock %}
-
-{% block extra_css %}
-<link rel="stylesheet" href="{% static 'nano/auth.css' %}">
-{% endblock %}
+{% block title %}Sign In - NDtech POS{% endblock %}
 
 {% block content %}
-<div class="auth-container">
-    <h1>Sign In</h1>
-    <form action="{% url 'sign_in' %}" method="post">
-        {% csrf_token %}
-        {% if messages %}
-            {% for message in messages %}
-                <div class="message {{ message.tags }}">{{ message }}</div>
-            {% endfor %}
-        {% endif %}
-        <label for="username">Username:</label>
-        <input type="text" id="username" name="username" required><br><br>
-        <label for="password">Password:</label>
-        <input type="password" id="password" name="password" required><br><br>
-        <button type="submit">Sign In</button>
-    </form>
+  <div class="auth-header">
+    <a class="brand" href="{% url 'home' %}">
+      <img class="brand-logo" src="{% static 'nano/icon-96.png' %}" alt="NDtech" />
+      <span>NDtech POS</span>
+    </a>
+    <h1>Sign in</h1>
+    <p class="muted">Welcome back.</p>
+  </div>
+
+  <form class="auth-form" method="post" action="{% url 'sign_in' %}">
+    {% csrf_token %}
+
+    <label class="field">
+      <span>Username</span>
+      <input name="username" type="text" autocomplete="username" required value="{{ request.POST.username|default:'' }}" />
+    </label>
+
+    <label class="field">
+      <span>Password</span>
+      <input name="password" type="password" autocomplete="current-password" required />
+    </label>
+
+    <button class="btn btn-primary" type="submit">Sign in</button>
+
     <div class="auth-links">
-        <p><a href="{% url 'forgot_password' %}">Forgot Password?</a></p>
-        <p>Don't have an account? <a href="{% url 'register' %}">Register</a></p>
+      <a href="{% url 'register' %}" class="link">Register</a>
+      <span class="dot">•</span>
+      <a href="{% url 'forgot_password' %}" class="link">Forgot password?</a>
     </div>
-</div>
+  </form>
 {% endblock %}
+

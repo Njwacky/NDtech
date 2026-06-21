@@ -1,112 +1,367 @@
 {% extends 'nano/base.html' %}
 {% load static %}
-
-{% block title %}Edit User - NDtech{% endblock %}
+{% block title %}Edit User: {{ user.username }} - NDtech POS{% endblock %}
 
 {% block extra_css %}
 <style>
-    /* Additional styles specific to edit user page can go here */
+  /* ── Layout ────────────────────────────────────────────────── */
+  .page-wrap {
+    padding: 2rem 1.5rem;
+    max-width: 680px;
+    margin: 0 auto;
+  }
+
+  /* ── Back link ─────────────────────────────────────────────── */
+  .back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: rgba(255,255,255,0.5);
+    font-size: 0.85rem;
+    text-decoration: none;
+    margin-bottom: 1.5rem;
+    transition: color 0.2s;
+  }
+  .back-link:hover { color: #fff; text-decoration: none; }
+
+  /* ── Card ──────────────────────────────────────────────────── */
+  .card {
+    background: rgba(255,255,255,0.05);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 16px;
+    overflow: hidden;
+  }
+
+  /* ── Card Header ───────────────────────────────────────────── */
+  .card-header {
+    padding: 1.4rem 1.6rem 1.2rem;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+  .card-header-icon {
+    width: 46px;
+    height: 46px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #7c3aed, #6d28d9);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    color: #fff;
+    flex-shrink: 0;
+  }
+  .card-title    { font-size: 1.15rem; font-weight: 700; color: #fff; margin: 0; }
+  .card-subtitle { font-size: 0.8rem; color: rgba(255,255,255,0.45); margin: 0.2rem 0 0; }
+
+  /* ── Form Body ─────────────────────────────────────────────── */
+  .card-body { padding: 1.6rem; }
+
+  .form-section-title {
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.35);
+    margin: 0 0 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+  }
+
+  .form-group { margin-bottom: 1.2rem; }
+  .form-group label {
+    display: block;
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: rgba(255,255,255,0.7);
+    margin-bottom: 0.4rem;
+  }
+  .form-control {
+    width: 100%;
+    padding: 0.65rem 0.9rem;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 10px;
+    color: #fff;
+    font-size: 0.875rem;
+    outline: none;
+    transition: border-color 0.2s, background 0.2s;
+    box-sizing: border-box;
+    -webkit-appearance: none;
+  }
+  .form-control::placeholder { color: rgba(255,255,255,0.25); }
+  .form-control:focus {
+    border-color: rgba(124,58,237,0.7);
+    background: rgba(255,255,255,0.09);
+    box-shadow: 0 0 0 3px rgba(124,58,237,0.18);
+  }
+  select.form-control { cursor: pointer; }
+  select.form-control option { background: #1e1b2e; color: #fff; }
+
+  /* ── Collapsible Password Section ──────────────────────────── */
+  .collapse-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    width: 100%;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 10px;
+    padding: 0.75rem 1rem;
+    cursor: pointer;
+    color: rgba(255,255,255,0.75);
+    font-size: 0.875rem;
+    font-weight: 600;
+    margin: 1.4rem 0 0;
+    transition: background 0.2s;
+  }
+  .collapse-toggle:hover { background: rgba(255,255,255,0.08); }
+  .collapse-toggle .chevron { transition: transform 0.25s; color: rgba(255,255,255,0.4); }
+  .collapse-toggle.open .chevron { transform: rotate(180deg); }
+
+  .collapse-body {
+    display: none;
+    padding: 1.2rem 0 0;
+  }
+  .collapse-body.open { display: block; }
+
+  .pw-hint {
+    font-size: 0.78rem;
+    color: rgba(255,255,255,0.35);
+    margin: -0.6rem 0 0.8rem;
+  }
+
+  /* ── Divider ───────────────────────────────────────────────── */
+  .divider { border: none; border-top: 1px solid rgba(255,255,255,0.07); margin: 1.4rem 0; }
+
+  /* ── Form Actions ──────────────────────────────────────────── */
+  .form-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+    padding-top: 0.4rem;
+  }
+  .btn-primary {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.65rem 1.4rem;
+    background: linear-gradient(135deg, #7c3aed, #6d28d9);
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    font-size: 0.875rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity 0.2s, transform 0.15s;
+  }
+  .btn-primary:hover { opacity: 0.88; transform: translateY(-1px); }
+
+  .btn-cancel {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.65rem 1.1rem;
+    background: transparent;
+    color: rgba(255,255,255,0.55);
+    border: 1px solid rgba(255,255,255,0.14);
+    border-radius: 10px;
+    font-size: 0.875rem;
+    font-weight: 600;
+    text-decoration: none;
+    transition: background 0.2s, color 0.2s;
+  }
+  .btn-cancel:hover { background: rgba(255,255,255,0.07); color: #fff; text-decoration: none; }
+
+  /* ── Messages ──────────────────────────────────────────────── */
+  .msg { padding: 0.75rem 1rem; border-radius: 10px; font-size: 0.85rem; margin-bottom: 1.2rem; display: flex; gap: 0.6rem; align-items: flex-start; }
+  .msg-error   { background: rgba(239,68,68,0.1);  border: 1px solid rgba(239,68,68,0.3);  color: #fca5a5; }
+  .msg-success { background: rgba(16,185,129,0.1); border: 1px solid rgba(16,185,129,0.3); color: #6ee7b7; }
+
+  /* ── Responsive ────────────────────────────────────────────── */
+  @media (max-width: 768px) {
+    .page-wrap { padding: 1rem; }
+    .card-body  { padding: 1.2rem; }
+    .form-actions { flex-direction: column; }
+    .btn-primary, .btn-cancel { width: 100%; justify-content: center; }
+  }
+  @media (max-width: 480px) {
+    .card-header { padding: 1rem 1.1rem; }
+    .card-title  { font-size: 1rem; }
+  }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="edit-user-form">
-    <h2><i class="fas fa-user-edit"></i> Edit User</h2>
-    
-    <form method="post">
+<div class="page-wrap">
+
+  <!-- Back link -->
+  <a href="{% url 'manage_users' %}" class="back-link">
+    <i class="fas fa-arrow-left"></i> Back to Manage Users
+  </a>
+
+  <div class="card">
+    <!-- Card Header -->
+    <div class="card-header">
+      <div class="card-header-icon"><i class="fas fa-user-pen"></i></div>
+      <div>
+        <h1 class="card-title">Edit User: <span style="color:#a78bfa;">{{ user.username }}</span></h1>
+        <p class="card-subtitle">Update account info and permissions</p>
+      </div>
+    </div>
+
+    <!-- Card Body -->
+    <div class="card-body">
+
+      <!-- Django messages -->
+      {% if messages %}
+        {% for message in messages %}
+          <div class="msg msg-{% if message.tags == 'error' %}error{% else %}success{% endif %}">
+            <i class="fas {% if message.tags == 'error' %}fa-circle-exclamation{% else %}fa-circle-check{% endif %}"></i>
+            <span>{{ message }}</span>
+          </div>
+        {% endfor %}
+      {% endif %}
+
+      <form method="post" action="{% url 'edit_user' user.id %}" autocomplete="off" novalidate>
         {% csrf_token %}
-        
-        <div class="form-group">
-            <label for="username">
-                <i class="fas fa-user"></i> Username
-            </label>
-            <input type="text" 
-                   id="username" 
-                   name="username" 
-                   value="{{ user.username }}" 
-                   required>
-        </div>
+
+        <!-- ── Section: Account Info ── -->
+        <p class="form-section-title"><i class="fas fa-circle-info" style="margin-right:.4rem;color:#7c3aed;"></i>Account Information</p>
 
         <div class="form-group">
-            <label for="email">
-                <i class="fas fa-envelope"></i> Email
-            </label>
-            <input type="email" 
-                   id="email" 
-                   name="email" 
-                   value="{{ user.email }}" 
-                   required>
+          <label for="id_username">Username</label>
+          <input
+            type="text"
+            id="id_username"
+            name="username"
+            class="form-control"
+            value="{{ user.username }}"
+            required
+            autocomplete="off"
+          >
         </div>
 
         <div class="form-group">
-            <label for="role">
-                <i class="fas fa-user-tag"></i> Role
-            </label>
-            <select id="role" name="role" required>
-                <option value="admin" {% if user.userprofile.role == 'admin' %}selected{% endif %}>Admin</option>
-                <option value="manager" {% if user.userprofile.role == 'manager' %}selected{% endif %}>Manager</option>
-                <option value="cashier" {% if user.userprofile.role == 'cashier' %}selected{% endif %}>Cashier</option>
-            </select>
+          <label for="id_email">Email Address</label>
+          <input
+            type="email"
+            id="id_email"
+            name="email"
+            class="form-control"
+            value="{{ user.email }}"
+            autocomplete="off"
+          >
         </div>
 
-        <div class="password-section">
-            <h3><i class="fas fa-lock"></i> Change Password (Optional)</h3>
-            <p class="password-note">Leave blank if you don't want to change the password</p>
-            
-            {% if request.user.id == user.id %}
-            <!-- User editing their own account - requires current password -->
-            <div class="form-group">
-                <label for="current_password">
-                    <i class="fas fa-key"></i> Current Password
-                </label>
-                <input type="password" 
-                       id="current_password" 
-                       name="current_password" 
-                       placeholder="Enter current password to verify">
-                <small class="form-text">Required to change your own password</small>
-            </div>
-            {% else %}
-            <!-- Admin editing another user - no current password needed -->
-            <div class="admin-password-note">
-                <div class="alert alert-info">
-                    <i class="fas fa-info-circle"></i>
-                    <strong>Admin Privilege:</strong> As an admin, you can change this user's password without knowing their current password.
-                </div>
-            </div>
-            {% endif %}
-
-            <div class="form-group">
-                <label for="new_password">
-                    <i class="fas fa-lock"></i> New Password
-                </label>
-                <input type="password" 
-                       id="new_password" 
-                       name="new_password" 
-                       placeholder="Enter new password (min 6 characters)">
-                <small class="form-text">Minimum 6 characters</small>
-            </div>
-
-            <div class="form-group">
-                <label for="confirm_password">
-                    <i class="fas fa-lock"></i> Confirm New Password
-                </label>
-                <input type="password" 
-                       id="confirm_password" 
-                       name="confirm_password" 
-                       placeholder="Confirm new password">
-            </div>
+        <div class="form-group">
+          <label for="id_role">Role</label>
+          <select id="id_role" name="role" class="form-control">
+            <option value="superuser" {% if current_role == 'superuser' %}selected{% endif %}>Superuser</option>
+            <option value="admin"     {% if current_role == 'admin'     %}selected{% endif %}>Admin</option>
+            <option value="manager"   {% if current_role == 'manager'   %}selected{% endif %}>Manager</option>
+            <option value="cashier"   {% if current_role == 'cashier'   %}selected{% endif %}>Cashier</option>
+          </select>
         </div>
 
+        <!-- ── Collapsible: Change Password ── -->
+        <button type="button" class="collapse-toggle" id="pw-toggle">
+          <span><i class="fas fa-lock" style="margin-right:.5rem;color:#7c3aed;"></i>Change Password</span>
+          <i class="fas fa-chevron-down chevron"></i>
+        </button>
+
+        <div class="collapse-body" id="pw-body">
+          <p class="pw-hint">Leave blank to keep the current password.</p>
+
+          <div class="form-group">
+            <label for="id_current_password">Current Password</label>
+            <input
+              type="password"
+              id="id_current_password"
+              name="current_password"
+              class="form-control"
+              placeholder="Enter current password"
+              autocomplete="current-password"
+            >
+          </div>
+
+          <div class="form-group">
+            <label for="id_new_password">New Password</label>
+            <input
+              type="password"
+              id="id_new_password"
+              name="new_password"
+              class="form-control"
+              placeholder="Enter new password"
+              autocomplete="new-password"
+            >
+          </div>
+
+          <div class="form-group">
+            <label for="id_confirm_password">Confirm New Password</label>
+            <input
+              type="password"
+              id="id_confirm_password"
+              name="confirm_password"
+              class="form-control"
+              placeholder="Re-enter new password"
+              autocomplete="new-password"
+            >
+            <p id="pw-match-msg" style="font-size:0.78rem;margin:.4rem 0 0;display:none;"></p>
+          </div>
+        </div>
+
+        <hr class="divider">
+
+        <!-- ── Actions ── -->
         <div class="form-actions">
-            <button type="submit" class="btn-submit">
-                <i class="fas fa-save"></i> Update User
-            </button>
-            <a href="{% url 'manage_users' %}" class="btn-back">
-                <i class="fas fa-arrow-left"></i> Back to Manage Users
-            </a>
+          <button type="submit" class="btn-primary">
+            <i class="fas fa-floppy-disk"></i> Save Changes
+          </button>
+          <a href="{% url 'manage_users' %}" class="btn-cancel">
+            <i class="fas fa-xmark"></i> Cancel
+          </a>
         </div>
-    </form>
+
+      </form>
+    </div>
+  </div>
 </div>
 
-<script src="{% static 'nano/edit_user.js' %}"></script>
+<script>
+(function () {
+  /* ── Collapsible password section ── */
+  const toggle = document.getElementById('pw-toggle');
+  const body   = document.getElementById('pw-body');
+
+  toggle.addEventListener('click', () => {
+    const open = body.classList.toggle('open');
+    toggle.classList.toggle('open', open);
+  });
+
+  /* ── Password match feedback ── */
+  const newPw  = document.getElementById('id_new_password');
+  const confPw = document.getElementById('id_confirm_password');
+  const msg    = document.getElementById('pw-match-msg');
+
+  function checkMatch() {
+    if (!confPw.value) { msg.style.display = 'none'; return; }
+    if (newPw.value === confPw.value) {
+      msg.textContent = '✓ Passwords match';
+      msg.style.color = '#34d399';
+    } else {
+      msg.textContent = '✗ Passwords do not match';
+      msg.style.color = '#f87171';
+    }
+    msg.style.display = 'block';
+  }
+
+  newPw.addEventListener('input', checkMatch);
+  confPw.addEventListener('input', checkMatch);
+})();
+</script>
 {% endblock %}

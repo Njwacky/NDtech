@@ -86,30 +86,37 @@ class EnhancedSecurityMiddleware(MiddlewareMixin):
     def _check_for_sensitive_data_leakage(self, request, response):
         """Check if response contains sensitive data that shouldn't be exposed"""
         try:
+            workspace = None
+            try:
+                if request.user.is_authenticated and hasattr(request.user, 'userprofile'):
+                    workspace = getattr(request.user.userprofile, 'workspace', None)
+            except Exception:
+                workspace = None
+
             if hasattr(response, 'content'):
                 content = response.content.decode('utf-8', errors='ignore')
-                
+
                 import re
                 for idx, pattern in enumerate(self.sensitive_patterns):
                     if re.search(pattern, content, re.IGNORECASE):
-                        # Log potential data leakage
                         SecurityAuditLog.objects.create(
-                            user=request.user if request.user.is_authenticated else None,
+                            user=request.user if getattr(request.user, 'is_authenticated', False) else None,
                             event_type='suspicious_activity',
                             severity='warning',
                             description=f"Potential sensitive data leakage detected in response to {request.path}",
                             ip_address=self._get_client_ip(request),
                             user_agent=request.META.get('HTTP_USER_AGENT', ''),
-                            request_data=AuditSanitizer.sanitize_request_data(dict(request.POST)),
+                            request_data=AuditSanitizer.sanitize_request_data(dict(getattr(request, 'POST', {}) or {})),
                             detection_method='enhanced_middleware',
+                            workspace=workspace
                         )
-                        
-                        # Log warning without exposing the pattern itself
+
                         logger.warning(f"Sensitive data pattern #{idx + 1} detected in response to {request.path}")
                         break
-        
+
         except Exception as e:
             logger.error(f"Error checking for data leakage: {str(e)}")
+
     
     def _get_client_ip(self, request):
         """Get client IP address"""
@@ -214,17 +221,24 @@ class PrivacyComplianceMiddleware(MiddlewareMixin):
                 if header in response:
                     del response[header]
             
-            # Ensure no sensitive data in debug responses
-            if settings.DEBUG and hasattr(response, 'content'):
-                content = response.content.decode('utf-8', errors='ignore')
-                if 'DEBUG' in content or 'settings' in content:
-                    # Replace debug information with generic message
-                    sanitized_content = json.dumps({
-                        'error': 'Debug information not available in production',
-                        'status': 'error'
-                    })
-                    response.content = sanitized_content.encode('utf-8')
-                    response['Content-Length'] = len(response.content)
+            # Sanitize only real Django debug/500 error pages.
+            # Avoid scanning/rewriting normal HTML pages (would break the app).
+            # Only sanitize in production mode (when DEBUG is False)
+            if not settings.DEBUG:
+                try:
+                    if hasattr(response, 'content') and getattr(response, 'status_code', 200) >= 500:
+                        content = response.content.decode('utf-8', errors='ignore').lower()
+                        if 'server error' in content or 'traceback' in content or '<title>server error' in content:
+                            sanitized_content = json.dumps({
+                                'error': 'Debug information not available in production',
+                                'status': 'error'
+                            })
+                            response.content = sanitized_content.encode('utf-8')
+                            response['Content-Length'] = len(response.content)
+                except Exception:
+                    # Never fail responses because of sanitization logic.
+                    pass
+
         
         except Exception as e:
             logger.error(f"Error in privacy compliance middleware: {str(e)}")

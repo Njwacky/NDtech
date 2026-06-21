@@ -1,0 +1,139 @@
+:root{
+  --bg:#0b1220;
+  --card:#0f1b33;
+  --muted:#9fb0d0;
+  --text:#e9efff;
+  --primary:#4f8cff;
+  --primary2:#2f6dff;
+  --danger:#ff4f6d;
+  --border:rgba(255,255,255,.10);
+  --shadow: 0 14px 40px rgba(0,0,0,.35);
+  --radius:16px;
+}
+
+*{box-sizing:border-box}
+html,body{height:100%}
+body{
+  margin:0;
+  font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, "Noto Sans", "Helvetica Neue", sans-serif;
+  background: radial-gradient(1200px 600px at 20% 10%, rgba(79,140,255,.22), transparent 55%),
+              radial-gradient(900px 500px at 90% 10%, rgba(47,109,255,.18), transparent 55%),
+              var(--bg);
+  color:var(--text);
+}
+
+.topbar{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  padding:14px 22px;
+  border-bottom:1px solid var(--border);
+  background: rgba(11,18,32,.55);
+  backdrop-filter: blur(8px);
+  position: sticky;
+  top:0;
+  z-index:20;
+}
+.brand{display:flex; gap:10px; align-items:center; text-decoration:none; color:inherit; font-weight:700}
+.brand-logo{width:38px; height:38px}
+.pill{padding:6px 10px; border:1px solid var(--border); border-radius:999px; color:var(--muted)}
+.container{max-width:1100px; margin:0 auto; padding:26px 16px 60px}
+
+.page-head h1{margin:0 0 8px; font-size:28px}
+.muted{color:var(--muted); margin:0}
+
+.grid{display:grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap:14px; margin-top:18px}
+.card{
+  background: rgba(15,27,51,.7);
+  border:1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding:14px;
+}
+
+.product-title{font-weight:700; margin-bottom:10px; line-height:1.2}
+.product-meta{display:flex; gap:8px; align-items:center; justify-content:space-between}
+.category{color:var(--muted); font-size:12px}
+.badge{font-size:12px; padding:4px 8px; border-radius:999px; border:1px solid var(--border)}
+.badge-sale{border-color:rgba(79,140,255,.35); color:#cfe0ff}
+.price{font-size:22px; font-weight:800; margin-top:12px}
+.stock{color:var(--muted); margin-top:6px; font-size:13px}
+
+.btn{
+  display:inline-flex; align-items:center; justify-content:center;
+  gap:10px;
+  padding:10px 14px;
+  border-radius:12px;
+  border:1px solid var(--border);
+  background: transparent;
+  color: var(--text);
+  cursor:pointer;
+  text-decoration:none;
+  font-weight:700;
+}
+.btn-sm{padding:8px 12px; border-radius:10px; font-size:13px}
+.btn-primary{background: linear-gradient(180deg, var(--primary), var(--primary2)); border-color: rgba(79,140,255,.55)}
+.btn-danger{background: linear-gradient(180deg, #ff6b82, var(--danger)); border-color: rgba(255,79,109,.55)}
+.btn-ghost{background: rgba(255,255,255,.04)}
+
+.panel{
+  margin-top:18px;
+  background: rgba(15,27,51,.7);
+  border:1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding:18px;
+}
+.panel-title{margin:0 0 14px; font-size:18px}
+
+.form{display:grid; gap:12px; max-width:520px}
+.form-actions{display:flex; gap:10px; flex-wrap:wrap}
+.field{display:grid; gap:8px}
+.field span{color:var(--muted); font-size:13px}
+input,select{
+  width:100%;
+  background: rgba(0,0,0,.15);
+  border:1px solid var(--border);
+  color:var(--text);
+  padding:10px 12px;
+  border-radius:12px;
+  outline:none;
+}
+select option{
+  background: #0f1b33;
+  color: var(--text);
+}
+
+/* Auth */
+.auth-body{overflow-x:hidden}
+.auth-bg{
+  position:fixed;
+  inset:0;
+  background: url('../auth-bg.jpg') center/cover no-repeat;
+  filter: saturate(1.1);
+  opacity:.20;
+}
+.auth-card-wrap{min-height:100vh; display:flex; align-items:center; justify-content:center; padding:30px 16px; position:relative}
+.auth-card{
+  width:100%;
+  max-width:460px;
+  background: rgba(15,27,51,.86);
+  border:1px solid var(--border);
+  border-radius: 18px;
+  box-shadow: var(--shadow);
+  padding:20px;
+}
+.auth-header{margin-bottom:18px}
+.auth-header h1{margin:10px 0 6px; font-size:26px}
+.auth-form{display:grid; gap:14px}
+.auth-links{display:flex; gap:10px; align-items:center; justify-content:center; margin-top:6px}
+.dot{color:var(--muted)}
+.link{color:#cfe0ff; text-decoration:none}
+.link:hover{text-decoration:underline}
+
+.alert{margin-top:14px; padding:10px 12px; border:1px solid var(--border); border-radius:12px; color:var(--muted)}
+
+.toasts{position:fixed; top:16px; right:16px; display:grid; gap:10px; z-index:50}
+.toast{padding:12px 14px; border-radius:14px; border:1px solid var(--border); background: rgba(15,27,51,.92)}
+.toast-success{border-color: rgba(79,140,255,.35)}
+

@@ -28,7 +28,9 @@ def create_user(request):
         password = request.POST.get('password', '')
         confirm_password = request.POST.get('confirm_password', '')
         role = request.POST.get('role', '')
-        company_name = request.POST.get('company_name', '').strip()
+        # company_name is inherited from the creator — not required as input
+        creator_profile = getattr(request.user, 'userprofile', None)
+        company_name = getattr(creator_profile, 'company_name', '') or ''
 
         errors = {}
 
@@ -73,17 +75,13 @@ def create_user(request):
         if role == 'superuser' and not request.user.is_superuser:
             errors['role'] = 'Only superusers can create other superusers'
 
-        if not company_name:
-            errors['company_name'] = 'Company name is required'
-        elif len(company_name) < 2:
-            errors['company_name'] = 'Company name must be at least 2 characters'
+        # company_name is inherited from the workspace creator — no validation needed here
 
         if errors:
             for field, error in errors.items():
                 messages.error(request, error)
             return render(request, 'nano/create_user.html', {
                 'user_role': user_role,
-                'company_name': company_name
             })
 
         user = User.objects.create_user(username=username, email=email, password=password)
@@ -94,12 +92,28 @@ def create_user(request):
             user.is_staff = True
             user.save()
 
+        # Inherit workspace and company from creator
+        creator_workspace = getattr(creator_profile, 'workspace', None)
+        
+        # Company name rule:
+        # - For the first user (first workspace/admin), company_name is required via sign_up.
+        # - For subsequent cashier/manager/user adds, do NOT require company_name input.
+        # - Always inherit from creator; if missing, fall back to workspace name or NDtech.
+        fallback_company_name = 'NDtech'
+        if creator_workspace and getattr(creator_workspace, 'name', None):
+            fallback_company_name = creator_workspace.name
+        
+        inherited_company_name = getattr(creator_profile, 'company_name', None)
+        profile_company_name = inherited_company_name or company_name or fallback_company_name
+
         # Create or update user profile (handle case where signal already created one)
         profile, created = UserProfile.objects.get_or_create(user=user)
         profile.role = role
         profile.created_by = request.user
-        profile.company_name = company_name
+        profile.company_name = profile_company_name
+        profile.workspace = creator_workspace
         profile.save()
+
 
         messages.success(request, f'User "{username}" created successfully with role "{role}"!')
         return redirect('manage_users')
@@ -116,20 +130,15 @@ def manage_users(request):
     if not (request.user.is_superuser or user_role in ['admin', 'manager']):
         return HttpResponseForbidden("You do not have permission to access this page.")
 
-    # Filter users based on who created them (workspace separation)
+    # Filter users based on workspace separation
+    current_workspace = getattr(request.user.userprofile, 'workspace', None)
+    
     if request.user.is_superuser:
         # Superusers can see all users
         users = User.objects.all().order_by('username')
-    elif user_role == 'admin':
-        # Admins can see all users
-        users = User.objects.all().order_by('username')
-    elif user_role == 'manager':
-        # Managers can only see users they created + themselves
-        users = User.objects.filter(
-            Q(userprofile__created_by=request.user) | Q(id=request.user.id)
-        ).distinct().order_by('username')
     else:
-        users = User.objects.filter(id=request.user.id).order_by('username')
+        # Everyone else only sees users in their own workspace
+        users = User.objects.filter(userprofile__workspace=current_workspace).order_by('username')
 
     # Pagination
     paginator = Paginator(users, 20)

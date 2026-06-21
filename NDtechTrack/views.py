@@ -153,7 +153,8 @@ def system_performance(request):
     # Calculate health indicators
     db_health = SystemPerformance.objects.filter(
         metric_name='db_health_score'
-    ).aggregate(latest=Avg('metric_value'))['latest_score'] or 100
+    ).aggregate(latest_score=Avg('metric_value'))['latest_score'] or 100
+
     
     api_response_time = SystemPerformance.objects.filter(
         metric_name='api_response_time'

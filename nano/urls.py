@@ -12,6 +12,7 @@ urlpatterns = [
     path('sign_up/', views.sign_up, name='sign_up'),
     path('logout/', views.logout_view, name='logout'),
     path('forgot_password/', views.forgot_password, name='forgot_password'),
+    path('verify-admin-password/', views.verify_admin_password, name='verify_admin_password'),
     path('add_stock/', views.add_stock, name='add_stock'),
     path('manage_sales/', views.manage_sales, name='manage_sales'),
     path('create_user/', views.create_user, name='create_user'),

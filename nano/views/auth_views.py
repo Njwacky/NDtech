@@ -9,16 +9,22 @@ from django.contrib.auth.models import User
 from django.db import transaction
 from django.db.models import Q
 from django.utils import timezone
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+from django.contrib.auth.decorators import login_required
+import json
 from ..models import UserProfile, Notification
 from ..fcm_service import send_fcm_notification_to_user
 
 
 def register(request):
+    workspace = getattr(request.user.userprofile, 'workspace', None) if hasattr(getattr(request, 'user', None), 'userprofile') else None
     """Initial registration redirect - always allows registration"""
     return redirect('sign_up')
 
 
 def sign_up(request):
+    workspace = getattr(request.user.userprofile, 'workspace', None) if hasattr(getattr(request, 'user', None), 'userprofile') else None
     """User registration form - allows multiple users to create their own workspaces"""
     # Check if any users already exist to determine if this is first user
     existing_users = User.objects.exists()
@@ -107,6 +113,7 @@ def sign_up(request):
 
 
 def sign_in(request):
+    workspace = getattr(request.user.userprofile, 'workspace', None) if hasattr(getattr(request, 'user', None), 'userprofile') else None
     """User login view"""
     if request.method == 'POST':
         username = request.POST.get('username', '').strip()
@@ -137,12 +144,14 @@ def sign_in(request):
 
 
 def logout_view(request):
+    workspace = getattr(request.user.userprofile, 'workspace', None) if hasattr(getattr(request, 'user', None), 'userprofile') else None
     """User logout handler"""
     logout(request)
     return redirect('register')
 
 
 def forgot_password(request):
+    workspace = getattr(request.user.userprofile, 'workspace', None) if hasattr(getattr(request, 'user', None), 'userprofile') else None
     """Handle forgot password requests - creates notification for admins"""
     if request.method == 'POST':
         username = request.POST.get('username', '').strip()
@@ -180,7 +189,7 @@ def forgot_password(request):
                         'user_id': user.id,
                         'request_time': timezone.now().isoformat()
                     }
-                )
+                , workspace=workspace)
                 notifications_created.append(notification.id)
 
                 # Send FCM notification
@@ -194,3 +203,31 @@ def forgot_password(request):
             return redirect('sign_in')
 
     return render(request, 'nano/forgot_password.html')
+
+
+@csrf_exempt
+@login_required
+def verify_admin_password(request):
+    """Verify admin password for secret NDtechTrack access"""
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'error': 'Invalid request method'})
+
+    try:
+        data = json.loads(request.body)
+        password = data.get('password', '')
+
+        if not password:
+            return JsonResponse({'success': False, 'error': 'Password required'})
+
+        # Verify the password against the current user
+        user = authenticate(request, username=request.user.username, password=password)
+
+        if user is not None:
+            return JsonResponse({'success': True})
+        else:
+            return JsonResponse({'success': False, 'error': 'Incorrect password'})
+
+    except json.JSONDecodeError:
+        return JsonResponse({'success': False, 'error': 'Invalid request'})
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': 'Server error'})

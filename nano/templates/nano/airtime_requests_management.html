@@ -1,105 +1,201 @@
 {% extends 'nano/base.html' %}
 {% load static %}
-
-{% block title %}Airtime Requests{% endblock %}
+{% block title %}Airtime Requests - NDtech POS{% endblock %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="{% static 'nano/airtime.css' %}">
-<link rel="stylesheet" href="{% static 'nano/airtime_requests_management.css' %}">
+<style>
+  .page-wrap { padding: 2rem 1.5rem; max-width: 1400px; margin: 0 auto; }
+
+  /* Page Header */
+  .page-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 2rem; flex-wrap: wrap; gap: 1rem; }
+  .page-header-left { display: flex; align-items: center; gap: 1rem; }
+  .page-header-icon { width: 52px; height: 52px; background: linear-gradient(135deg, #7c3aed, #6d28d9); border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 1.4rem; color: #fff; flex-shrink: 0; }
+  .page-header-title { font-size: 1.6rem; font-weight: 700; color: #fff; margin: 0; }
+  .page-header-sub { font-size: 0.85rem; color: rgba(255,255,255,0.5); margin: 0; }
+  .page-header-actions { display: flex; gap: 0.75rem; flex-wrap: wrap; }
+
+  /* Buttons */
+  .btn { display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.55rem 1.1rem; border-radius: 10px; font-size: 0.85rem; font-weight: 600; cursor: pointer; border: none; text-decoration: none; transition: all 0.2s; }
+  .btn-primary { background: linear-gradient(135deg, #7c3aed, #6d28d9); color: #fff; }
+  .btn-primary:hover { opacity: 0.88; transform: translateY(-1px); }
+  .btn-ghost { background: transparent; color: rgba(255,255,255,0.7); border: 1px solid rgba(255,255,255,0.2); }
+  .btn-ghost:hover { background: rgba(255,255,255,0.07); color: #fff; }
+  .btn-success { background: linear-gradient(135deg, #10b981, #059669); color: #fff; }
+  .btn-success:hover { opacity: 0.88; }
+  .btn-danger { background: linear-gradient(135deg, #ef4444, #dc2626); color: #fff; }
+  .btn-danger:hover { opacity: 0.88; }
+  .btn-sm { padding: 0.35rem 0.75rem; font-size: 0.78rem; }
+
+  /* Section */
+  .section-card { background: rgba(255,255,255,0.05); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.12); border-radius: 16px; padding: 1.5rem; margin-bottom: 2rem; }
+  .section-title { font-size: 1.05rem; font-weight: 600; color: #fff; margin: 0 0 0.25rem 0; }
+  .section-sub { font-size: 0.8rem; color: rgba(255,255,255,0.45); margin: 0 0 1.25rem 0; }
+  .section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.25rem; flex-wrap: wrap; gap: 0.75rem; }
+
+  /* Request Card */
+  .request-card { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1); border-radius: 14px; padding: 1.5rem; margin-bottom: 1rem; }
+  .request-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 1rem; gap: 1rem; }
+  .request-title { font-size: 1rem; font-weight: 600; color: #fff; margin: 0; }
+  .request-meta { display: flex; gap: 1rem; flex-wrap: wrap; font-size: 0.8rem; color: rgba(255,255,255,0.5); margin-bottom: 0.75rem; }
+  .request-meta span { display: flex; align-items: center; gap: 0.3rem; }
+  .request-message { font-size: 0.9rem; color: rgba(255,255,255,0.7); line-height: 1.5; margin-bottom: 1rem; }
+  .request-actions { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+
+  /* Status badges */
+  .badge { display: inline-flex; align-items: center; padding: 0.22rem 0.65rem; border-radius: 999px; font-size: 0.7rem; font-weight: 600; }
+  .badge-pending { background: rgba(245,158,11,0.15); color: #fcd34d; border: 1px solid rgba(245,158,11,0.3); }
+  .badge-approved { background: rgba(16,185,129,0.15); color: #34d399; border: 1px solid rgba(16,185,129,0.3); }
+  .badge-rejected { background: rgba(239,68,68,0.15); color: #fca5a5; border: 1px solid rgba(239,68,68,0.3); }
+
+  /* Type badges */
+  .badge-add { background: rgba(16,185,129,0.15); color: #34d399; border: 1px solid rgba(16,185,129,0.3); }
+  .badge-update { background: rgba(99,102,241,0.15); color: #a5b4fc; border: 1px solid rgba(99,102,241,0.3); }
+  .badge-bulk { background: rgba(245,158,11,0.15); color: #fcd34d; border: 1px solid rgba(245,158,11,0.3); }
+
+  /* Pagination */
+  .pagination { display: flex; align-items: center; justify-content: center; gap: 0.5rem; margin-top: 1.5rem; }
+  .page-link { padding: 0.45rem 0.85rem; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: rgba(255,255,255,0.7); text-decoration: none; font-size: 0.85rem; transition: all 0.2s; }
+  .page-link:hover { background: rgba(255,255,255,0.1); color: #fff; }
+  .page-link.active { background: linear-gradient(135deg, #7c3aed, #6d28d9); border-color: #7c3aed; color: #fff; }
+  .page-link.disabled { opacity: 0.4; cursor: not-allowed; pointer-events: none; }
+
+  /* Empty state */
+  .empty-state { text-align: center; padding: 3rem 1rem; color: rgba(255,255,255,0.35); }
+  .empty-state i { font-size: 2.5rem; margin-bottom: 0.75rem; display: block; }
+  .empty-state p { margin: 0; font-size: 0.9rem; }
+
+  @media (max-width: 768px) {
+    .page-wrap { padding: 1rem; }
+    .page-header { flex-direction: column; align-items: flex-start; }
+    .page-header-actions { width: 100%; }
+    .page-header-actions .btn { flex: 1; justify-content: center; }
+    .request-header { flex-direction: column; }
+    .request-actions { width: 100%; }
+    .request-actions .btn { flex: 1; justify-content: center; }
+  }
+</style>
 {% endblock %}
 
 {% block content %}
-<div class="container-fluid">
-  <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
-    <div>
-      <h2 class="mb-0"><i class="fas fa-clipboard-list"></i> Airtime Requests</h2>
-      <div class="text-muted small">Approve or reject airtime management requests.</div>
-    </div>
-    <div class="d-flex gap-2 flex-wrap">
-      <a class="btn btn-outline-primary" href="{% url 'airtime_dashboard' %}">
-        <i class="fas fa-tachometer-alt"></i> Dashboard
-      </a>
-      <a class="btn btn-outline-primary" href="{% url 'airtime_management' %}">
-        <i class="fas fa-cogs"></i> Manage Products
-      </a>
-    </div>
-  </div>
+<div class="page-wrap">
 
-  <div class="card shadow-sm">
-    <div class="card-header fw-bold"><i class="fas fa-list"></i> Requests</div>
-    <div class="card-body">
-      {% if requests %}
-      <div class="table-responsive">
-        <table class="table table-sm align-middle">
-          <thead>
-            <tr>
-              <th>ID</th>
-              <th>Requested by</th>
-              <th>Status</th>
-              <th class="text-muted">Created</th>
-              <th></th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for r in requests %}
-            <tr>
-              <td>#{{ r.id }}</td>
-              <td>{{ r.requested_by.username }}</td>
-              <td>
-                {% if r.status == 'pending' %}
-                  <span class="badge bg-warning text-dark">pending</span>
-                {% elif r.status == 'approved' %}
-                  <span class="badge bg-success">approved</span>
-                {% else %}
-                  <span class="badge bg-secondary">{{ r.status }}</span>
-                {% endif %}
-              </td>
-              <td class="small text-muted">{{ r.created_at }}</td>
-              <td class="text-end">
-                {% if r.status == 'pending' %}
-                  <a class="btn btn-sm btn-success" href="{% url 'approve_airtime_request' r.id %}">Approve</a>
-                  <a class="btn btn-sm btn-outline-danger" href="{% url 'reject_airtime_request' r.id %}">Reject</a>
-                {% else %}
-                  <span class="text-muted small">No actions</span>
-                {% endif %}
-              </td>
-            </tr>
-            {% endfor %}
-          </tbody>
-        </table>
+  <!-- Page Header -->
+  <div class="page-header">
+    <div class="page-header-left">
+      <div class="page-header-icon"><i class="fas fa-inbox"></i></div>
+      <div>
+        <h1 class="page-header-title">Airtime Requests</h1>
+        <p class="page-header-sub">Manage cashier requests for airtime products</p>
       </div>
-
-      {% if is_paginated %}
-      <nav aria-label="Requests pagination">
-        <ul class="pagination">
-          {% if page_obj.has_previous %}
-          <li class="page-item">
-            <a class="page-link" href="?page={{ page_obj.previous_page_number }}">Previous</a>
-          </li>
-          {% else %}
-          <li class="page-item disabled"><span class="page-link">Previous</span></li>
-          {% endif %}
-
-          <li class="page-item disabled">
-            <span class="page-link">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
-          </li>
-
-          {% if page_obj.has_next %}
-          <li class="page-item">
-            <a class="page-link" href="?page={{ page_obj.next_page_number }}">Next</a>
-          </li>
-          {% else %}
-          <li class="page-item disabled"><span class="page-link">Next</span></li>
-          {% endif %}
-        </ul>
-      </nav>
-      {% endif %}
-
-      {% else %}
-        <div class="text-muted">No requests found.</div>
-      {% endif %}
+    </div>
+    <div class="page-header-actions">
+      <a href="{% url 'airtime_dashboard' %}" class="btn btn-ghost"><i class="fas fa-arrow-left"></i> Back to Dashboard</a>
+      <a href="{% url 'airtime_management' %}" class="btn btn-ghost"><i class="fas fa-cog"></i> Manage Products</a>
+      <a href="{% url 'airtime_sales' %}" class="btn btn-ghost"><i class="fas fa-list"></i> Sales Records</a>
     </div>
   </div>
-</div>
-{% endblock %}
 
+  <!-- Requests List -->
+  <div class="section-card">
+    <div class="section-header">
+      <div>
+        <h2 class="section-title"><i class="fas fa-inbox" style="color:#a78bfa;margin-right:0.5rem;"></i>Pending Requests</h2>
+        <p class="section-sub">Review and approve cashier requests</p>
+      </div>
+    </div>
+
+    {% if requests %}
+    {% for req in requests %}
+    <div class="request-card">
+      <div class="request-header">
+        <div>
+          <h3 class="request-title">{{ req.title }}</h3>
+          <div class="request-meta">
+            <span><i class="fas fa-user"></i> {{ req.requested_by.get_full_name|default:req.requested_by.username }}</span>
+            <span><i class="fas fa-clock"></i> {{ req.created_at|date:"M d, Y H:i" }}</span>
+            <span>
+              <span class="badge
+                {% if req.request_type == 'add_airtime' %}badge-add
+                {% elif req.request_type == 'update_stock' %}badge-update
+                {% else %}badge-bulk{% endif %}">
+                {{ req.get_request_type_display }}
+              </span>
+            </span>
+            <span>
+              <span class="badge
+                {% if req.status == 'pending' %}badge-pending
+                {% elif req.status == 'approved' %}badge-approved
+                {% else %}badge-rejected{% endif %}">
+                {{ req.get_status_display }}
+              </span>
+            </span>
+          </div>
+        </div>
+      </div>
+      <p class="request-message">{{ req.message }}</p>
+      {% if req.request_data %}
+      <div style="background:rgba(255,255,255,0.03);border-radius:8px;padding:0.75rem;margin-bottom:1rem;font-size:0.85rem;color:rgba(255,255,255,0.6);">
+        <strong>Request Details:</strong>
+        <pre style="margin:0.5rem 0 0 0;white-space:pre-wrap;font-family:inherit;">{{ req.request_data|pprint }}</pre>
+      </div>
+      {% endif %}
+      {% if req.status == 'pending' %}
+      <div class="request-actions">
+        <form method="post" action="{% url 'approve_airtime_request' req.id %}" style="display:inline;">
+          {% csrf_token %}
+          <button type="submit" class="btn btn-success btn-sm"><i class="fas fa-check"></i> Approve</button>
+        </form>
+        <button class="btn btn-danger btn-sm" onclick="rejectRequest({{ req.id }})"><i class="fas fa-times"></i> Reject</button>
+      </div>
+      {% elif req.status == 'approved' %}
+      <div class="request-meta" style="margin-bottom:0;">
+        <span><i class="fas fa-check-circle" style="color:#10b981;"></i> Approved by {{ req.approved_by.get_full_name|default:req.approved_by.username }} on {{ req.approved_at|date:"M d, Y H:i" }}</span>
+        {% if req.approval_notes %}
+        <span><i class="fas fa-sticky-note"></i> {{ req.approval_notes }}</span>
+        {% endif %}
+      </div>
+      {% endif %}
+    </div>
+    {% endfor %}
+
+    <!-- Pagination -->
+    {% if is_paginated %}
+    <div class="pagination">
+      {% if page_obj.has_previous %}
+        <a href="?page=1" class="page-link">&laquo; First</a>
+        <a href="?page={{ page_obj.previous_page_number }}" class="page-link">&lsaquo; Previous</a>
+      {% else %}
+        <span class="page-link disabled">&laquo; First</span>
+        <span class="page-link disabled">&lsaquo; Previous</span>
+      {% endif %}
+
+      <span class="page-link active">{{ page_obj.number }}</span>
+
+      {% if page_obj.has_next %}
+        <a href="?page={{ page_obj.next_page_number }}" class="page-link">Next &rsaquo;</a>
+        <a href="?page={{ page_obj.paginator.num_pages }}" class="page-link">Last &raquo;</a>
+      {% else %}
+        <span class="page-link disabled">Next &rsaquo;</span>
+        <span class="page-link disabled">Last &raquo;</span>
+      {% endif %}
+    </div>
+    {% endif %}
+    {% else %}
+    <div class="empty-state">
+      <i class="fas fa-inbox"></i>
+      <p>No airtime requests found.</p>
+    </div>
+    {% endif %}
+  </div>
+
+</div>
+
+<script>
+function rejectRequest(requestId) {
+  const notes = prompt('Enter rejection notes (optional):');
+  if (notes === null) return;
+  
+  alert('Reject functionality requires additional endpoint implementation.');
+}
+</script>
+{% endblock %}

@@ -1,226 +1,284 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    {% load static %}
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Price Comparisons - futurePOS</title>
-    <link rel="stylesheet" href="{% static 'nano/price_comparisons.css' %}">
-</head>
-<body>
-    <!-- Theme Toggle Button -->
-    <button class="theme-toggle" onclick="toggleTheme()" aria-label="Toggle theme">
-        <span id="themeIcon">🌙</span>
-        <span id="themeText">Dark</span>
+{% extends 'nano/base.html' %}
+{% load static %}
+{% block title %}Price Comparisons - NDtech POS{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'nano/css/price_comparisons.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="page-wrap">
+  <!-- Header -->
+  <div class="page-header">
+    <div class="page-header-left">
+      <div class="page-header-icon">
+        <i class="fas fa-balance-scale"></i>
+      </div>
+      <div class="page-header-text">
+        <h1>Price Comparisons</h1>
+        <p>Compare prices across warehouses to find the best deals</p>
+      </div>
+    </div>
+    <div class="page-header-actions">
+      <a href="{% url 'warehouse_prices' %}" class="btn btn-ghost">
+        <i class="fas fa-tags"></i> Warehouse Prices
+      </a>
+      <a href="{% url 'export_price_comparisons' %}" class="btn btn-primary">
+        <i class="fas fa-file-export"></i> Export
+      </a>
+      <button id="runComparisonBtn" class="btn btn-success">
+        <i class="fas fa-sync-alt"></i> Run Comparison
+      </button>
+    </div>
+  </div>
+
+  <!-- Statistics Cards -->
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="stat-icon">
+        <i class="fas fa-boxes"></i>
+      </div>
+      <div class="stat-content">
+        <div class="stat-value">{{ total_comparisons }}</div>
+        <div class="stat-label">Total Comparisons</div>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon">
+        <i class="fas fa-piggy-bank"></i>
+      </div>
+      <div class="stat-content">
+        <div class="stat-value">R {{ avg_savings|floatformat:2 }}</div>
+        <div class="stat-label">Avg Savings</div>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon">
+        <i class="fas fa-chart-line"></i>
+      </div>
+      <div class="stat-content">
+        <div class="stat-value">R {{ max_savings|floatformat:2 }}</div>
+        <div class="stat-label">Max Savings</div>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon">
+        <i class="fas fa-warehouse"></i>
+      </div>
+      <div class="stat-content">
+        <div class="stat-value">{{ total_warehouses }}</div>
+        <div class="stat-label">Warehouses</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toolbar -->
+  <div class="toolbar">
+    <div class="search-wrap">
+      <i class="fas fa-search"></i>
+      <input type="text" class="search-input" id="searchInput" placeholder="Search products by name or barcode…" value="{{ search_query }}">
+    </div>
+    <select class="select-filter" id="warehouseFilter">
+      <option value="">All Warehouses</option>
+      {% for warehouse in warehouse_names %}
+        <option value="{{ warehouse }}" {% if warehouse_filter == warehouse %}selected{% endif %}>{{ warehouse }}</option>
+      {% endfor %}
+    </select>
+    <select class="select-filter" id="sortBy">
+      <option value="price_difference_desc" {% if sort == 'price_difference_desc' %}selected{% endif %}>Highest Savings</option>
+      <option value="price_difference_asc" {% if sort == 'price_difference_asc' %}selected{% endif %}>Lowest Savings</option>
+      <option value="product_name" {% if sort == 'product_name' %}selected{% endif %}>Product Name</option>
+      <option value="lowest_price" {% if sort == 'lowest_price' %}selected{% endif %}>Lowest Price</option>
+    </select>
+    <button class="btn btn-secondary" onclick="applyFilters()">
+      <i class="fas fa-filter"></i> Apply
     </button>
+  </div>
 
-    <div class="container">
-        <div class="header">
-            <h2>Price Comparisons</h2>
-            <p>Compare prices across different warehouses to find the best deals</p>
-            <div>
-                <a href="{% url 'warehouse_prices' %}" class="btn btn-light">← Back to Warehouse Prices</a>
-                <a href="{% url 'warehouse_import' %}" class="btn btn-primary">Import New Data</a>
-                <button type="button" id="runComparisonBtn" class="btn btn-success">Run Comparison</button>
-                <a href="{% url 'price_comparisons_marketing' %}" class="btn btn-info">📊 Marketing Dashboard</a>
-                <a href="{% url 'export_price_comparisons' %}" class="btn btn-light">Export</a>
-            </div>
-        </div>
-
-        <!-- Statistics Cards -->
-        <div class="stats-grid">
-            <div class="stat-card">
-                <div class="stat-number">{{ total_comparisons }}</div>
-                <div class="stat-label">Total Comparisons</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-number">R{{ avg_savings|floatformat:2 }}</div>
-                <div class="stat-label">Average Savings</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-number">R{{ max_savings|floatformat:2 }}</div>
-                <div class="stat-label">Maximum Savings</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-number">{{ total_warehouses }}</div>
-                <div class="stat-label">Warehouses Compared</div>
-            </div>
-        </div>
-
-        <!-- Filters -->
-        <div class="filters">
-            <form method="get" class="filter-row">
-                <div class="form-group">
-                    <label for="search">Search Products:</label>
-                    <input type="text" id="search" name="search" class="form-control" 
-                           value="{{ search_query }}" placeholder="Search by name or barcode...">
-                </div>
-                <div class="form-group">
-                    <label for="warehouse">Warehouse:</label>
-                    <select id="warehouse" name="warehouse" class="form-control">
-                        <option value="">All Warehouses</option>
-                        {% for warehouse in warehouse_names %}
-                        <option value="{{ warehouse }}" {% if warehouse_filter == warehouse %}selected{% endif %}>{{ warehouse }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label for="sort">Sort By:</label>
-                    <select id="sort" name="sort" class="form-control">
-                        <option value="price_difference_desc" {% if sort == 'price_difference_desc' %}selected{% endif %}>Highest Savings First</option>
-                        <option value="price_difference_asc" {% if sort == 'price_difference_asc' %}selected{% endif %}>Lowest Savings First</option>
-                        <option value="product_name" {% if sort == 'product_name' %}selected{% endif %}>Product Name</option>
-                        <option value="lowest_price" {% if sort == 'lowest_price' %}selected{% endif %}>Lowest Price</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>&nbsp;</label>
-                    <button type="submit" class="btn btn-primary">Apply Filters</button>
-                    <a href="{% url 'price_comparisons' %}" class="btn btn-light">Clear</a>
-                </div>
-            </form>
-        </div>
-
-        <!-- Results Table -->
-        <div class="table-container">
-            {% if comparisons %}
-            <table class="table">
-                <thead>
-                    <tr>
-                        <th>Product Name</th>
-                        <th>Barcode</th>
-                        <th>Lowest Price</th>
-                        <th>Best Warehouse</th>
-                        <th>Savings</th>
-                        <th>Warehouses Compared</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for comparison in comparisons %}
-                    <tr>
-                        <td>
-                            <strong>{{ comparison.product_name }}</strong>
-                            {% if comparison.comparison_date %}
-                            <br><small>{{ comparison.comparison_date|date:"Y-m-d H:i" }}</small>
-                            {% endif %}
-                        </td>
-                        <td>
-                            {% if comparison.barcode %}
-                            <code>{{ comparison.barcode }}</code>
-                            {% else %}
-                            <span>-</span>
-                            {% endif %}
-                        </td>
-                        <td class="price-highlight">R{{ comparison.lowest_price }}</td>
-                        <td>
-                            <span class="badge">{{ comparison.lowest_warehouse }}</span>
-                        </td>
-                        <td>
-                            {% if comparison.price_difference > 0 %}
-                            <span class="savings-badge">R{{ comparison.price_difference|floatformat:2 }}</span>
-                            {% else %}
-                            <span>-</span>
-                            {% endif %}
-                        </td>
-                        <td>
-                            <small>{{ comparison.compared_warehouses|length }} warehouses</small>
-                            {% if comparison.compared_warehouses %}
-                            <br><small>{{ comparison.compared_warehouses|join:", " }}</small>
-                            {% endif %}
-                        </td>
-                        <td>
-                            <button type="button" class="btn btn-sm btn-light" onclick="showDetails('{{ comparison.id }}')">
-                                View Details
-                            </button>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-
-            <!-- Pagination -->
-            {% if is_paginated %}
-            <div class="pagination">
-                {% if page_obj.has_previous %}
-                    <a href="?page=1{% if search_query %}&search={{ search_query }}{% endif %}{% if warehouse_filter %}&warehouse={{ warehouse_filter }}{% endif %}{% if sort %}&sort={{ sort }}{% endif %}" class="page-link">&laquo; First</a>
-                    <a href="?page={{ page_obj.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if warehouse_filter %}&warehouse={{ warehouse_filter }}{% endif %}{% if sort %}&sort={{ sort }}{% endif %}" class="page-link">&lsaquo; Previous</a>
-                {% endif %}
-
-                <span class="page-link active">
-                    Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
-                </span>
-
-                {% if page_obj.has_next %}
-                    <a href="?page={{ page_obj.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if warehouse_filter %}&warehouse={{ warehouse_filter }}{% endif %}{% if sort %}&sort={{ sort }}{% endif %}" class="page-link">Next &rsaquo;</a>
-                    <a href="?page={{ page_obj.paginator.num_pages }}{% if search_query %}&search={{ search_query }}{% endif %}{% if warehouse_filter %}&warehouse={{ warehouse_filter }}{% endif %}{% if sort %}&sort={{ sort }}{% endif %}" class="page-link">Last &raquo;</a>
-                {% endif %}
-            </div>
-            {% endif %}
-
-            {% else %}
-            <div class="empty-state">
-                <h3>No price comparisons available</h3>
-                <p>Import warehouse price data and run a comparison to see results here.</p>
-                <div>
-                    <a href="{% url 'warehouse_import' %}" class="btn btn-primary">Import Warehouse Data</a>
-                    <button type="button" id="runComparisonEmptyBtn" class="btn btn-success">Run Comparison</button>
-                </div>
-            </div>
-            {% endif %}
-        </div>
+  <!-- Desktop Table -->
+  <div class="table-card desktop-table">
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Product Name</th>
+            <th>Barcode</th>
+            <th>Lowest Price</th>
+            <th>Best Warehouse</th>
+            <th>Savings</th>
+            <th>Warehouses Compared</th>
+            <th>Date</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% if comparisons %}
+            {% for comparison in comparisons %}
+            <tr class="comparison-row">
+              <td>
+                <div class="product-name">{{ comparison.product_name }}</div>
+              </td>
+              <td>
+                <span class="barcode-text">{{ comparison.barcode|default:"—" }}</span>
+              </td>
+              <td>
+                <span class="price-text">R {{ comparison.lowest_price }}</span>
+              </td>
+              <td>
+                <span class="warehouse-badge">{{ comparison.lowest_warehouse }}</span>
+              </td>
+              <td>
+                <span class="savings-badge positive">+R {{ comparison.price_difference }}</span>
+              </td>
+              <td>
+                <span class="count-badge">{{ comparison.compared_warehouses|length }}</span>
+              </td>
+              <td>
+                <span class="date-text">{{ comparison.comparison_date|date:"d M Y" }}</span>
+              </td>
+              <td>
+                <button class="action-btn details-btn" data-comparison-id="{{ comparison.id }}">
+                  <i class="fas fa-eye"></i> Details
+                </button>
+              </td>
+            </tr>
+            {% endfor %}
+          {% else %}
+          <tr>
+            <td colspan="8">
+              <div class="empty-state">
+                <i class="fas fa-search"></i>
+                <h3>No comparisons found</h3>
+                <p>Run a price comparison to see results.</p>
+                <button id="runComparisonEmptyBtn" class="btn btn-primary" style="margin-top: 1rem;">
+                  <i class="fas fa-sync-alt"></i> Run Comparison
+                </button>
+              </div>
+            </td>
+          </tr>
+          {% endif %}
+        </tbody>
+      </table>
     </div>
 
-    <!-- Details Modal -->
-    <div id="detailsModal">
-        <div>
-            <div>
-                <h3 id="modalTitle">Price Comparison Details</h3>
-                <button type="button" onclick="closeDetails()">&times;</button>
-            </div>
-            <div id="modalContent">
-                <!-- Content will be loaded here -->
-            </div>
-        </div>
+    <!-- Pagination -->
+    {% if is_paginated %}
+    <div class="pagination">
+      <span class="page-info">
+        Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+        ({{ total_comparisons }} total)
+      </span>
+      <div class="page-btns">
+        {% if page_obj.has_previous %}
+          <a href="?page={{ page_obj.previous_page_number }}&search={{ search_query }}&warehouse={{ warehouse_filter }}&sort={{ sort }}" class="page-btn">
+            <i class="fas fa-chevron-left"></i>
+          </a>
+        {% endif %}
+        {% for num in page_obj.paginator.page_range %}
+          <a href="?page={{ num }}&search={{ search_query }}&warehouse={{ warehouse_filter }}&sort={{ sort }}" class="page-btn {% if num == page_obj.number %}active{% endif %}">
+            {{ num }}
+          </a>
+        {% endfor %}
+        {% if page_obj.has_next %}
+          <a href="?page={{ page_obj.next_page_number }}&search={{ search_query }}&warehouse={{ warehouse_filter }}&sort={{ sort }}" class="page-btn">
+            <i class="fas fa-chevron-right"></i>
+          </a>
+        {% endif %}
+      </div>
     </div>
+    {% endif %}
+  </div>
 
-    <script src="{% static 'nano/price_comparisons.js' %}"></script>
-    
-    <!-- Theme Toggle JavaScript -->
-    <script>
-        // Theme Management
-        function initTheme() {
-            const savedTheme = localStorage.getItem('theme') || 'light';
-            document.documentElement.setAttribute('data-theme', savedTheme);
-            updateThemeToggle(savedTheme);
-        }
+  <!-- Mobile Cards -->
+  <div class="mobile-cards">
+    {% if comparisons %}
+      {% for comparison in comparisons %}
+      <div class="comparison-card">
+        <div class="card-header">
+          <div class="card-title">{{ comparison.product_name }}</div>
+          <span class="savings-badge positive">+R {{ comparison.price_difference }}</span>
+        </div>
+        <div class="card-body">
+          <div class="card-row">
+            <span class="card-label">Barcode</span>
+            <span class="card-value">{{ comparison.barcode|default:"—" }}</span>
+          </div>
+          <div class="card-row">
+            <span class="card-label">Best Price</span>
+            <span class="card-value price-text">R {{ comparison.lowest_price }}</span>
+          </div>
+          <div class="card-row">
+            <span class="card-label">Best Warehouse</span>
+            <span class="card-value warehouse-badge">{{ comparison.lowest_warehouse }}</span>
+          </div>
+          <div class="card-row">
+            <span class="card-label">Warehouses</span>
+            <span class="card-value count-badge">{{ comparison.compared_warehouses|length }}</span>
+          </div>
+          <div class="card-row">
+            <span class="card-label">Date</span>
+            <span class="card-value date-text">{{ comparison.comparison_date|date:"d M Y" }}</span>
+          </div>
+        </div>
+        <div class="card-footer">
+          <button class="btn btn-primary btn-block details-btn" data-comparison-id="{{ comparison.id }}">
+            <i class="fas fa-eye"></i> View Details
+          </button>
+        </div>
+      </div>
+      {% endfor %}
+    {% else %}
+      <div class="empty-state">
+        <i class="fas fa-search"></i>
+        <h3>No comparisons found</h3>
+        <p>Run a price comparison to see results.</p>
+        <button id="runComparisonEmptyBtn" class="btn btn-primary" style="margin-top: 1rem;">
+          <i class="fas fa-sync-alt"></i> Run Comparison
+        </button>
+      </div>
+    {% endif %}
+  </div>
+</div>
 
-        function toggleTheme() {
-            const currentTheme = document.documentElement.getAttribute('data-theme');
-            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-            
-            document.documentElement.setAttribute('data-theme', newTheme);
-            localStorage.setItem('theme', newTheme);
-            updateThemeToggle(newTheme);
-        }
+<!-- Details Modal -->
+<div id="detailsModal" class="modal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h3 id="modalTitle">Price Comparison Details</h3>
+      <button class="modal-close" onclick="closeDetails()">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+    <div class="modal-body" id="modalContent">
+      <!-- Content will be loaded dynamically -->
+    </div>
+  </div>
+</div>
 
-        function updateThemeToggle(theme) {
-            const themeIcon = document.getElementById('themeIcon');
-            const themeText = document.getElementById('themeText');
-            
-            if (theme === 'dark') {
-                themeIcon.textContent = '☀️';
-                themeText.textContent = 'Light';
-            } else {
-                themeIcon.textContent = '🌙';
-                themeText.textContent = 'Dark';
-            }
-        }
+<script src="{% static 'nano/price_comparisons.js' %}"></script>
+<script>
+// Add event listeners for details buttons
+document.addEventListener('DOMContentLoaded', function() {
+  const detailsButtons = document.querySelectorAll('.details-btn');
+  detailsButtons.forEach(function(button) {
+    button.addEventListener('click', function() {
+      const comparisonId = this.getAttribute('data-comparison-id');
+      showDetails(comparisonId);
+    });
+  });
+});
 
-        // Initialize theme on page load
-        document.addEventListener('DOMContentLoaded', function() {
-            initTheme();
-        });
-    </script>
-</body>
-</html>
+function applyFilters() {
+  const search = document.getElementById('searchInput').value;
+  const warehouse = document.getElementById('warehouseFilter').value;
+  const sort = document.getElementById('sortBy').value;
+  
+  const params = new URLSearchParams();
+  if (search) params.set('search', search);
+  if (warehouse) params.set('warehouse', warehouse);
+  if (sort) params.set('sort', sort);
+  
+  window.location.href = '?' + params.toString();
+}
+</script>
+{% endblock %}

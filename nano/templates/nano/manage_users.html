@@ -1,112 +1,540 @@
 {% extends 'nano/base.html' %}
+{% load static %}
+{% block title %}Manage Users - NDtech POS{% endblock %}
 
-{% block title %}Manage Users - NDtech{% endblock %}
+{% block extra_css %}
+<style>
+  /* ── Layout ────────────────────────────────────────────────── */
+  .page-wrap {
+    padding: 2rem 1.5rem;
+    max-width: 1300px;
+    margin: 0 auto;
+  }
+
+  /* ── Page Header ───────────────────────────────────────────── */
+  .page-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 2rem;
+    flex-wrap: wrap;
+  }
+  .page-header-left {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+  .page-header-icon {
+    width: 52px;
+    height: 52px;
+    border-radius: 14px;
+    background: linear-gradient(135deg, #7c3aed, #6d28d9);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.4rem;
+    color: #fff;
+    flex-shrink: 0;
+    box-shadow: 0 8px 24px rgba(124,58,237,0.35);
+  }
+  .page-title { font-size: 1.6rem; font-weight: 700; color: #fff; margin: 0; line-height: 1.2; }
+  .page-subtitle { font-size: 0.875rem; color: rgba(255,255,255,0.5); margin: 0.2rem 0 0; }
+
+  /* ── Buttons ───────────────────────────────────────────────── */
+  .btn-primary {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.6rem 1.2rem;
+    background: linear-gradient(135deg, #7c3aed, #6d28d9);
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    font-size: 0.875rem;
+    font-weight: 600;
+    cursor: pointer;
+    text-decoration: none;
+    transition: opacity 0.2s, transform 0.15s;
+    white-space: nowrap;
+  }
+  .btn-primary:hover { opacity: 0.88; transform: translateY(-1px); color: #fff; text-decoration: none; }
+
+  .btn-danger {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    background: rgba(239,68,68,0.15);
+    color: #ef4444;
+    border: 1px solid rgba(239,68,68,0.3);
+    border-radius: 8px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+    text-decoration: none;
+    transition: background 0.2s;
+    white-space: nowrap;
+  }
+  .btn-danger:hover { background: rgba(239,68,68,0.28); color: #ef4444; text-decoration: none; }
+  .btn-danger:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  .btn-ghost {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.45rem 0.85rem;
+    background: transparent;
+    color: rgba(255,255,255,0.6);
+    border: 1px solid rgba(255,255,255,0.15);
+    border-radius: 8px;
+    font-size: 0.8rem;
+    cursor: pointer;
+    text-decoration: none;
+    transition: background 0.2s, color 0.2s;
+  }
+  .btn-ghost:hover { background: rgba(255,255,255,0.07); color: #fff; text-decoration: none; }
+
+  /* ── Stats Bar ─────────────────────────────────────────────── */
+  .stats-bar {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+  }
+  .stat-pill {
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 999px;
+    padding: 0.4rem 1rem;
+    font-size: 0.825rem;
+    color: rgba(255,255,255,0.7);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .stat-pill strong { color: #fff; }
+
+  /* ── Card / Table Container ────────────────────────────────── */
+  .card {
+    background: rgba(255,255,255,0.05);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 16px;
+    overflow: hidden;
+  }
+
+  /* ── Bulk action bar ───────────────────────────────────────── */
+  .bulk-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.9rem 1.25rem;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+    flex-wrap: wrap;
+  }
+  .bulk-bar-left {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    font-size: 0.85rem;
+    color: rgba(255,255,255,0.55);
+  }
+  #bulk-count { font-weight: 600; color: #fff; }
+
+  /* ── Table ─────────────────────────────────────────────────── */
+  .users-table { width: 100%; border-collapse: collapse; }
+  .users-table thead th {
+    padding: 0.75rem 1rem;
+    text-align: left;
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.4);
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+    white-space: nowrap;
+  }
+  .users-table thead th:first-child { padding-left: 1.25rem; }
+  .users-table thead th:last-child  { padding-right: 1.25rem; text-align: right; }
+
+  .users-table tbody tr {
+    transition: background 0.15s;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+  }
+  .users-table tbody tr:last-child { border-bottom: none; }
+  .users-table tbody tr:hover { background: rgba(255,255,255,0.04); }
+  .users-table tbody tr.selected { background: rgba(124,58,237,0.08); }
+
+  .users-table td {
+    padding: 0.85rem 1rem;
+    vertical-align: middle;
+    font-size: 0.875rem;
+    color: rgba(255,255,255,0.85);
+  }
+  .users-table td:first-child { padding-left: 1.25rem; }
+  .users-table td:last-child  { padding-right: 1.25rem; text-align: right; }
+
+  /* ── Avatar ────────────────────────────────────────────────── */
+  .avatar-cell { display: flex; align-items: center; gap: 0.75rem; }
+  .avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: #fff;
+    flex-shrink: 0;
+    text-transform: uppercase;
+  }
+  .avatar-a { background: linear-gradient(135deg,#7c3aed,#6d28d9); }
+  .avatar-b { background: linear-gradient(135deg,#2563eb,#1d4ed8); }
+  .avatar-c { background: linear-gradient(135deg,#059669,#047857); }
+  .avatar-d { background: linear-gradient(135deg,#d97706,#b45309); }
+  .avatar-e { background: linear-gradient(135deg,#db2777,#be185d); }
+  .avatar-f { background: linear-gradient(135deg,#0891b2,#0e7490); }
+  .avatar-g { background: linear-gradient(135deg,#65a30d,#4d7c0f); }
+  .avatar-h { background: linear-gradient(135deg,#ea580c,#c2410c); }
+  .avatar-other { background: rgba(255,255,255,0.15); }
+
+  .username-col { font-weight: 600; color: #fff; }
+  .email-col    { color: rgba(255,255,255,0.55); font-size: 0.8rem; }
+
+  /* ── Role badge ────────────────────────────────────────────── */
+  .role-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.2rem 0.65rem;
+    border-radius: 999px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+  .role-superuser { background: rgba(239,68,68,0.15); color: #f87171; border: 1px solid rgba(239,68,68,0.3); }
+  .role-admin     { background: rgba(124,58,237,0.18); color: #a78bfa; border: 1px solid rgba(124,58,237,0.35); }
+  .role-manager   { background: rgba(37,99,235,0.15);  color: #60a5fa; border: 1px solid rgba(37,99,235,0.3); }
+  .role-cashier   { background: rgba(5,150,105,0.15);  color: #34d399; border: 1px solid rgba(5,150,105,0.3); }
+
+  /* ── Action buttons ────────────────────────────────────────── */
+  .action-btns { display: inline-flex; align-items: center; gap: 0.4rem; }
+  .icon-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.8rem;
+    text-decoration: none;
+    border: 1px solid transparent;
+    cursor: pointer;
+    transition: background 0.18s, border-color 0.18s, color 0.18s;
+  }
+  .icon-btn-edit {
+    background: rgba(99,102,241,0.12);
+    color: #818cf8;
+    border-color: rgba(99,102,241,0.25);
+  }
+  .icon-btn-edit:hover { background: rgba(99,102,241,0.25); color: #a5b4fc; text-decoration: none; }
+  .icon-btn-delete {
+    background: rgba(239,68,68,0.1);
+    color: #f87171;
+    border-color: rgba(239,68,68,0.2);
+  }
+  .icon-btn-delete:hover { background: rgba(239,68,68,0.22); color: #fca5a5; text-decoration: none; }
+
+  /* ── Checkbox ──────────────────────────────────────────────── */
+  .cb-col { width: 36px; }
+  input[type="checkbox"] {
+    width: 16px; height: 16px;
+    accent-color: #7c3aed;
+    cursor: pointer;
+  }
+
+  /* ── Date ──────────────────────────────────────────────────── */
+  .date-col { color: rgba(255,255,255,0.45); font-size: 0.8rem; }
+
+  /* ── Pagination ────────────────────────────────────────────── */
+  .pagination-wrap {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    padding: 1.2rem;
+    flex-wrap: wrap;
+  }
+  .page-btn {
+    min-width: 34px;
+    height: 34px;
+    padding: 0 0.6rem;
+    border-radius: 8px;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.1);
+    color: rgba(255,255,255,0.65);
+    font-size: 0.8rem;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+    transition: background 0.18s, color 0.18s;
+  }
+  .page-btn:hover { background: rgba(255,255,255,0.1); color: #fff; text-decoration: none; }
+  .page-btn.active { background: linear-gradient(135deg,#7c3aed,#6d28d9); border-color: transparent; color: #fff; }
+  .page-btn.disabled { opacity: 0.35; pointer-events: none; }
+
+  /* ── Empty state ───────────────────────────────────────────── */
+  .empty-state {
+    padding: 3.5rem 1.5rem;
+    text-align: center;
+    color: rgba(255,255,255,0.4);
+  }
+  .empty-state i { font-size: 2.5rem; margin-bottom: 1rem; display: block; }
+  .empty-state p { margin: 0; font-size: 0.9rem; }
+
+  /* ── Mobile card view ──────────────────────────────────────── */
+  .mobile-cards { display: none; }
+  .user-card {
+    padding: 1rem;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+    display: flex;
+    gap: 0.85rem;
+    align-items: flex-start;
+  }
+  .user-card:last-child { border-bottom: none; }
+  .user-card-body { flex: 1; min-width: 0; }
+  .user-card-name { font-weight: 600; color: #fff; font-size: 0.9rem; margin-bottom: 0.15rem; }
+  .user-card-email { font-size: 0.78rem; color: rgba(255,255,255,0.5); margin-bottom: 0.5rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .user-card-footer { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; flex-wrap: wrap; }
+  .user-card-date { font-size: 0.72rem; color: rgba(255,255,255,0.35); }
+
+  @media (max-width: 768px) {
+    .page-wrap { padding: 1rem; }
+    .page-title { font-size: 1.3rem; }
+    .desktop-table { display: none; }
+    .mobile-cards { display: block; }
+    .bulk-bar { flex-direction: column; align-items: flex-start; }
+  }
+  @media (max-width: 480px) {
+    .page-header { flex-direction: column; }
+    .btn-primary { width: 100%; justify-content: center; }
+    .stat-pill { font-size: 0.78rem; }
+  }
+</style>
+{% endblock %}
 
 {% block content %}
-<div class="manage-users-container">
-    <div class="page-header">
-        <h2><i class="fas fa-users"></i> 
-            {% if is_workspace_view %}
-                My Workspace Users
-            {% else %}
-                Manage Users
-            {% endif %}
-        </h2>
-        <a href="{% url 'create_user' %}" class="btn-create-user">
-            <i class="fas fa-user-plus"></i> Create New User
-        </a>
+<div class="page-wrap">
+
+  <!-- Page Header -->
+  <div class="page-header">
+    <div class="page-header-left">
+      <div class="page-header-icon"><i class="fas fa-users-gear"></i></div>
+      <div>
+        <h1 class="page-title">Manage Users</h1>
+        <p class="page-subtitle">View and manage all workspace accounts</p>
+      </div>
     </div>
-    
+    <a href="{% url 'create_user' %}" class="btn-primary">
+      <i class="fas fa-user-plus"></i> Add User
+    </a>
+  </div>
+
+  <!-- Stats Bar -->
+  <div class="stats-bar">
+    <div class="stat-pill">
+      <i class="fas fa-users" style="color:#7c3aed;"></i>
+      <span>Total Users: <strong>{{ users.paginator.count|default:users|length }}</strong></span>
+    </div>
     {% if is_workspace_view %}
-    <div class="workspace-info">
-        <div class="info-card">
-            <i class="fas fa-info-circle"></i>
-            <h4>Your Workspace</h4>
-            <p>This is your personal workspace. You can only see and manage users you have created. Each manager runs their own independent workspace.</p>
-        </div>
+    <div class="stat-pill">
+      <i class="fas fa-building" style="color:#6366f1;"></i>
+      <span>Workspace View</span>
     </div>
     {% endif %}
-    
-    {% if users %}
-        <form method="post" action="{% url 'bulk_delete_users' %}" class="manage-users-form">
-            {% csrf_token %}
-            <div class="users-table-wrapper">
-                <table class="users-table">
-                    <thead>
-                        <tr>
-                            <th class="checkbox-cell">Select</th>
-                            <th>Username</th>
-                            <th>Email</th>
-                            <th>Role</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for user in users %}
-                        <tr{% if user.id == request.user.id %} class="current-user"{% endif %}>
-                            <td class="checkbox-cell">
-                                {% if user.id != request.user.id %}
-                                    <input type="checkbox" name="user_ids" value="{{ user.id }}">
-                                {% else %}
-                                    <span class="self-delete-protected" title="You cannot delete yourself">
-                                        <i class="fas fa-shield-alt"></i>
-                                    </span>
-                                {% endif %}
-                            </td>
-                            <td>
-                                {{ user.username }}
-                                {% if user.id == request.user.id %}
-                                    <span class="current-user-badge">(You)</span>
-                                {% endif %}
-                            </td>
-                            <td>{{ user.email }}</td>
-                            <td>
-                                <span class="role-badge role-{{ user.userprofile.role }}">
-                                    {{ user.userprofile.role|title }}
-                                </span>
-                            </td>
-                            <td>
-                                <div class="action-links">
-                                    <a href="{% url 'edit_user' user.id %}" class="edit">
-                                        <i class="fas fa-edit"></i><span class="action-text"> Edit</span>
-                                    </a>
-                                    {% if user.id != request.user.id %}
-                                        <a href="{% url 'delete_user' user.id %}" class="delete">
-                                            <i class="fas fa-trash"></i><span class="action-text"> Delete</span>
-                                        </a>
-                                    {% else %}
-                                        <span class="delete-protected" title="You cannot delete yourself">
-                                            <i class="fas fa-trash-slash"></i><span class="action-text"> Cannot Delete</span>
-                                        </span>
-                                    {% endif %}
-                                </div>
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-            <button type="submit" class="btn-delete-selected" onclick="return confirm('Are you sure you want to delete the selected users?')">
-                <i class="fas fa-trash"></i> Delete Selected
-            </button>
-        </form>
-    {% else %}
-        <div class="no-users">
-            <p><i class="fas fa-info-circle"></i> 
-                {% if is_workspace_view %}
-                    No users found in your workspace.
-                {% else %}
-                    No users found in the system.
-                {% endif %}
-            </p>
-            <p>
-                {% if is_workspace_view %}
-                    Start building your team by creating your first team member.
-                {% else %}
-                    Please create user accounts to manage them here.
-                {% endif %}
-            </p>
+  </div>
+
+  <!-- Main Card -->
+  <div class="card">
+
+    <!-- Bulk Action Bar -->
+    <form method="post" action="{% url 'bulk_delete_users' %}" id="bulk-form">
+      {% csrf_token %}
+      <div class="bulk-bar">
+        <div class="bulk-bar-left">
+          <input type="checkbox" id="select-all" title="Select all">
+          <label for="select-all" style="cursor:pointer; color:rgba(255,255,255,0.6); font-size:0.85rem;">
+            Select All &nbsp;<span id="bulk-count"></span>
+          </label>
         </div>
+        <button type="submit" class="btn-danger" id="bulk-delete-btn" disabled>
+          <i class="fas fa-trash-can"></i> Delete Selected
+        </button>
+      </div>
+
+      <!-- Desktop Table -->
+      <div class="desktop-table">
+        {% if users %}
+        <table class="users-table">
+          <thead>
+            <tr>
+              <th class="cb-col"></th>
+              <th>User</th>
+              <th>Email</th>
+              <th>Role</th>
+              <th>Joined</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for u in users %}
+            <tr data-row>
+              <td class="cb-col">
+                <input type="checkbox" name="user_ids" value="{{ u.id }}" class="row-cb">
+              </td>
+              <td>
+                <div class="avatar-cell">
+                  {% with letter=u.username|slice:":1"|lower %}
+                  <div class="avatar avatar-{% if letter == 'a' %}a{% elif letter == 'b' %}b{% elif letter == 'c' %}c{% elif letter == 'd' %}d{% elif letter == 'e' %}e{% elif letter == 'f' %}f{% elif letter == 'g' %}g{% elif letter == 'h' %}h{% else %}other{% endif %}">
+                    {{ u.username|slice:":1"|upper }}
+                  </div>
+                  {% endwith %}
+                  <span class="username-col">{{ u.username }}</span>
+                </div>
+              </td>
+              <td class="email-col">{{ u.email|default:"—" }}</td>
+              <td>
+                {% with role=u.userprofile.role %}
+                <span class="role-badge role-{{ role }}">
+                  {% if role == 'superuser' %}<i class="fas fa-shield-halved"></i>{% elif role == 'admin' %}<i class="fas fa-crown"></i>{% elif role == 'manager' %}<i class="fas fa-briefcase"></i>{% else %}<i class="fas fa-cash-register"></i>{% endif %}
+                  {{ role|title|default:"—" }}
+                </span>
+                {% endwith %}
+              </td>
+              <td class="date-col">{{ u.date_joined|date:"M j, Y" }}</td>
+              <td>
+                <div class="action-btns">
+                  <a href="{% url 'edit_user' u.id %}" class="icon-btn icon-btn-edit" title="Edit user"><i class="fas fa-pen-to-square"></i></a>
+                  <a href="{% url 'delete_user' u.id %}" class="icon-btn icon-btn-delete" title="Delete user"><i class="fas fa-trash-can"></i></a>
+                </div>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+
+        {% else %}
+        <div class="empty-state">
+          <i class="fas fa-users-slash"></i>
+          <p>No users found in this workspace.</p>
+        </div>
+        {% endif %}
+      </div><!-- /desktop-table -->
+
+      <!-- Mobile Cards -->
+      <div class="mobile-cards">
+        {% if users %}
+          {% for u in users %}
+          <div class="user-card">
+            {% with letter=u.username|slice:":1"|lower %}
+            <div class="avatar avatar-{% if letter == 'a' %}a{% elif letter == 'b' %}b{% elif letter == 'c' %}c{% elif letter == 'd' %}d{% elif letter == 'e' %}e{% elif letter == 'f' %}f{% elif letter == 'g' %}g{% elif letter == 'h' %}h{% else %}other{% endif %}" style="width:40px;height:40px;font-size:1rem;flex-shrink:0;">
+              {{ u.username|slice:":1"|upper }}
+            </div>
+            {% endwith %}
+            <div class="user-card-body">
+              <div class="user-card-name">{{ u.username }}</div>
+              <div class="user-card-email">{{ u.email|default:"No email" }}</div>
+              <div class="user-card-footer">
+                <span class="role-badge role-{{ u.userprofile.role }}">{{ u.userprofile.role|title|default:"—" }}</span>
+                <span class="user-card-date">{{ u.date_joined|date:"M j, Y" }}</span>
+                <div class="action-btns">
+                  <a href="{% url 'edit_user' u.id %}" class="icon-btn icon-btn-edit" title="Edit"><i class="fas fa-pen-to-square"></i></a>
+                  <a href="{% url 'delete_user' u.id %}" class="icon-btn icon-btn-delete" title="Delete"><i class="fas fa-trash-can"></i></a>
+                </div>
+              </div>
+            </div>
+          </div>
+          {% endfor %}
+        {% else %}
+          <div class="empty-state">
+            <i class="fas fa-users-slash"></i>
+            <p>No users found.</p>
+          </div>
+        {% endif %}
+      </div><!-- /mobile-cards -->
+
+    </form><!-- /bulk-form -->
+
+    <!-- Pagination -->
+    {% if users.has_other_pages %}
+    <div class="pagination-wrap">
+      {% if users.has_previous %}
+        <a href="?page={{ users.previous_page_number }}" class="page-btn"><i class="fas fa-chevron-left"></i></a>
+      {% else %}
+        <span class="page-btn disabled"><i class="fas fa-chevron-left"></i></span>
+      {% endif %}
+
+      {% for num in users.paginator.page_range %}
+        {% if users.number == num %}
+          <span class="page-btn active">{{ num }}</span>
+        {% elif num > users.number|add:'-3' and num < users.number|add:'3' %}
+          <a href="?page={{ num }}" class="page-btn">{{ num }}</a>
+        {% endif %}
+      {% endfor %}
+
+      {% if users.has_next %}
+        <a href="?page={{ users.next_page_number }}" class="page-btn"><i class="fas fa-chevron-right"></i></a>
+      {% else %}
+        <span class="page-btn disabled"><i class="fas fa-chevron-right"></i></span>
+      {% endif %}
+    </div>
     {% endif %}
-</div>
+
+  </div><!-- /card -->
+</div><!-- /page-wrap -->
+
+<script>
+(function () {
+  const selectAll = document.getElementById('select-all');
+  const bulkCount = document.getElementById('bulk-count');
+  const bulkBtn   = document.getElementById('bulk-delete-btn');
+  const checkboxes = () => document.querySelectorAll('.row-cb');
+  const rows       = () => document.querySelectorAll('tr[data-row]');
+
+  function updateBulk() {
+    const checked = [...checkboxes()].filter(c => c.checked);
+    const n = checked.length;
+    bulkCount.textContent = n > 0 ? `(${n} selected)` : '';
+    bulkBtn.disabled = n === 0;
+    // highlight rows
+    rows().forEach(row => {
+      const cb = row.querySelector('.row-cb');
+      row.classList.toggle('selected', cb && cb.checked);
+    });
+    selectAll.indeterminate = n > 0 && n < checkboxes().length;
+    selectAll.checked = n > 0 && n === checkboxes().length;
+  }
+
+  selectAll.addEventListener('change', () => {
+    checkboxes().forEach(cb => cb.checked = selectAll.checked);
+    updateBulk();
+  });
+
+  document.addEventListener('change', e => {
+    if (e.target.classList.contains('row-cb')) updateBulk();
+  });
+
+  document.getElementById('bulk-form').addEventListener('submit', e => {
+    const checked = [...checkboxes()].filter(c => c.checked);
+    if (checked.length === 0) { e.preventDefault(); return; }
+    if (!confirm(`Delete ${checked.length} user(s)? This cannot be undone.`)) e.preventDefault();
+  });
+})();
+</script>
 {% endblock %}

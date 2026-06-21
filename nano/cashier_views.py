@@ -69,7 +69,7 @@ def process_cashier_airtime_sale(request):
                 'stock': 999999,  # Unlimited stock for quick sell
                 'is_active': True
             }
-        )
+        , workspace=workspace)
         
         if not created and airtime_product.price != price:
             # Update price if different
@@ -88,7 +88,7 @@ def process_cashier_airtime_sale(request):
             network=network,
             amount=amount,
             product_type=sale_type
-        )
+        , workspace=workspace)
         
         # Log user activity
         UserActivity.objects.create(
@@ -96,7 +96,7 @@ def process_cashier_airtime_sale(request):
             action='airtime_sale',
             details=f'Quick airtime sale: {product_name} to {customer_phone}',
             ip_address=request.META.get('REMOTE_ADDR', '')
-        )
+        , workspace=workspace)
         
         # Create notification for managers
         manager_users = User.objects.filter(
@@ -109,7 +109,7 @@ def process_cashier_airtime_sale(request):
                 message=f'Cashier {request.user.username} completed quick sale: {product_name} to {customer_phone} for R{price}',
                 notification_type='airtime_sale',
                 target_user=manager
-            )
+            , workspace=workspace)
             send_fcm_notification_to_user(manager, notification.title, notification.message)
         
         return JsonResponse({
@@ -170,7 +170,7 @@ def process_quick_airtime_sale(request):
                 'stock': 999999,  # Unlimited stock for quick sell
                 'is_active': True
             }
-        )
+        , workspace=workspace)
         
         if not created and airtime_product.price != price:
             # Update price if different
@@ -189,7 +189,7 @@ def process_quick_airtime_sale(request):
             network=network,
             amount=amount,
             product_type=sale_type
-        )
+        , workspace=workspace)
         
         # Log user activity
         UserActivity.objects.create(
@@ -197,7 +197,7 @@ def process_quick_airtime_sale(request):
             action='airtime_sale',
             details=f'Quick airtime sale: {product_name} to {customer_phone}',
             ip_address=request.META.get('REMOTE_ADDR', '')
-        )
+        , workspace=workspace)
         
         return JsonResponse({
             'success': True,

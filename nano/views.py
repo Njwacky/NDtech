@@ -14,6 +14,7 @@ from .views.auth_views import (
     sign_in,
     logout_view,
     forgot_password,
+    verify_admin_password,
 )
 
 # Dashboard Views
@@ -34,9 +35,9 @@ from .views.user_views import (
 # Import all other views from views_legacy (these need to be further split)
 from .views_legacy import *
 
-# ============================================================================
+# =========================================================================
 # EXPORT ALL VIEWS FOR URL IMPORTS
-# ============================================================================
+# =========================================================================
 
 __all__ = [
     # Auth views
@@ -45,6 +46,7 @@ __all__ = [
     'sign_in',
     'logout_view',
     'forgot_password',
+    'verify_admin_password',
     
     # Dashboard views
     'home',

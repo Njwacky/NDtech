@@ -41,13 +41,14 @@ def check_low_stock():
                 target_role='admin',  # Default to admin role
                 target_user=admin_user,
                 product=product
-            )
+            , workspace=workspace)
 
             # Send FCM notification
             send_fcm_notification_to_user(notification.target_user, notification.title, notification.message)
 
 @login_required
 def home(request):
+    workspace = getattr(request.user.userprofile, 'workspace', None) if hasattr(getattr(request, 'user', None), 'userprofile') else None
     # POS Dashboard
     products = Product.objects.all()
 
@@ -57,9 +58,11 @@ def home(request):
     return render(request, 'nano/home.html', {'products': products})
 
 def register(request):
+    workspace = getattr(request.user.userprofile, 'workspace', None) if hasattr(getattr(request, 'user', None), 'userprofile') else None
     return render(request, 'nano/register.html')
 
 def sign_up(request):
+    workspace = getattr(request.user.userprofile, 'workspace', None) if hasattr(getattr(request, 'user', None), 'userprofile') else None
     # Check if any users already exist
     existing_users = User.objects.exists()
 
@@ -128,6 +131,7 @@ def sign_up(request):
     return render(request, 'nano/sign_up.html', {'existing_users': existing_users})
 
 def sign_in(request):
+    workspace = getattr(request.user.userprofile, 'workspace', None) if hasattr(getattr(request, 'user', None), 'userprofile') else None
     if request.method == 'POST':
         username = request.POST.get('username', '').strip()
         password = request.POST.get('password', '')
@@ -156,10 +160,12 @@ def sign_in(request):
     return render(request, 'nano/sign_in.html')
 
 def logout_view(request):
+    workspace = getattr(request.user.userprofile, 'workspace', None) if hasattr(getattr(request, 'user', None), 'userprofile') else None
     logout(request)
     return redirect('register')
 
 def forgot_password(request):
+    workspace = getattr(request.user.userprofile, 'workspace', None) if hasattr(getattr(request, 'user', None), 'userprofile') else None
     """Handle forgot password requests"""
     if request.method == 'POST':
         username = request.POST.get('username', '').strip()
@@ -197,7 +203,7 @@ def forgot_password(request):
                         'user_id': user.id,
                         'request_time': timezone.now().isoformat()
                     }
-                )
+                , workspace=workspace)
                 notifications_created.append(notification.id)
 
                 # Send FCM notification
@@ -214,6 +220,7 @@ def forgot_password(request):
 
 @login_required
 def add_stock(request):
+    workspace = getattr(request.user.userprofile, 'workspace', None) if hasattr(getattr(request, 'user', None), 'userprofile') else None
     # Allow only superusers or users with admin/manager/cashier roles
     if not (request.user.is_superuser or (hasattr(request.user, 'userprofile') and request.user.userprofile.role in ['admin', 'manager', 'cashier'])):
         return HttpResponseForbidden("You do not have permission to access this page.")
@@ -339,7 +346,7 @@ def add_stock(request):
                 category=category,
                 expiry_date=expiry_date,
                 stock=stock
-            )
+            , workspace=workspace)
 
             messages.success(request, f'Product "{name}" added successfully!')
             return redirect('add_stock')
@@ -406,6 +413,7 @@ def add_stock(request):
 
 @login_required
 def manage_sales(request):
+    workspace = getattr(request.user.userprofile, 'workspace', None) if hasattr(getattr(request, 'user', None), 'userprofile') else None
     # Allow only superusers or users with admin/manager roles
     if not (request.user.is_superuser or (hasattr(request.user, 'userprofile') and request.user.userprofile.role in ['admin', 'manager'])):
         return HttpResponseForbidden("You do not have permission to access this page.")
@@ -508,6 +516,7 @@ def manage_sales(request):
 
 @login_required
 def create_user(request):
+    workspace = getattr(request.user.userprofile, 'workspace', None) if hasattr(getattr(request, 'user', None), 'userprofile') else None
     # Allow only superusers or users with admin role
     if not (request.user.is_superuser or (hasattr(request.user, 'userprofile') and request.user.userprofile.role in ['superuser', 'admin'])):
         return HttpResponseForbidden("You do not have permission to access this page.")
@@ -578,6 +587,7 @@ def create_user(request):
 
 @login_required
 def manage_users(request):
+    workspace = getattr(request.user.userprofile, 'workspace', None) if hasattr(getattr(request, 'user', None), 'userprofile') else None
     # Allow only superusers or users with admin role
     if not (request.user.is_superuser or (hasattr(request.user, 'userprofile') and request.user.userprofile.role in ['superuser', 'admin'])):
         return HttpResponseForbidden("You do not have permission to access this page.")
@@ -593,6 +603,7 @@ def manage_users(request):
 
 @login_required
 def edit_user(request, user_id):
+    workspace = getattr(request.user.userprofile, 'workspace', None) if hasattr(getattr(request, 'user', None), 'userprofile') else None
     # Allow only superusers or users with admin role
     if not (request.user.is_superuser or (hasattr(request.user, 'userprofile') and request.user.userprofile.role == 'admin')):
         return HttpResponseForbidden("You do not have permission to access this page.")
@@ -681,6 +692,7 @@ def edit_user(request, user_id):
 
 @login_required
 def delete_user(request, user_id):
+    workspace = getattr(request.user.userprofile, 'workspace', None) if hasattr(getattr(request, 'user', None), 'userprofile') else None
     # Allow only superusers or users with admin role
     if not (request.user.is_superuser or (hasattr(request.user, 'userprofile') and request.user.userprofile.role == 'admin')):
         return HttpResponseForbidden("You do not have permission to access this page.")
@@ -701,6 +713,7 @@ def delete_user(request, user_id):
 
 @login_required
 def bulk_delete_users(request):
+    workspace = getattr(request.user.userprofile, 'workspace', None) if hasattr(getattr(request, 'user', None), 'userprofile') else None
     # Allow only superusers or users with admin role
     if not (request.user.is_superuser or (hasattr(request.user, 'userprofile') and request.user.userprofile.role == 'admin')):
         return HttpResponseForbidden("You do not have permission to access this page.")
@@ -735,6 +748,7 @@ def bulk_delete_users(request):
 
 @login_required
 def pending_orders(request):
+    workspace = getattr(request.user.userprofile, 'workspace', None) if hasattr(getattr(request, 'user', None), 'userprofile') else None
     # Allow only superusers or users with admin/manager/cashier roles
     if not (request.user.is_superuser or (hasattr(request.user, 'userprofile') and request.user.userprofile.role in ['admin', 'manager', 'cashier'])):
         return HttpResponseForbidden("You do not have permission to access this page.")
@@ -750,6 +764,7 @@ def pending_orders(request):
 
 @login_required
 def save_order(request):
+    workspace = getattr(request.user.userprofile, 'workspace', None) if hasattr(getattr(request, 'user', None), 'userprofile') else None
     if request.method == 'POST':
         try:
             data = json.loads(request.body)
@@ -782,7 +797,7 @@ def save_order(request):
                 items=cart_items,
                 total=total_amount,
                 status='pending'
-            )
+            , workspace=workspace)
 
             return JsonResponse({'success': True, 'order_id': order.id})
 
@@ -795,6 +810,7 @@ def save_order(request):
 
 @login_required
 def order_details(request, order_id):
+    workspace = getattr(request.user.userprofile, 'workspace', None) if hasattr(getattr(request, 'user', None), 'userprofile') else None
     # Allow only superusers or users with admin/manager/cashier roles
     if not (request.user.is_superuser or (hasattr(request.user, 'userprofile') and request.user.userprofile.role in ['admin', 'manager', 'cashier'])):
         return HttpResponseForbidden("You do not have permission to access this page.")
@@ -804,6 +820,7 @@ def order_details(request, order_id):
 
 @login_required
 def complete_order(request, order_id):
+    workspace = getattr(request.user.userprofile, 'workspace', None) if hasattr(getattr(request, 'user', None), 'userprofile') else None
     # Allow only superusers or users with admin/manager/cashier roles
     if not (request.user.is_superuser or (hasattr(request.user, 'userprofile') and request.user.userprofile.role in ['admin', 'manager', 'cashier'])):
         return HttpResponseForbidden("You do not have permission to access this page.")
@@ -872,7 +889,7 @@ def complete_order(request, order_id):
                             product=product,
                             quantity=quantity,
                             total_price=item.get('price', 0) * quantity
-                        )
+                        , workspace=workspace)
                     else:
                         stock_issues.append(f'Insufficient stock for {product.name}. Available: {product.stock}, Required: {quantity}')
                 except Product.DoesNotExist:
@@ -905,7 +922,7 @@ def complete_order(request, order_id):
                 change_given=change_given,
                 payment_method=payment_method,
                 processed_by=request.user
-            )
+            , workspace=workspace)
 
             # Update pending order status
             order.status = 'completed'
@@ -944,6 +961,7 @@ def complete_order(request, order_id):
 
 @login_required
 def completed_orders(request):
+    workspace = getattr(request.user.userprofile, 'workspace', None) if hasattr(getattr(request, 'user', None), 'userprofile') else None
     # Allow only superusers or users with admin/manager/cashier roles
     if not (request.user.is_superuser or (hasattr(request.user, 'userprofile') and request.user.userprofile.role in ['admin', 'manager', 'cashier'])):
         return HttpResponseForbidden("You do not have permission to access this page.")
@@ -971,6 +989,7 @@ def completed_orders(request):
 
 @login_required
 def completed_order_details(request, order_id):
+    workspace = getattr(request.user.userprofile, 'workspace', None) if hasattr(getattr(request, 'user', None), 'userprofile') else None
     # Allow only superusers or users with admin/manager/cashier roles
     if not (request.user.is_superuser or (hasattr(request.user, 'userprofile') and request.user.userprofile.role in ['admin', 'manager', 'cashier'])):
         return HttpResponseForbidden("You do not have permission to access this page.")
@@ -996,6 +1015,7 @@ def completed_order_details(request, order_id):
 
 @login_required
 def checkout(request):
+    workspace = getattr(request.user.userprofile, 'workspace', None) if hasattr(getattr(request, 'user', None), 'userprofile') else None
     if request.method == 'POST':
         try:
             data = json.loads(request.body)
@@ -1032,7 +1052,7 @@ def checkout(request):
                         product=product,
                         quantity=quantity,
                         total_price=price * quantity
-                    )
+                    , workspace=workspace)
                 except Product.DoesNotExist:
                     continue
 
@@ -1059,6 +1079,7 @@ def checkout(request):
 
 @login_required
 def get_notifications(request):
+    workspace = getattr(request.user.userprofile, 'workspace', None) if hasattr(getattr(request, 'user', None), 'userprofile') else None
     """Get notifications for the current user"""
     notifications = Notification.objects.filter(
         target_user=request.user
@@ -1089,6 +1110,7 @@ def get_notifications(request):
 
 @login_required
 def mark_notification_read(request, notification_id):
+    workspace = getattr(request.user.userprofile, 'workspace', None) if hasattr(getattr(request, 'user', None), 'userprofile') else None
     """Mark a notification as read"""
     try:
         notification = Notification.objects.get(id=notification_id, target_user=request.user)
@@ -1100,12 +1122,14 @@ def mark_notification_read(request, notification_id):
 
 @login_required
 def mark_all_notifications_read(request):
+    workspace = getattr(request.user.userprofile, 'workspace', None) if hasattr(getattr(request, 'user', None), 'userprofile') else None
     """Mark all notifications as read for the current user"""
     Notification.objects.filter(target_user=request.user, is_read=False).update(is_read=True)
     return JsonResponse({'success': True})
 
 @login_required
 def cancel_order(request, order_id):
+    workspace = getattr(request.user.userprofile, 'workspace', None) if hasattr(getattr(request, 'user', None), 'userprofile') else None
     """Cancel a pending order"""
     # Allow only superusers or users with admin/manager/cashier roles
     if not (request.user.is_superuser or (hasattr(request.user, 'userprofile') and request.user.userprofile.role in ['admin', 'manager', 'cashier'])):
@@ -1123,6 +1147,7 @@ def cancel_order(request, order_id):
 
 @login_required
 def checkout_order(request, order_id=None):
+    workspace = getattr(request.user.userprofile, 'workspace', None) if hasattr(getattr(request, 'user', None), 'userprofile') else None
     """Checkout an order (with or without order_id)"""
     if order_id:
         # Allow only superusers or users with admin/manager/cashier roles
@@ -1162,7 +1187,7 @@ def checkout_order(request, order_id=None):
                     change_given=float(request.POST.get('cash_received', total_amount)) - float(total_amount),
                     payment_method=request.POST.get('payment_method', 'cash'),
                     processed_by=request.user
-                )
+                , workspace=workspace)
 
                 # Create individual sale records for each product for inventory tracking
                 for item in cart_items:
@@ -1176,7 +1201,7 @@ def checkout_order(request, order_id=None):
                             product=product,
                             quantity=quantity,
                             total_price=price * quantity
-                        )
+                        , workspace=workspace)
                     except Product.DoesNotExist:
                         continue
 
@@ -1308,7 +1333,7 @@ def checkout_order(request, order_id=None):
                     change_given=change_given,
                     payment_method='cash',
                     processed_by=request.user
-                )
+                , workspace=workspace)
 
                 # Create individual sale records for each product for inventory tracking
                 for item in cart_items:
@@ -1335,7 +1360,7 @@ def checkout_order(request, order_id=None):
                         product=product,
                         quantity=quantity,
                         total_price=price * quantity
-                    )
+                    , workspace=workspace)
 
                 # Update product stock
                 for item in cart_items:
@@ -1412,6 +1437,7 @@ def checkout_order(request, order_id=None):
 
 @login_required
 def dismiss_notification(request, notification_id):
+    workspace = getattr(request.user.userprofile, 'workspace', None) if hasattr(getattr(request, 'user', None), 'userprofile') else None
     """Dismiss a notification (mark as read)"""
     try:
         notification = Notification.objects.get(id=notification_id, target_user=request.user)
@@ -1423,6 +1449,7 @@ def dismiss_notification(request, notification_id):
 
 @login_required
 def create_cashier_request(request):
+    workspace = getattr(request.user.userprofile, 'workspace', None) if hasattr(getattr(request, 'user', None), 'userprofile') else None
     """Create a cashier request for approval"""
     if request.method == 'POST':
         try:
@@ -1466,7 +1493,7 @@ def create_cashier_request(request):
                         'sender_id': request.user.id,
                         'timestamp': timezone.now().isoformat()
                     }
-                )
+                , workspace=workspace)
 
             return JsonResponse({'success': True, 'message': 'Request submitted successfully'})
 
@@ -1489,6 +1516,7 @@ def create_cashier_request(request):
 
 @login_required
 def check_role(request):
+    workspace = getattr(request.user.userprofile, 'workspace', None) if hasattr(getattr(request, 'user', None), 'userprofile') else None
     """Check if user has specific role"""
     if request.method == 'GET':
         role = request.GET.get('role', '')
@@ -1505,6 +1533,7 @@ def check_role(request):
 
 @login_required
 def check_low_stock_api(request):
+    workspace = getattr(request.user.userprofile, 'workspace', None) if hasattr(getattr(request, 'user', None), 'userprofile') else None
     """API endpoint to check for low stock products"""
     if request.method == 'GET':
         low_stock_products = Product.objects.filter(stock__lt=10)
@@ -1524,6 +1553,7 @@ def check_low_stock_api(request):
 
 @login_required
 def get_user_by_username(request):
+    workspace = getattr(request.user.userprofile, 'workspace', None) if hasattr(getattr(request, 'user', None), 'userprofile') else None
     """Get user by username"""
     if request.method == 'GET':
         username = request.GET.get('username', '').strip()
@@ -1549,6 +1579,7 @@ def get_user_by_username(request):
 
 @login_required
 def get_product_by_barcode(request):
+    workspace = getattr(request.user.userprofile, 'workspace', None) if hasattr(getattr(request, 'user', None), 'userprofile') else None
     """Get product by barcode"""
     if request.method == 'GET':
         barcode = request.GET.get('barcode', '').strip()
@@ -1609,6 +1640,7 @@ def run_price_comparison():
 # Warehouse views - complete implementations
 @login_required
 def warehouse_import(request):
+    workspace = getattr(request.user.userprofile, 'workspace', None) if hasattr(getattr(request, 'user', None), 'userprofile') else None
     """Import warehouse prices from CSV/Excel files"""
     # Allow only superusers or users with admin/manager roles
     if not (request.user.is_superuser or (hasattr(request.user, 'userprofile') and request.user.userprofile.role in ['admin', 'manager'])):
@@ -1702,6 +1734,7 @@ def warehouse_import(request):
 
 @login_required
 def warehouse_prices(request):
+    workspace = getattr(request.user.userprofile, 'workspace', None) if hasattr(getattr(request, 'user', None), 'userprofile') else None
     """Display warehouse prices with search and filtering"""
     # Allow only superusers or users with admin/manager/cashier roles
     if not (request.user.is_superuser or (hasattr(request.user, 'userprofile') and request.user.userprofile.role in ['admin', 'manager', 'cashier'])):
@@ -1744,6 +1777,7 @@ def warehouse_prices(request):
 
 @login_required
 def price_comparisons(request):
+    workspace = getattr(request.user.userprofile, 'workspace', None) if hasattr(getattr(request, 'user', None), 'userprofile') else None
     """Display price comparisons"""
     # Allow only superusers or users with admin/manager/cashier roles
     if not (request.user.is_superuser or (hasattr(request.user, 'userprofile') and request.user.userprofile.role in ['admin', 'manager', 'cashier'])):
@@ -1808,6 +1842,7 @@ def price_comparisons(request):
 
 @login_required
 def sync_warehouse_data(request):
+    workspace = getattr(request.user.userprofile, 'workspace', None) if hasattr(getattr(request, 'user', None), 'userprofile') else None
     """Sync warehouse data"""
     # Allow only superusers or users with admin/manager roles
     if not (request.user.is_superuser or (hasattr(request.user, 'userprofile') and request.user.userprofile.role in ['admin', 'manager'])):
@@ -1821,6 +1856,7 @@ def sync_warehouse_data(request):
 
 @login_required
 def export_warehouse_prices(request):
+    workspace = getattr(request.user.userprofile, 'workspace', None) if hasattr(getattr(request, 'user', None), 'userprofile') else None
     """Export warehouse prices"""
     # Allow only superusers or users with admin/manager roles
     if not (request.user.is_superuser or (hasattr(request.user, 'userprofile') and request.user.userprofile.role in ['admin', 'manager'])):
@@ -1832,6 +1868,7 @@ def export_warehouse_prices(request):
 
 @login_required
 def export_price_comparisons(request):
+    workspace = getattr(request.user.userprofile, 'workspace', None) if hasattr(getattr(request, 'user', None), 'userprofile') else None
     """Export price comparisons"""
     # Allow only superusers or users with admin/manager roles
     if not (request.user.is_superuser or (hasattr(request.user, 'userprofile') and request.user.userprofile.role in ['admin', 'manager'])):
@@ -1843,6 +1880,7 @@ def export_price_comparisons(request):
 
 @login_required
 def warehouse_api_prices(request):
+    workspace = getattr(request.user.userprofile, 'workspace', None) if hasattr(getattr(request, 'user', None), 'userprofile') else None
     """API endpoint for warehouse prices"""
     if request.method == 'GET':
         # Simplified API response
@@ -1852,6 +1890,7 @@ def warehouse_api_prices(request):
 
 @login_required
 def run_price_comparison_view(request):
+    workspace = getattr(request.user.userprofile, 'workspace', None) if hasattr(getattr(request, 'user', None), 'userprofile') else None
     """Run price comparison via AJAX"""
     # Allow only superusers or users with admin/manager roles
     if not (request.user.is_superuser or (hasattr(request.user, 'userprofile') and request.user.userprofile.role in ['admin', 'manager'])):
@@ -1868,6 +1907,7 @@ def run_price_comparison_view(request):
 
 @login_required
 def price_comparison_details(request, comparison_id):
+    workspace = getattr(request.user.userprofile, 'workspace', None) if hasattr(getattr(request, 'user', None), 'userprofile') else None
     """Get detailed price comparison data via AJAX"""
     # Allow only superusers or users with admin/manager/cashier roles
     if not (request.user.is_superuser or (hasattr(request.user, 'userprofile') and request.user.userprofile.role in ['admin', 'manager', 'cashier'])):
@@ -1905,6 +1945,7 @@ def price_comparison_details(request, comparison_id):
 
 @login_required
 def price_comparisons_marketing(request):
+    workspace = getattr(request.user.userprofile, 'workspace', None) if hasattr(getattr(request, 'user', None), 'userprofile') else None
     """Display marketing-focused price comparisons dashboard"""
     # Allow only superusers or users with admin/manager/cashier roles
     if not (request.user.is_superuser or (hasattr(request.user, 'userprofile') and request.user.userprofile.role in ['admin', 'manager', 'cashier'])):
@@ -2014,6 +2055,7 @@ def price_comparisons_marketing(request):
 
 @login_required
 def marketing_analytics_data(request):
+    workspace = getattr(request.user.userprofile, 'workspace', None) if hasattr(getattr(request, 'user', None), 'userprofile') else None
     """API endpoint for marketing analytics data"""
     # Allow only superusers or users with admin/manager/cashier roles
     if not (request.user.is_superuser or (hasattr(request.user, 'userprofile') and request.user.userprofile.role in ['admin', 'manager', 'cashier'])):
@@ -2125,6 +2167,7 @@ def marketing_analytics_data(request):
 
 @login_required
 def export_marketing_report(request):
+    workspace = getattr(request.user.userprofile, 'workspace', None) if hasattr(getattr(request, 'user', None), 'userprofile') else None
     """Export marketing report"""
     # Allow only superusers or users with admin/manager roles
     if not (request.user.is_superuser or (hasattr(request.user, 'userprofile') and request.user.userprofile.role in ['admin', 'manager'])):
@@ -2230,17 +2273,20 @@ def export_marketing_report(request):
 
 @login_required
 def notifications_page(request):
+    workspace = getattr(request.user.userprofile, 'workspace', None) if hasattr(getattr(request, 'user', None), 'userprofile') else None
     """Dedicated notifications page"""
     return render(request, 'nano/notifications_page.html')
 
 @login_required
 def test_notifications_complete(request):
+    workspace = getattr(request.user.userprofile, 'workspace', None) if hasattr(getattr(request, 'user', None), 'userprofile') else None
     """Complete notification system test page"""
     return render(request, 'nano/test_notifications_complete.html')
 
 # FCM (Firebase Cloud Messaging) Views
 @csrf_exempt
 def register_fcm_token(request):
+    workspace = getattr(request.user.userprofile, 'workspace', None) if hasattr(getattr(request, 'user', None), 'userprofile') else None
     """Register FCM token for push notifications"""
     if request.method == 'POST':
         try:
@@ -2290,6 +2336,7 @@ def register_fcm_token(request):
 
 @csrf_exempt
 def unregister_fcm_token(request):
+    workspace = getattr(request.user.userprofile, 'workspace', None) if hasattr(getattr(request, 'user', None), 'userprofile') else None
     """Unregister FCM token"""
     if request.method == 'POST':
         try:
@@ -2321,6 +2368,7 @@ def unregister_fcm_token(request):
 
 @login_required
 def send_test_notification(request):
+    workspace = getattr(request.user.userprofile, 'workspace', None) if hasattr(getattr(request, 'user', None), 'userprofile') else None
     """Send a test push notification to the current user"""
     if request.method == 'POST':
         try:
@@ -2351,6 +2399,7 @@ def send_test_notification(request):
 
 @login_required
 def send_price_change_notification(request):
+    workspace = getattr(request.user.userprofile, 'workspace', None) if hasattr(getattr(request, 'user', None), 'userprofile') else None
     """Send price change notification to a customer"""
     if request.method == 'POST':
         try:
@@ -2394,6 +2443,7 @@ def send_price_change_notification(request):
 
 @login_required
 def test_fcm_connection(request):
+    workspace = getattr(request.user.userprofile, 'workspace', None) if hasattr(getattr(request, 'user', None), 'userprofile') else None
     """Test FCM connection"""
     if request.method == 'GET':
         try:
@@ -2415,6 +2465,7 @@ def test_fcm_connection(request):
 
 @login_required
 def get_user_fcm_tokens(request):
+    workspace = getattr(request.user.userprofile, 'workspace', None) if hasattr(getattr(request, 'user', None), 'userprofile') else None
     """Get all FCM tokens for the current user"""
     if request.method == 'GET':
         try:
@@ -2490,11 +2541,13 @@ def send_fcm_for_notification(notification):
 
 @login_required
 def fcm_test_page(request):
+    workspace = getattr(request.user.userprofile, 'workspace', None) if hasattr(getattr(request, 'user', None), 'userprofile') else None
     """FCM test page for push notifications"""
     return render(request, 'nano/fcm_test.html')
 
 # PWA Views
 def service_worker(request):
+    workspace = getattr(request.user.userprofile, 'workspace', None) if hasattr(getattr(request, 'user', None), 'userprofile') else None
     """Serve the service worker file"""
     return HttpResponse(
         open('nano/static/nano/sw.js').read(),
@@ -2502,6 +2555,7 @@ def service_worker(request):
     )
 
 def manifest(request):
+    workspace = getattr(request.user.userprofile, 'workspace', None) if hasattr(getattr(request, 'user', None), 'userprofile') else None
     """Serve the PWA manifest file"""
     return HttpResponse(
         open('nano/static/nano/manifest.json').read(),
@@ -2509,12 +2563,14 @@ def manifest(request):
     )
 
 def offline(request):
+    workspace = getattr(request.user.userprofile, 'workspace', None) if hasattr(getattr(request, 'user', None), 'userprofile') else None
     """Offline fallback page"""
     return render(request, 'nano/offline.html')
 
 # Error Tracking Views
 @login_required
 def tracking_dashboard(request):
+    workspace = getattr(request.user.userprofile, 'workspace', None) if hasattr(getattr(request, 'user', None), 'userprofile') else None
     """Main tracking dashboard"""
     # Allow only superusers or users with admin/manager roles
     if not (request.user.is_superuser or (hasattr(request.user, 'userprofile') and request.user.userprofile.role in ['admin', 'manager'])):
@@ -2545,6 +2601,7 @@ def tracking_dashboard(request):
 
 @login_required
 def device_tracking(request):
+    workspace = getattr(request.user.userprofile, 'workspace', None) if hasattr(getattr(request, 'user', None), 'userprofile') else None
     """Device connection tracking"""
     # Allow only superusers or users with admin/manager roles
     if not (request.user.is_superuser or (hasattr(request.user, 'userprofile') and request.user.userprofile.role in ['admin', 'manager'])):
@@ -2593,6 +2650,7 @@ def device_tracking(request):
 
 @login_required
 def error_tracking(request):
+    workspace = getattr(request.user.userprofile, 'workspace', None) if hasattr(getattr(request, 'user', None), 'userprofile') else None
     """Error log tracking and management"""
     # Allow only superusers or users with admin/manager roles
     if not (request.user.is_superuser or (hasattr(request.user, 'userprofile') and request.user.userprofile.role in ['admin', 'manager'])):
@@ -2669,6 +2727,7 @@ def error_tracking(request):
 
 @login_required
 def error_details(request, error_id):
+    workspace = getattr(request.user.userprofile, 'workspace', None) if hasattr(getattr(request, 'user', None), 'userprofile') else None
     """Detailed view of a specific error"""
     # Allow only superusers or users with admin/manager roles
     if not (request.user.is_superuser or (hasattr(request.user, 'userprofile') and request.user.userprofile.role in ['admin', 'manager'])):
@@ -2689,6 +2748,7 @@ def error_details(request, error_id):
 
 @login_required
 def resolve_error(request, error_id):
+    workspace = getattr(request.user.userprofile, 'workspace', None) if hasattr(getattr(request, 'user', None), 'userprofile') else None
     """Mark an error as resolved"""
     # Allow only superusers or users with admin/manager roles
     if not (request.user.is_superuser or (hasattr(request.user, 'userprofile') and request.user.userprofile.role in ['admin', 'manager'])):
@@ -2708,6 +2768,7 @@ def resolve_error(request, error_id):
 
 @login_required
 def user_activity_tracking(request):
+    workspace = getattr(request.user.userprofile, 'workspace', None) if hasattr(getattr(request, 'user', None), 'userprofile') else None
     """User activity tracking"""
     # Allow only superusers or users with admin/manager roles
     if not (request.user.is_superuser or (hasattr(request.user, 'userprofile') and request.user.userprofile.role in ['admin', 'manager'])):
@@ -2778,6 +2839,7 @@ def user_activity_tracking(request):
 # Tracking API Views
 @csrf_exempt
 def track_device_connection(request):
+    workspace = getattr(request.user.userprofile, 'workspace', None) if hasattr(getattr(request, 'user', None), 'userprofile') else None
     """API endpoint to track device connections"""
     if request.method == 'POST':
         try:
@@ -2833,6 +2895,7 @@ def track_device_connection(request):
 
 @csrf_exempt
 def track_user_activity(request):
+    workspace = getattr(request.user.userprofile, 'workspace', None) if hasattr(getattr(request, 'user', None), 'userprofile') else None
     """API endpoint to track user activities"""
     if request.method == 'POST':
         try:
@@ -2879,7 +2942,7 @@ def track_user_activity(request):
                 device_connection=device_connection,
                 metadata=metadata,
                 duration_ms=duration_ms
-            )
+            , workspace=workspace)
             
             return JsonResponse({
                 'success': True,
@@ -2895,6 +2958,7 @@ def track_user_activity(request):
 
 @csrf_exempt
 def log_error(request):
+    workspace = getattr(request.user.userprofile, 'workspace', None) if hasattr(getattr(request, 'user', None), 'userprofile') else None
     """API endpoint to log errors"""
     if request.method == 'POST':
         try:
@@ -2956,7 +3020,7 @@ def log_error(request):
                 function_name=function_name,
                 user_action=user_action,
                 form_data=form_data
-            )
+            , workspace=workspace)
             
             return JsonResponse({
                 'success': True,

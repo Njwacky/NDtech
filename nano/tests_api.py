@@ -14,6 +14,13 @@ from .models import (
     FCMToken, AirtimeProduct, AirtimeSale, WarehousePrice, PriceComparison
 )
 
+# tests in this repo expect a `workspace` variable when creating workspace-scoped rows.
+# During these unit tests, we don't need a real workspace relationship (it only scopes queries).
+# Provide a safe default so the test suite can construct model instances.
+workspace = None
+
+
+
 
 class ProductAPITestCase(APITestCase):
     """Test cases for Product API endpoints"""
@@ -43,14 +50,14 @@ class ProductAPITestCase(APITestCase):
             category='basic_groceries',
             stock=50,
             barcode='1234567890123'
-        )
+        , workspace=workspace)
         self.product2 = Product.objects.create(
             name='Test Product 2',
             price=Decimal('5.99'),
             category='cold_drinks',
             stock=5,
             barcode='1234567890124'
-        )
+        , workspace=workspace)
 
     def test_get_product_list(self):
         """Test getting list of products"""
@@ -175,14 +182,14 @@ class NotificationAPITestCase(APITestCase):
             notification_type='system_alert',
             target_role='cashier',
             created_by=self.admin_user
-        )
+        , workspace=workspace)
         self.notification2 = Notification.objects.create(
             title='Test Notification 2',
             message='Test message 2',
             notification_type='low_stock',
             target_user=self.cashier_user,
             created_by=self.admin_user
-        )
+        , workspace=workspace)
 
     def test_get_notifications_as_cashier(self):
         """Test cashier getting their notifications"""
@@ -270,7 +277,7 @@ class ErrorLogAPITestCase(APITestCase):
             url='/test/url1/',
             request_method='GET',
             user=self.cashier_user
-        )
+        , workspace=workspace)
         self.error2 = ErrorLog.objects.create(
             error_type='system_error',
             severity='high',
@@ -278,7 +285,7 @@ class ErrorLogAPITestCase(APITestCase):
             url='/test/url2/',
             request_method='POST',
             user=self.admin_user
-        )
+        , workspace=workspace)
 
     def test_get_error_logs_as_cashier(self):
         """Test cashier getting only their own error logs"""
@@ -372,14 +379,14 @@ class SecurityEventAPITestCase(APITestCase):
             description='Successful login',
             user=self.cashier_user,
             ip_address='192.168.1.1'
-        )
+        , workspace=workspace)
         self.event2 = SecurityAuditLog.objects.create(
             event_type='login_failed',
             severity='warning',
             description='Failed login attempt',
             username_attempted='unknown_user',
             ip_address='192.168.1.2'
-        )
+        , workspace=workspace)
 
     def test_get_security_logs_as_admin(self):
         """Test admin getting security logs"""
@@ -450,13 +457,13 @@ class FCMTokenAPITestCase(APITestCase):
             token='token1_device1',
             device_id='device1',
             device_type='web'
-        )
+        , workspace=workspace)
         self.token2 = FCMToken.objects.create(
             user=self.user2,
             token='token2_device1',
             device_id='device2',
             device_type='android'
-        )
+        , workspace=workspace)
 
     def test_get_own_tokens(self):
         """Test user getting their own tokens"""
@@ -515,7 +522,7 @@ class AirtimeProductAPITestCase(APITestCase):
             value=Decimal('10.00'),
             price=Decimal('10.00'),
             stock=50
-        )
+        , workspace=workspace)
         self.airtime2 = AirtimeProduct.objects.create(
             name='MTN Data R20',
             network='mtn',
@@ -523,7 +530,7 @@ class AirtimeProductAPITestCase(APITestCase):
             value=Decimal('20.00'),
             price=Decimal('19.00'),
             stock=3  # Low stock
-        )
+        , workspace=workspace)
 
     def test_get_airtime_products(self):
         """Test getting list of airtime products"""
@@ -603,7 +610,7 @@ class AirtimeSaleAPITestCase(APITestCase):
             value=Decimal('10.00'),
             price=Decimal('10.00'),
             stock=100
-        )
+        , workspace=workspace)
         
         # Create airtime sale
         self.sale = AirtimeSale.objects.create(
@@ -613,7 +620,7 @@ class AirtimeSaleAPITestCase(APITestCase):
             customer_phone='0721234567',
             status='pending',
             requested_by=self.cashier_user
-        )
+        , workspace=workspace)
 
     def test_get_airtime_sales_as_cashier(self):
         """Test cashier getting their own sales"""

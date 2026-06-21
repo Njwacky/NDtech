@@ -1,123 +1,229 @@
 {% extends 'nano/base.html' %}
 {% load static %}
-
-{% block title %}Airtime History Review{% endblock %}
+{% block title %}Airtime History Review - NDtech POS{% endblock %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="{% static 'nano/airtime.css' %}">
+<style>
+  .page-wrap { padding: 2rem 1.5rem; max-width: 1400px; margin: 0 auto; }
+
+  /* Page Header */
+  .page-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 2rem; flex-wrap: wrap; gap: 1rem; }
+  .page-header-left { display: flex; align-items: center; gap: 1rem; }
+  .page-header-icon { width: 52px; height: 52px; background: linear-gradient(135deg, #7c3aed, #6d28d9); border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 1.4rem; color: #fff; flex-shrink: 0; }
+  .page-header-title { font-size: 1.6rem; font-weight: 700; color: #fff; margin: 0; }
+  .page-header-sub { font-size: 0.85rem; color: rgba(255,255,255,0.5); margin: 0; }
+  .page-header-actions { display: flex; gap: 0.75rem; flex-wrap: wrap; }
+
+  /* Buttons */
+  .btn { display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.55rem 1.1rem; border-radius: 10px; font-size: 0.85rem; font-weight: 600; cursor: pointer; border: none; text-decoration: none; transition: all 0.2s; }
+  .btn-primary { background: linear-gradient(135deg, #7c3aed, #6d28d9); color: #fff; }
+  .btn-primary:hover { opacity: 0.88; transform: translateY(-1px); }
+  .btn-ghost { background: transparent; color: rgba(255,255,255,0.7); border: 1px solid rgba(255,255,255,0.2); }
+  .btn-ghost:hover { background: rgba(255,255,255,0.07); color: #fff; }
+  .btn-sm { padding: 0.35rem 0.75rem; font-size: 0.78rem; }
+
+  /* Stats Cards */
+  .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 2rem; }
+  .stat-card { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.12); border-radius: 14px; padding: 1.25rem; }
+  .stat-label { font-size: 0.8rem; color: rgba(255,255,255,0.5); margin-bottom: 0.5rem; }
+  .stat-value { font-size: 1.8rem; font-weight: 700; color: #fff; }
+  .stat-value.revenue { color: #34d399; }
+
+  /* Section */
+  .section-card { background: rgba(255,255,255,0.05); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.12); border-radius: 16px; padding: 1.5rem; margin-bottom: 2rem; }
+  .section-title { font-size: 1.05rem; font-weight: 600; color: #fff; margin: 0 0 0.25rem 0; }
+  .section-sub { font-size: 0.8rem; color: rgba(255,255,255,0.45); margin: 0 0 1.25rem 0; }
+  .section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.25rem; flex-wrap: wrap; gap: 0.75rem; }
+
+  /* Filters */
+  .filter-bar { display: flex; gap: 0.75rem; flex-wrap: wrap; margin-bottom: 1.5rem; }
+  .filter-input, .filter-select { background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.15); border-radius: 10px; padding: 0.55rem 0.9rem; color: #fff; font-size: 0.85rem; outline: none; min-width: 140px; }
+  .filter-input:focus, .filter-select:focus { border-color: #7c3aed; background: rgba(124,58,237,0.1); }
+  .filter-input { cursor: text; }
+  .filter-select { cursor: pointer; }
+
+  /* Table */
+  .data-table { width: 100%; border-collapse: collapse; }
+  .data-table th { padding: 0.7rem 1rem; font-size: 0.72rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: rgba(255,255,255,0.45); text-align: left; border-bottom: 1px solid rgba(255,255,255,0.08); }
+  .data-table td { padding: 0.8rem 1rem; font-size: 0.85rem; color: rgba(255,255,255,0.8); border-bottom: 1px solid rgba(255,255,255,0.05); vertical-align: middle; }
+  .data-table tr:last-child td { border-bottom: none; }
+  .data-table tbody tr:hover td { background: rgba(255,255,255,0.04); }
+  .table-wrap { overflow-x: auto; }
+
+  /* Status badges */
+  .badge { display: inline-flex; align-items: center; padding: 0.22rem 0.65rem; border-radius: 999px; font-size: 0.7rem; font-weight: 600; }
+  .badge-pending { background: rgba(245,158,11,0.15); color: #fcd34d; border: 1px solid rgba(245,158,11,0.3); }
+  .badge-approved { background: rgba(16,185,129,0.15); color: #34d399; border: 1px solid rgba(16,185,129,0.3); }
+  .badge-rejected { background: rgba(239,68,68,0.15); color: #fca5a5; border: 1px solid rgba(239,68,68,0.3); }
+  .badge-completed { background: rgba(99,102,241,0.15); color: #a5b4fc; border: 1px solid rgba(99,102,241,0.3); }
+
+  /* Pagination */
+  .pagination { display: flex; align-items: center; justify-content: center; gap: 0.5rem; margin-top: 1.5rem; }
+  .page-link { padding: 0.45rem 0.85rem; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: rgba(255,255,255,0.7); text-decoration: none; font-size: 0.85rem; transition: all 0.2s; }
+  .page-link:hover { background: rgba(255,255,255,0.1); color: #fff; }
+  .page-link.active { background: linear-gradient(135deg, #7c3aed, #6d28d9); border-color: #7c3aed; color: #fff; }
+  .page-link.disabled { opacity: 0.4; cursor: not-allowed; pointer-events: none; }
+
+  /* Empty state */
+  .empty-state { text-align: center; padding: 3rem 1rem; color: rgba(255,255,255,0.35); }
+  .empty-state i { font-size: 2.5rem; margin-bottom: 0.75rem; display: block; }
+  .empty-state p { margin: 0; font-size: 0.9rem; }
+
+  @media (max-width: 768px) {
+    .page-wrap { padding: 1rem; }
+    .page-header { flex-direction: column; align-items: flex-start; }
+    .page-header-actions { width: 100%; }
+    .page-header-actions .btn { flex: 1; justify-content: center; }
+    .stats-grid { grid-template-columns: 1fr; }
+    .filter-bar { flex-direction: column; }
+    .filter-input, .filter-select { width: 100%; }
+    .data-table th, .data-table td { padding: 0.6rem 0.65rem; font-size: 0.8rem; }
+  }
+</style>
 {% endblock %}
 
 {% block content %}
-<div class="container-fluid">
-  <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
-    <div>
-      <h2 class="mb-0"><i class="fas fa-history"></i> Airtime History Review</h2>
-      <div class="text-muted small">
-        Total sales: <strong>{{ total_sales }}</strong> • Total revenue: <strong>R{{ total_revenue }}</strong>
+<div class="page-wrap">
+
+  <!-- Page Header -->
+  <div class="page-header">
+    <div class="page-header-left">
+      <div class="page-header-icon"><i class="fas fa-history"></i></div>
+      <div>
+        <h1 class="page-header-title">History & Review</h1>
+        <p class="page-header-sub">Review airtime transaction history with verification</p>
       </div>
     </div>
-    <a class="btn btn-outline-primary" href="{% url 'airtime_dashboard' %}">
-      <i class="fas fa-tachometer-alt"></i> Dashboard
-    </a>
-  </div>
-
-  <div class="card shadow-sm mb-3">
-    <div class="card-body">
-      <form method="get" class="row g-2 align-items-end">
-        <div class="col-12 col-md-3">
-          <label class="form-label">From</label>
-          <input class="form-control" type="date" name="date_from" value="{{ date_from }}">
-        </div>
-        <div class="col-12 col-md-3">
-          <label class="form-label">To</label>
-          <input class="form-control" type="date" name="date_to" value="{{ date_to }}">
-        </div>
-        <div class="col-12 col-md-3">
-          <label class="form-label">Phone</label>
-          <input class="form-control" name="phone" value="{{ phone_filter }}" placeholder="search digits">
-        </div>
-        <div class="col-12 col-md-3">
-          <label class="form-label">Network</label>
-          <input class="form-control" name="network" value="{{ network_filter }}" placeholder="e.g. mtn">
-        </div>
-        <div class="col-12 d-flex gap-2">
-          <button class="btn btn-primary" type="submit"><i class="fas fa-filter"></i> Filter</button>
-          <a class="btn btn-outline-secondary" href="{% url 'airtime_history_review' %}">Clear</a>
-        </div>
-      </form>
-    </div>
-  </div>
-
-  <div class="card shadow-sm">
-    <div class="card-header fw-bold"><i class="fas fa-list"></i> Sales</div>
-    <div class="card-body">
-      {% if sales %}
-      <div class="table-responsive">
-        <table class="table table-sm align-middle">
-          <thead>
-            <tr>
-              <th>ID</th>
-              <th>Customer</th>
-              <th>Product</th>
-              <th class="text-end">Total</th>
-              <th>Status</th>
-              <th class="text-muted">Created</th>
-              <th></th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for s in sales %}
-            <tr>
-              <td>#{{ s.id }}</td>
-              <td>{{ s.customer_phone }}</td>
-              <td>{{ s.airtime_product.name }}</td>
-              <td class="text-end">R{{ s.total_price }}</td>
-              <td><span class="badge bg-light text-dark">{{ s.status }}</span></td>
-              <td class="small text-muted">{{ s.created_at }}</td>
-              <td class="text-end">
-                <button class="btn btn-sm btn-outline-primary js-verify-phone" type="button" data-sale-id="{{ s.id }}">
-                  Verify phone
-                </button>
-              </td>
-            </tr>
-            {% endfor %}
-          </tbody>
-        </table>
-      </div>
-
-      {% if is_paginated %}
-      <nav aria-label="History pagination">
-        <ul class="pagination">
-          {% if page_obj.has_previous %}
-          <li class="page-item">
-            <a class="page-link" href="?page={{ page_obj.previous_page_number }}&date_from={{ date_from }}&date_to={{ date_to }}&phone={{ phone_filter }}&network={{ network_filter }}">Previous</a>
-          </li>
-          {% else %}
-          <li class="page-item disabled"><span class="page-link">Previous</span></li>
-          {% endif %}
-
-          <li class="page-item disabled"><span class="page-link">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span></li>
-
-          {% if page_obj.has_next %}
-          <li class="page-item">
-            <a class="page-link" href="?page={{ page_obj.next_page_number }}&date_from={{ date_from }}&date_to={{ date_to }}&phone={{ phone_filter }}&network={{ network_filter }}">Next</a>
-          </li>
-          {% else %}
-          <li class="page-item disabled"><span class="page-link">Next</span></li>
-          {% endif %}
-        </ul>
-      </nav>
+    <div class="page-header-actions">
+      <a href="{% url 'airtime_dashboard' %}" class="btn btn-ghost"><i class="fas fa-arrow-left"></i> Back to Dashboard</a>
+      {% if is_manager %}
+      <a href="{% url 'airtime_management' %}" class="btn btn-ghost"><i class="fas fa-cog"></i> Manage Products</a>
+      <a href="{% url 'airtime_sales' %}" class="btn btn-ghost"><i class="fas fa-list"></i> Sales Records</a>
       {% endif %}
+    </div>
+  </div>
 
+  <!-- Statistics -->
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="stat-label">Total Sales</div>
+      <div class="stat-value">{{ total_sales }}</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Total Revenue</div>
+      <div class="stat-value revenue">R{{ total_revenue }}</div>
+    </div>
+  </div>
+
+  <!-- Filters -->
+  <div class="section-card">
+    <div class="section-header">
+      <div>
+        <h2 class="section-title"><i class="fas fa-filter" style="color:#a78bfa;margin-right:0.5rem;"></i>Filter History</h2>
+        <p class="section-sub">Filter by date range, phone number, or network</p>
+      </div>
+    </div>
+    <form method="get" class="filter-bar">
+      <input type="date" name="date_from" class="filter-input" value="{{ date_from }}" placeholder="From Date">
+      <input type="date" name="date_to" class="filter-input" value="{{ date_to }}" placeholder="To Date">
+      <input type="text" name="phone" class="filter-input" value="{{ phone_filter }}" placeholder="Phone Number">
+      <select name="network" class="filter-select">
+        <option value="">All Networks</option>
+        <option value="vodacom" {% if network_filter == 'vodacom' %}selected{% endif %}>Vodacom</option>
+        <option value="mtn" {% if network_filter == 'mtn' %}selected{% endif %}>MTN</option>
+        <option value="telkom" {% if network_filter == 'telkom' %}selected{% endif %}>Telkom</option>
+        <option value="cell_c" {% if network_filter == 'cell_c' %}selected{% endif %}>Cell C</option>
+        <option value="other" {% if network_filter == 'other' %}selected{% endif %}>Other</option>
+      </select>
+      <button type="submit" class="btn btn-primary"><i class="fas fa-search"></i> Filter</button>
+      <a href="{% url 'airtime_history_review' %}" class="btn btn-ghost btn-sm"><i class="fas fa-times"></i> Clear</a>
+    </form>
+  </div>
+
+  <!-- Sales Table -->
+  <div class="section-card">
+    <div class="section-header">
+      <div>
+        <h2 class="section-title"><i class="fas fa-list" style="color:#a78bfa;margin-right:0.5rem;"></i>Transaction History</h2>
+        <p class="section-sub">{% if is_manager %}All transactions{% else %}Your transactions{% endif %}</p>
+      </div>
+    </div>
+
+    {% if sales %}
+    <div class="table-wrap">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Product</th>
+            <th>Network</th>
+            <th>Phone</th>
+            <th>Qty</th>
+            <th>Total</th>
+            <th>Status</th>
+            <th>Date</th>
+            {% if is_manager %}
+            <th>Sold By</th>
+            {% endif %}
+          </tr>
+        </thead>
+        <tbody>
+          {% for sale in sales %}
+          <tr>
+            <td style="color:rgba(255,255,255,0.45);">#{{ sale.id }}</td>
+            <td>{{ sale.airtime_product.name }}</td>
+            <td>{{ sale.airtime_product.network|title }}</td>
+            <td>{{ sale.customer_phone }}</td>
+            <td>{{ sale.quantity }}</td>
+            <td style="color:#34d399;font-weight:600;">R{{ sale.total_price }}</td>
+            <td>
+              <span class="badge
+                {% if sale.status == 'pending' %}badge-pending
+                {% elif sale.status == 'approved' %}badge-approved
+                {% elif sale.status == 'rejected' %}badge-rejected
+                {% else %}badge-completed{% endif %}">
+                {{ sale.status|title }}
+              </span>
+            </td>
+            <td style="color:rgba(255,255,255,0.5);font-size:0.8rem;">{{ sale.created_at|date:"M d, Y H:i" }}</td>
+            {% if is_manager %}
+            <td>{{ sale.requested_by.get_full_name|default:sale.requested_by.username }}</td>
+            {% endif %}
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Pagination -->
+    {% if is_paginated %}
+    <div class="pagination">
+      {% if page_obj.has_previous %}
+        <a href="?page=1{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}{% if phone_filter %}&phone={{ phone_filter }}{% endif %}{% if network_filter %}&network={{ network_filter }}{% endif %}" class="page-link">&laquo; First</a>
+        <a href="?page={{ page_obj.previous_page_number }}{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}{% if phone_filter %}&phone={{ phone_filter }}{% endif %}{% if network_filter %}&network={{ network_filter }}{% endif %}" class="page-link">&lsaquo; Previous</a>
       {% else %}
-        <div class="text-muted">No sales found.</div>
+        <span class="page-link disabled">&laquo; First</span>
+        <span class="page-link disabled">&lsaquo; Previous</span>
+      {% endif %}
+
+      <span class="page-link active">{{ page_obj.number }}</span>
+
+      {% if page_obj.has_next %}
+        <a href="?page={{ page_obj.next_page_number }}{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}{% if phone_filter %}&phone={{ phone_filter }}{% endif %}{% if network_filter %}&network={{ network_filter }}{% endif %}" class="page-link">Next &rsaquo;</a>
+        <a href="?page={{ page_obj.paginator.num_pages }}{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}{% if phone_filter %}&phone={{ phone_filter }}{% endif %}{% if network_filter %}&network={{ network_filter }}{% endif %}" class="page-link">Last &raquo;</a>
+      {% else %}
+        <span class="page-link disabled">Next &rsaquo;</span>
+        <span class="page-link disabled">Last &raquo;</span>
       {% endif %}
     </div>
+    {% endif %}
+    {% else %}
+    <div class="empty-state">
+      <i class="fas fa-history"></i>
+      <p>No transaction history found.</p>
+    </div>
+    {% endif %}
   </div>
+
 </div>
 {% endblock %}
-
-{% block extra_js %}
-<script src="{% static 'nano/airtime.js' %}"></script>
-{% endblock %}
-

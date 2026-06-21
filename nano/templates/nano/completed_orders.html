@@ -1,84 +1,77 @@
 {% extends 'nano/base.html' %}
 {% load static %}
-{% load dict_filters %}
 
 {% block title %}Completed Orders - NDtech{% endblock %}
 
-{% block extra_css %}
-<link rel="stylesheet" href="{% static 'nano/completed_orders.css' %}">
-{% endblock %}
-
 {% block content %}
-        <div class="orders-container">
-            <h2><i class="fas fa-check-circle"></i> Completed Orders</h2>
-            
-            <!-- Statistics Summary -->
-            <div class="stats-summary">
-                <div class="stat-card">
-                    <div class="stat-value">{{ total_orders }}</div>
-                    <div class="stat-label">Total Orders</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-value">R{{ total_revenue|floatformat:2 }}</div>
-                    <div class="stat-label">Total Revenue</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-value">R{{ total_cash_received|floatformat:2 }}</div>
-                    <div class="stat-label">Total Cash Received</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-value">R{{ total_change_given|floatformat:2 }}</div>
-                    <div class="stat-label">Total Change Given</div>
-                </div>
-            </div>
+<div style="padding: 20px; max-width: 1200px; margin: 0 auto; color: #333;">
+  <h1 style="margin: 0 0 10px;">Completed Orders</h1>
+<p style="color: #666; margin: 0 0 20px;">Sales that have been completed.</p>
 
-            {% if orders %}
-                {% for order in orders %}
-                <div class="order-card" onclick="location.href='{% url 'completed_order_details' order.id %}'">
-                    <div class="order-header">
-                        <div class="order-customer">
-                            <i class="fas fa-user"></i> {{ order.customer_name }}
-                            <span style="margin-left: 1rem; color: #718096; font-size: 0.9rem;">
-                                <i class="fas fa-phone"></i> {{ order.customer_phone }}
-                            </span>
-                        </div>
-                        <div class="order-time">
-                            <i class="fas fa-clock"></i> {{ order.completed_at|date:"H:i, d M Y" }}
-                        </div>
-                    </div>
-                    
-                    <div class="order-details">
-                        <div class="order-detail">
-                            <div class="order-detail-label">Total Amount</div>
-                            <div class="order-detail-value total-amount">R{{ order.total }}</div>
-                        </div>
-                        <div class="order-detail">
-                            <div class="order-detail-label">Cash Received</div>
-                            <div class="order-detail-value cash-received">R{{ order.cash_received }}</div>
-                        </div>
-                        <div class="order-detail">
-                            <div class="order-detail-label">Change Given</div>
-                            <div class="order-detail-value change-given">R{{ order.change_given }}</div>
-                        </div>
-                        <div class="order-detail">
-                            <div class="order-detail-label">Processed By</div>
-                            <div class="order-detail-value processed-by">{{ order.processed_by.username|default:"System" }}</div>
-                        </div>
-                    </div>
-                </div>
-                {% endfor %}
-            {% else %}
-                <div class="no-orders">
-                    <i class="fas fa-inbox"></i>
-                    <h3>No completed orders yet</h3>
-                    <p>Completed orders will appear here once customers check out.</p>
-                </div>
-            {% endif %}
-        </div>
+
+  {% if total_orders is not None %}
+    <div style="display:flex; gap: 14px; flex-wrap: wrap; margin-bottom: 18px;">
+      <div style="background:#fff; border:1px solid #eee; border-radius:12px; padding: 12px 14px; min-width: 200px;">
+        <div style="font-size:12px; color:#666;">Total Orders</div>
+        <div style="font-size:20px; font-weight:700;">{{ total_orders }}</div>
+      </div>
+      <div style="background:#fff; border:1px solid #eee; border-radius:12px; padding: 12px 14px; min-width: 200px;">
+        <div style="font-size:12px; color:#666;">Total Revenue</div>
+        <div style="font-size:20px; font-weight:700;">R{{ total_revenue }}</div>
+      </div>
+    </div>
+  {% endif %}
+
+  {% if not orders %}
+    <div style="padding: 25px; background: #fff; border-radius: 12px; border: 1px solid #eee; color: #666;">
+      No completed orders.
+    </div>
+  {% else %}
+    <div style="background: #fff; border-radius: 12px; border: 1px solid #eee; overflow: hidden;">
+      <table style="width: 100%; border-collapse: collapse;">
+        <thead>
+          <tr style="background: #f6f6f6; text-align: left;">
+            <th style="padding: 12px 14px; border-bottom: 1px solid #eee;">Order #</th>
+            <th style="padding: 12px 14px; border-bottom: 1px solid #eee;">Customer</th>
+            <th style="padding: 12px 14px; border-bottom: 1px solid #eee;">Phone</th>
+            <th style="padding: 12px 14px; border-bottom: 1px solid #eee;">Total</th>
+            <th style="padding: 12px 14px; border-bottom: 1px solid #eee;">Paid</th>
+            <th style="padding: 12px 14px; border-bottom: 1px solid #eee;">Completed</th>
+            <th style="padding: 12px 14px; border-bottom: 1px solid #eee;">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for order in orders %}
+            <tr>
+              <td style="padding: 12px 14px; border-bottom: 1px solid #f0f0f0;">#{{ order.id }}</td>
+              <td style="padding: 12px 14px; border-bottom: 1px solid #f0f0f0;">{{ order.customer_name }}</td>
+              <td style="padding: 12px 14px; border-bottom: 1px solid #f0f0f0;">{{ order.customer_phone }}</td>
+              <td style="padding: 12px 14px; border-bottom: 1px solid #f0f0f0;">R{{ order.total }}</td>
+              <td style="padding: 12px 14px; border-bottom: 1px solid #f0f0f0;">R{{ order.cash_received }}</td>
+              <td style="padding: 12px 14px; border-bottom: 1px solid #f0f0f0;">{{ order.completed_at|date:"Y-m-d H:i" }}</td>
+              <td style="padding: 12px 14px; border-bottom: 1px solid #f0f0f0;">
+                <a class="nav-link" style="display:inline-block; padding: 8px 12px; border-radius: 8px; background:#f2f2f2; text-decoration:none;" href="{% url 'completed_order_details' order_id=order.id %}">
+                  Details
+                </a>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    {% if orders.has_other_pages %}
+      <div style="display:flex; justify-content:center; gap: 10px; margin-top: 16px;">
+        {% if orders.has_previous %}
+          <a href="?page={{ orders.previous_page_number }}" style="padding: 8px 12px; background:#f2f2f2; border-radius: 8px; text-decoration:none;">Previous</a>
+        {% endif %}
+        <span style="align-self:center; color:#666;">Page {{ orders.number }} of {{ orders.paginator.num_pages }}</span>
+        {% if orders.has_next %}
+          <a href="?page={{ orders.next_page_number }}" style="padding: 8px 12px; background:#f2f2f2; border-radius: 8px; text-decoration:none;">Next</a>
+        {% endif %}
+      </div>
+    {% endif %}
+  {% endif %}
+</div>
 {% endblock %}
 
-{% block extra_js %}
-<script>
-    // Mobile menu toggle functionality is handled by base template
-</script>
-{% endblock %}

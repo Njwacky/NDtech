@@ -177,7 +177,7 @@ class FoodOrderingIntegration:
                 barcode=barcode or f"FOOD{menu_item.id:08d}",  # Generate barcode if not provided
                 stock=999,  # Food items typically have unlimited stock
                 expiry_date=None  # Food items have different expiry handling
-            )
+            , workspace=workspace)
             
             return pos_product
             
@@ -187,6 +187,7 @@ class FoodOrderingIntegration:
 
 @login_required
 def food_scanner_integration(request):
+    workspace = getattr(request.user.userprofile, 'workspace', None) if hasattr(getattr(request, 'user', None), 'userprofile') else None
     """
     Enhanced barcode scanner that can scan both POS products and food ordering items
     """
@@ -199,6 +200,7 @@ def food_scanner_integration(request):
 @csrf_exempt
 @login_required
 def api_food_scanner_lookup(request, barcode):
+    workspace = getattr(request.user.userprofile, 'workspace', None) if hasattr(getattr(request, 'user', None), 'userprofile') else None
     """
     API endpoint that searches both POS products and food ordering menu items
     """
@@ -244,7 +246,7 @@ def api_food_scanner_lookup(request, barcode):
                     'results_found': len(results),
                     'scan_type': 'food_scanner'
                 }
-            )
+            , workspace=workspace)
             
             if results:
                 return JsonResponse({
@@ -266,7 +268,7 @@ def api_food_scanner_lookup(request, barcode):
                     user=request.user,
                     user_action='Scanning barcode for product lookup',
                     form_data={'barcode': barcode}
-                )
+                , workspace=workspace)
                 
                 return JsonResponse({
                     'success': False,
@@ -287,7 +289,7 @@ def api_food_scanner_lookup(request, barcode):
                 user=request.user,
                 user_action='Scanning barcode for product lookup',
                 stack_trace=str(e)
-            )
+            , workspace=workspace)
             
             return JsonResponse({'success': False, 'error': str(e)})
     
@@ -296,6 +298,7 @@ def api_food_scanner_lookup(request, barcode):
 @csrf_exempt
 @login_required
 def api_add_food_item_to_pos(request):
+    workspace = getattr(request.user.userprofile, 'workspace', None) if hasattr(getattr(request, 'user', None), 'userprofile') else None
     """
     API endpoint to add a food ordering menu item to POS cart
     This creates a POS product from the menu item if it doesn't exist
@@ -352,6 +355,7 @@ def api_add_food_item_to_pos(request):
 
 @login_required
 def food_menu_browser(request):
+    workspace = getattr(request.user.userprofile, 'workspace', None) if hasattr(getattr(request, 'user', None), 'userprofile') else None
     """
     Browse food ordering menu items and add them to POS
     """
@@ -378,6 +382,7 @@ def food_menu_browser(request):
     
     @staticmethod
     def _get_client_ip(request):
+        workspace = getattr(request.user.userprofile, 'workspace', None) if hasattr(getattr(request, 'user', None), 'userprofile') else None
         """Get client IP address from request"""
         x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
         if x_forwarded_for:
@@ -401,7 +406,7 @@ def food_menu_browser(request):
                 user=request.user if request.user.is_authenticated else None,
                 user_action=user_action,
                 form_data=form_data or {}
-            )
+            , workspace=workspace)
         except Exception as e:
             print(f"Error logging food ordering error: {str(e)}")
 

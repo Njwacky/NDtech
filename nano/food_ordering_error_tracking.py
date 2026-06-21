@@ -16,6 +16,7 @@ class FoodOrderingErrorTracking:
     
     @staticmethod
     def get_client_ip(request):
+        workspace = getattr(request.user.userprofile, 'workspace', None) if hasattr(getattr(request, 'user', None), 'userprofile') else None
         """Get client IP address from request"""
         x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
         if x_forwarded_for:
@@ -26,6 +27,7 @@ class FoodOrderingErrorTracking:
     
     @staticmethod
     def log_food_ordering_error(request, error_message, error_type='user_error', severity='low', user_action='', form_data=None, stack_trace=None):
+        workspace = getattr(request.user.userprofile, 'workspace', None) if hasattr(getattr(request, 'user', None), 'userprofile') else None
         """Log errors in food ordering system"""
         try:
             ErrorLog.objects.create(
@@ -40,7 +42,7 @@ class FoodOrderingErrorTracking:
                 user_action=user_action,
                 form_data=form_data or {},
                 stack_trace=stack_trace
-            )
+            , workspace=workspace)
         except Exception as e:
             print(f"Error logging food ordering error: {str(e)}")
     
@@ -56,12 +58,13 @@ class FoodOrderingErrorTracking:
                 ip_address=FoodOrderingErrorTracking.get_client_ip(request),
                 user_agent=request.META.get('HTTP_USER_AGENT', ''),
                 metadata=metadata or {}
-            )
+            , workspace=workspace)
         except Exception as e:
             print(f"Error logging food ordering activity: {str(e)}")
 
 @login_required
 def enhanced_food_scanner_lookup(request, barcode):
+    workspace = getattr(request.user.userprofile, 'workspace', None) if hasattr(getattr(request, 'user', None), 'userprofile') else None
     """
     Enhanced food scanner lookup with comprehensive error tracking
     """
@@ -214,6 +217,7 @@ def enhanced_food_scanner_lookup(request, barcode):
 @csrf_exempt
 @login_required
 def enhanced_add_to_cart(request):
+    workspace = getattr(request.user.userprofile, 'workspace', None) if hasattr(getattr(request, 'user', None), 'userprofile') else None
     """
     Enhanced add to cart with error tracking
     """
@@ -310,6 +314,7 @@ def enhanced_add_to_cart(request):
 
 @login_required
 def food_ordering_error_report(request):
+    workspace = getattr(request.user.userprofile, 'workspace', None) if hasattr(getattr(request, 'user', None), 'userprofile') else None
     """
     API endpoint to report food ordering errors
     """

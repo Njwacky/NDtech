@@ -290,7 +290,7 @@ def upc_lookup(request):
                 barcode=barcode if barcode else None,
                 expiry_date=expiry_date,
                 stock=stock
-            )
+            , workspace=workspace)
             
             messages.success(request, f'Product "{name}" created successfully with {stock} units in stock!')
             return redirect('upc_lookup')

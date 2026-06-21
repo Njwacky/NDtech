@@ -1,0 +1,30 @@
+{% load static %}
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>{% block title %}NDtech POS{% endblock %}</title>
+  <link rel="icon" href="{% static 'nano/favicon.ico' %}" />
+  <link rel="stylesheet" href="{% static 'nano/css/app.css' %}" />
+</head>
+<body class="auth-body">
+  <div class="auth-bg" aria-hidden="true"></div>
+  <main class="auth-card-wrap">
+    <section class="auth-card" aria-label="Authentication">
+      {% block content %}{% endblock %}
+    </section>
+  </main>
+
+  {% if messages %}
+  <div class="toasts" aria-live="polite" aria-relevant="additions">
+    {% for message in messages %}
+      <div class="toast toast-{{ message.tags }}">{{ message }}</div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <script src="{% static 'nano/toast.js' %}"></script>
+</body>
+</html>
+

@@ -1,197 +1,240 @@
 {% extends 'nano/base.html' %}
 {% load static %}
-
-{% block title %}Warehouse Prices{% endblock %}
+{% block title %}Warehouse Prices - NDtech POS{% endblock %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="{% static 'nano/warehouse.css' %}">
-{% endblock %}
+<style>
+  .page-wrap { padding: 2rem 1.5rem; max-width: 1300px; margin: 0 auto; }
+  .page-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 2rem; flex-wrap: wrap; gap: 1rem; }
+  .page-header-left { display: flex; align-items: center; gap: 1rem; }
+  .page-header-icon { width: 52px; height: 52px; border-radius: 14px; background: linear-gradient(135deg, #7c3aed, #6d28d9); display: flex; align-items: center; justify-content: center; font-size: 1.3rem; color: #fff; flex-shrink: 0; }
+  .page-header-text h1 { font-size: 1.6rem; font-weight: 700; color: #fff; margin: 0; }
+  .page-header-text p { font-size: 0.82rem; color: rgba(255,255,255,0.45); margin: 0.2rem 0 0; }
 
-{% block extra_js %}
-<script src="{% static 'nano/warehouse.js' %}"></script>
+  .btn { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.65rem 1.25rem; border-radius: 10px; font-size: 0.875rem; font-weight: 600; cursor: pointer; border: none; transition: opacity 0.2s, transform 0.15s; text-decoration: none; }
+  .btn:hover { opacity: 0.85; transform: translateY(-1px); }
+  .btn-primary { background: linear-gradient(135deg, #7c3aed, #6d28d9); color: #fff; }
+  .btn-ghost { background: transparent; border: 1px solid rgba(255,255,255,0.18); color: rgba(255,255,255,0.8); }
+
+  .toolbar { display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem; flex-wrap: wrap; }
+  .search-wrap { position: relative; flex: 1; min-width: 220px; }
+  .search-wrap i { position: absolute; left: 0.9rem; top: 50%; transform: translateY(-50%); color: rgba(255,255,255,0.35); font-size: 0.9rem; }
+  .search-input { width: 100%; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12); border-radius: 10px; padding: 0.6rem 0.9rem 0.6rem 2.5rem; color: #fff; font-size: 0.9rem; outline: none; box-sizing: border-box; }
+  .search-input::placeholder { color: rgba(255,255,255,0.3); }
+  .search-input:focus { border-color: rgba(124,58,237,0.5); }
+
+  .select-filter { background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12); border-radius: 10px; padding: 0.6rem 0.9rem; color: rgba(255,255,255,0.8); font-size: 0.875rem; outline: none; cursor: pointer; }
+  .select-filter option { background: #1a1030; }
+
+  /* Table card */
+  .table-card { background: rgba(255,255,255,0.05); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.12); border-radius: 16px; overflow: hidden; }
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
+  thead th { background: rgba(255,255,255,0.04); color: rgba(255,255,255,0.5); font-weight: 600; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.05em; padding: 0.85rem 1rem; text-align: left; white-space: nowrap; border-bottom: 1px solid rgba(255,255,255,0.07); }
+  tbody tr { border-bottom: 1px solid rgba(255,255,255,0.05); transition: background 0.15s; }
+  tbody tr:last-child { border-bottom: none; }
+  tbody tr:hover { background: rgba(255,255,255,0.04); }
+  tbody td { padding: 0.9rem 1rem; color: rgba(255,255,255,0.85); vertical-align: middle; }
+
+  .badge { display: inline-flex; align-items: center; padding: 0.25rem 0.65rem; border-radius: 999px; font-size: 0.75rem; font-weight: 600; }
+  .badge-purple { background: rgba(124,58,237,0.18); color: #a78bfa; }
+  .badge-blue { background: rgba(99,102,241,0.18); color: #818cf8; }
+  .badge-green { background: rgba(16,185,129,0.18); color: #34d399; }
+  .badge-yellow { background: rgba(245,158,11,0.18); color: #fbbf24; }
+  .badge-gray { background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.5); }
+
+  .price-text { font-weight: 700; color: #10b981; font-size: 0.95rem; }
+
+  .stock-bar-wrap { display: flex; align-items: center; gap: 0.6rem; min-width: 100px; }
+  .stock-bar { flex: 1; height: 6px; border-radius: 3px; background: rgba(255,255,255,0.08); overflow: hidden; }
+  .stock-fill { height: 100%; border-radius: 3px; transition: width 0.4s; }
+  .stock-fill.high { background: #10b981; }
+  .stock-fill.mid { background: #f59e0b; }
+  .stock-fill.low { background: #ef4444; }
+  .stock-count { font-size: 0.8rem; color: rgba(255,255,255,0.5); white-space: nowrap; }
+
+  .action-link { color: #7c3aed; text-decoration: none; font-size: 0.82rem; font-weight: 600; transition: color 0.2s; }
+  .action-link:hover { color: #a78bfa; }
+
+  /* Pagination */
+  .pagination { display: flex; align-items: center; justify-content: space-between; padding: 1rem 1.25rem; border-top: 1px solid rgba(255,255,255,0.07); flex-wrap: wrap; gap: 0.75rem; }
+  .page-info { font-size: 0.82rem; color: rgba(255,255,255,0.4); }
+  .page-btns { display: flex; gap: 0.4rem; }
+  .page-btn { background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); color: rgba(255,255,255,0.7); border-radius: 8px; padding: 0.35rem 0.75rem; font-size: 0.82rem; text-decoration: none; transition: background 0.2s; }
+  .page-btn:hover { background: rgba(124,58,237,0.2); color: #fff; }
+  .page-btn.active { background: linear-gradient(135deg, #7c3aed, #6d28d9); color: #fff; border-color: transparent; }
+  .page-btn.disabled { opacity: 0.35; pointer-events: none; }
+
+  /* Empty state */
+  .empty-state { padding: 3.5rem 1rem; text-align: center; }
+  .empty-state i { font-size: 2.5rem; color: rgba(255,255,255,0.15); display: block; margin-bottom: 1rem; }
+  .empty-state h3 { color: rgba(255,255,255,0.5); font-size: 1rem; margin: 0 0 0.4rem; }
+  .empty-state p { color: rgba(255,255,255,0.3); font-size: 0.85rem; margin: 0; }
+
+  /* Mobile cards */
+  .mobile-cards { display: none; }
+  .m-card { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 1rem; margin-bottom: 0.75rem; }
+  .m-card-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 0.75rem; }
+  .m-card-name { font-weight: 600; color: #fff; font-size: 0.95rem; }
+  .m-card-row { display: flex; justify-content: space-between; align-items: center; font-size: 0.82rem; color: rgba(255,255,255,0.55); margin-bottom: 0.4rem; }
+  .m-card-row strong { color: rgba(255,255,255,0.85); }
+
+  @media (max-width: 768px) {
+    .page-wrap { padding: 1rem; }
+    .page-header { flex-direction: column; align-items: flex-start; }
+    .desktop-table { display: none; }
+    .mobile-cards { display: block; }
+  }
+  @media (max-width: 480px) {
+    .toolbar { flex-direction: column; }
+    .search-wrap { width: 100%; }
+  }
+</style>
 {% endblock %}
 
 {% block content %}
-<div class="warehouse-container">
-    <div class="warehouse-prices-card">
-        <div class="warehouse-prices-header">
-            <h4>
-                <i class="fas fa-warehouse"></i> Warehouse Prices
-            </h4>
-            <div class="warehouse-header-actions">
-                <a href="{% url 'warehouse_import' %}" class="warehouse-btn warehouse-btn-light">
-                    <i class="fas fa-upload"></i> Import Prices
-                </a>
-                <a href="{% url 'export_warehouse_prices' %}" class="warehouse-btn warehouse-btn-light">
-                    <i class="fas fa-download"></i> Export
-                </a>
-            </div>
-        </div>
-        <div class="warehouse-prices-body">
-            <!-- Search and Filter Form -->
-            <form method="get" class="warehouse-search-form">
-                <div class="warehouse-search-row">
-                    <div>
-                        <input type="text" class="warehouse-search-input" name="search" placeholder="Search products..." value="{{ search_query }}">
-                    </div>
-                    <div>
-                        <select class="warehouse-search-select" name="warehouse">
-                            <option value="">All Warehouses</option>
-                            {% for warehouse in warehouse_names %}
-                                <option value="{{ warehouse }}" {% if warehouse_filter == warehouse %}selected{% endif %}>{{ warehouse }}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                    <div>
-                        <button type="submit" class="warehouse-btn warehouse-btn-outline-primary">
-                            <i class="fas fa-search"></i> Search
-                        </button>
-                    </div>
-                    <div>
-                        <a href="{% url 'price_comparisons' %}" class="warehouse-btn warehouse-btn-success">
-                            <i class="fas fa-chart-bar"></i> Price Comparisons
-                        </a>
-                    </div>
-                </div>
-            </form>
-
-            <!-- Results Summary -->
-            {% if search_query or warehouse_filter %}
-                <div class="warehouse-results-info">
-                    <i class="fas fa-info-circle"></i>
-                    Showing {{ warehouse_prices.paginator.count }} results
-                    {% if search_query %}for "{{ search_query }}"{% endif %}
-                    {% if warehouse_filter %}in {{ warehouse_filter }}{% endif %}
-                </div>
-            {% endif %}
-
-            <!-- Prices Table -->
-            {% if warehouse_prices %}
-                <div class="warehouse-table-responsive">
-                    <table class="warehouse-table">
-                        <thead>
-                            <tr>
-                                <th>Product Name</th>
-                                <th>Warehouse</th>
-                                <th>Price</th>
-                                <th>Barcode</th>
-                                <th>Category</th>
-                                <th>Stock</th>
-                                <th>Unit Size</th>
-                                <th>Imported</th>
-                                <th>Imported By</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for price in warehouse_prices %}
-                                <tr>
-                                    <td>
-                                        <div class="warehouse-product-name">{{ price.product_name }}</div>
-                                        {% if price.file_name %}
-                                            <div class="warehouse-product-file">File: {{ price.file_name }}</div>
-                                        {% endif %}
-                                    </td>
-                                    <td>
-                                        <span class="warehouse-badge warehouse-badge-primary">{{ price.warehouse_name }}</span>
-                                    </td>
-                                    <td>
-                                        <div class="warehouse-price">R{{ price.price }}</div>
-                                    </td>
-                                    <td>
-                                        {% if price.barcode %}
-                                            <span class="warehouse-barcode">{{ price.barcode }}</span>
-                                        {% else %}
-                                            <span class="warehouse-muted">-</span>
-                                        {% endif %}
-                                    </td>
-                                    <td>
-                                        {% if price.category %}
-                                            <span class="warehouse-badge warehouse-badge-secondary">{{ price.category }}</span>
-                                        {% else %}
-                                            <span class="warehouse-muted">-</span>
-                                        {% endif %}
-                                    </td>
-                                    <td>
-                                        {% if price.stock_quantity %}
-                                            {{ price.stock_quantity }}
-                                        {% else %}
-                                            <span class="warehouse-muted">-</span>
-                                        {% endif %}
-                                    </td>
-                                    <td>
-                                        {% if price.unit_size %}
-                                            {{ price.unit_size }}
-                                        {% else %}
-                                            <span class="warehouse-muted">-</span>
-                                        {% endif %}
-                                    </td>
-                                    <td>
-                                        <div class="warehouse-date">{{ price.date_imported|date:"Y-m-d H:i" }}</div>
-                                    </td>
-                                    <td>
-                                        {% if price.imported_by %}
-                                            {{ price.imported_by.username }}
-                                        {% else %}
-                                            <span class="warehouse-muted">-</span>
-                                        {% endif %}
-                                    </td>
-                                </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-
-                <!-- Pagination -->
-                {% if warehouse_prices.has_other_pages %}
-                    <nav class="warehouse-pagination" aria-label="Warehouse prices pagination">
-                        <ul class="warehouse-pagination-list">
-                            {% if warehouse_prices.has_previous %}
-                                <li class="warehouse-page-item">
-                                    <a class="warehouse-page-link" href="?page=1{% if search_query %}&search={{ search_query }}{% endif %}{% if warehouse_filter %}&warehouse={{ warehouse_filter }}{% endif %}">First</a>
-                                </li>
-                                <li class="warehouse-page-item">
-                                    <a class="warehouse-page-link" href="?page={{ warehouse_prices.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if warehouse_filter %}&warehouse={{ warehouse_filter }}{% endif %}">Previous</a>
-                                </li>
-                            {% endif %}
-
-                            {% for num in warehouse_prices.paginator.page_range %}
-                                {% if warehouse_prices.number == num %}
-                                    <li class="warehouse-page-item active">
-                                        <span class="warehouse-page-link">{{ num }}</span>
-                                    </li>
-                                {% elif num > warehouse_prices.number|add:'-3' and num < warehouse_prices.number|add:'3' %}
-                                    <li class="warehouse-page-item">
-                                        <a class="warehouse-page-link" href="?page={{ num }}{% if search_query %}&search={{ search_query }}{% endif %}{% if warehouse_filter %}&warehouse={{ warehouse_filter }}{% endif %}">{{ num }}</a>
-                                    </li>
-                                {% endif %}
-                            {% endfor %}
-
-                            {% if warehouse_prices.has_next %}
-                                <li class="warehouse-page-item">
-                                    <a class="warehouse-page-link" href="?page={{ warehouse_prices.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if warehouse_filter %}&warehouse={{ warehouse_filter }}{% endif %}">Next</a>
-                                </li>
-                                <li class="warehouse-page-item">
-                                    <a class="warehouse-page-link" href="?page={{ warehouse_prices.paginator.num_pages }}{% if search_query %}&search={{ search_query }}{% endif %}{% if warehouse_filter %}&warehouse={{ warehouse_filter }}{% endif %}">Last</a>
-                                </li>
-                            {% endif %}
-                        </ul>
-                    </nav>
-                {% endif %}
-            {% else %}
-                <div class="warehouse-empty-state">
-                    <i class="fas fa-warehouse"></i>
-                    <h5>No warehouse prices found</h5>
-                    <p>
-                        {% if search_query or warehouse_filter %}
-                            Try adjusting your search criteria or 
-                            <a href="{% url 'warehouse_prices' %}">clear all filters</a>.
-                        {% else %}
-                            <a href="{% url 'warehouse_import' %}">Import your first warehouse prices</a> to get started.
-                        {% endif %}
-                    </p>
-                </div>
-            {% endif %}
-        </div>
+<div class="page-wrap">
+  <!-- Header -->
+  <div class="page-header">
+    <div class="page-header-left">
+      <div class="page-header-icon"><i class="fas fa-tags"></i></div>
+      <div class="page-header-text">
+        <h1>Warehouse Prices</h1>
+        <p>{% if last_sync %}Last synced: {{ last_sync|date:"d M Y, H:i" }}{% else %}No sync recorded{% endif %}</p>
+      </div>
     </div>
+    <div style="display:flex;gap:0.75rem;flex-wrap:wrap;">
+      <a href="{% url 'warehouse_import' %}" class="btn btn-ghost"><i class="fas fa-file-import"></i> Import</a>
+      <a href="{% url 'export_warehouse_prices' %}" class="btn btn-primary"><i class="fas fa-file-export"></i> Export</a>
+    </div>
+  </div>
+
+  <!-- Toolbar -->
+  <div class="toolbar">
+    <div class="search-wrap">
+      <i class="fas fa-search"></i>
+      <input type="text" class="search-input" id="searchInput" placeholder="Search products by name or barcode…" oninput="filterRows()">
+    </div>
+    <select class="select-filter" id="categoryFilter" onchange="filterRows()">
+      <option value="">All Categories</option>
+      {% for product in warehouse_products %}
+        <option value="{{ product.category }}">{{ product.category }}</option>
+      {% endfor %}
+    </select>
+  </div>
+
+  <!-- Desktop Table -->
+  <div class="table-card desktop-table" id="mainTable">
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Product Name</th>
+            <th>Category</th>
+            <th>Price</th>
+            <th>Stock</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="tableBody">
+          {% if warehouse_products %}
+            {% for product in warehouse_products %}
+            <tr class="product-row" data-name="{{ product.name|lower }}" data-category="{{ product.category|lower }}">
+              <td>
+                <div style="font-weight:600;color:#fff;">{{ product.name }}</div>
+                <div style="font-size:0.78rem;color:rgba(255,255,255,0.35);">ID #{{ product.id }}</div>
+              </td>
+              <td>
+                <span class="badge badge-purple">{{ product.category|default:"Uncategorised" }}</span>
+              </td>
+              <td><span class="price-text">R {{ product.price }}</span></td>
+              <td>
+                {% with stock=product.stock %}
+                <div class="stock-bar-wrap">
+                  <div class="stock-bar">
+                    {% if stock > 50 %}
+                    <div class="stock-fill high" style="width:{% if stock > 200 %}100{% else %}{{ stock|floatformat:0 }}{% endif %}%;"></div>
+                    {% elif stock > 10 %}
+                    <div class="stock-fill mid" style="width:{{ stock }}%;"></div>
+                    {% else %}
+                    <div class="stock-fill low" style="width:{{ stock }}%;"></div>
+                    {% endif %}
+                  </div>
+                  <span class="stock-count">{{ stock }}</span>
+                </div>
+                {% endwith %}
+              </td>
+              <td>
+                <a href="{% url 'warehouse_product_detail' product.id %}" class="action-link"><i class="fas fa-eye"></i> View</a>
+              </td>
+            </tr>
+            {% endfor %}
+          {% else %}
+          <tr><td colspan="5">
+            <div class="empty-state">
+              <i class="fas fa-box-open"></i>
+              <h3>No products found</h3>
+              <p>Import a CSV or sync to populate warehouse prices.</p>
+            </div>
+          </td></tr>
+          {% endif %}
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Pagination -->
+    {% if warehouse_products.has_other_pages %}
+    <div class="pagination">
+      <span class="page-info">Page {{ warehouse_products.number }} of {{ warehouse_products.paginator.num_pages }}</span>
+      <div class="page-btns">
+        {% if warehouse_products.has_previous %}
+          <a href="?page={{ warehouse_products.previous_page_number }}" class="page-btn"><i class="fas fa-chevron-left"></i></a>
+        {% endif %}
+        {% for num in warehouse_products.paginator.page_range %}
+          <a href="?page={{ num }}" class="page-btn {% if num == warehouse_products.number %}active{% endif %}">{{ num }}</a>
+        {% endfor %}
+        {% if warehouse_products.has_next %}
+          <a href="?page={{ warehouse_products.next_page_number }}" class="page-btn"><i class="fas fa-chevron-right"></i></a>
+        {% endif %}
+      </div>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- Mobile Cards -->
+  <div class="mobile-cards" id="mobileCards">
+    {% for product in warehouse_products %}
+    <div class="m-card product-row" data-name="{{ product.name|lower }}" data-category="{{ product.category|lower }}">
+      <div class="m-card-header">
+        <div class="m-card-name">{{ product.name }}</div>
+        <span class="badge badge-purple">{{ product.category|default:"—" }}</span>
+      </div>
+      <div class="m-card-row"><span>Price</span><strong class="price-text">R {{ product.price }}</strong></div>
+      <div class="m-card-row"><span>Stock</span><strong>{{ product.stock }}</strong></div>
+      <div class="m-card-row"><span>ID</span><strong>#{{ product.id }}</strong></div>
+      <a href="{% url 'warehouse_product_detail' product.id %}" class="action-link" style="display:inline-block;margin-top:0.5rem;"><i class="fas fa-eye"></i> View Detail</a>
+    </div>
+    {% empty %}
+    <div class="empty-state">
+      <i class="fas fa-box-open"></i>
+      <h3>No products found</h3>
+      <p>Import a CSV or sync to populate warehouse prices.</p>
+    </div>
+    {% endfor %}
+  </div>
 </div>
+
+<script>
+function filterRows() {
+  const q = document.getElementById('searchInput').value.toLowerCase();
+  const cat = document.getElementById('categoryFilter').value.toLowerCase();
+  document.querySelectorAll('.product-row').forEach(row => {
+    const name = row.dataset.name || '';
+    const category = row.dataset.category || '';
+    const matchQ = !q || name.includes(q);
+    const matchCat = !cat || category === cat;
+    row.style.display = (matchQ && matchCat) ? '' : 'none';
+  });
+}
+</script>
 {% endblock %}

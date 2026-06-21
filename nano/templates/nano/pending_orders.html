@@ -3,94 +3,62 @@
 
 {% block title %}Pending Orders - NDtech{% endblock %}
 
-{% block extra_css %}
-<link rel="stylesheet" href="{% static 'nano/pending_orders.css' %}">
-{% endblock %}
-
 {% block content %}
-<div class="auth-container">
-    <h1><i class="fas fa-clipboard-list"></i> Pending Orders</h1>
-        {% if orders %}
-            <!-- Desktop Table View -->
-            <div class="desktop-view">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Customer Name</th>
-                            <th>Phone</th>
-                            <th>Items</th>
-                            <th>Total</th>
-                            <th>Created At</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for order in orders %}
-                        <tr>
-                            <td>{{ order.customer_name }}</td>
-                            <td>{{ order.customer_phone }}</td>
-                            <td>
-                                {% load dict_filters %}
-                                {% for item in order.items|parse_json %}
-                                    {{ item.product }} x{{ item.quantity }}<br>
-                                {% endfor %}
-                            </td>
-                            <td>R{{ order.total }}</td>
-                            <td>{{ order.created_at }}</td>
-                            <td>
-                                <button class="checkout-btn" onclick="checkoutOrder('{{ order.id }}')">Checkout</button>
-                                <button class="complete-btn" onclick="completeOrder('{{ order.id }}')">Complete</button>
-                                <button class="cancel-btn" onclick="cancelOrder('{{ order.id }}')">Cancel</button>
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
+<div style="padding: 20px; max-width: 1200px; margin: 0 auto;">
+  <h1 style="margin: 0 0 10px;">Pending Orders</h1>
+  <p style="color: #666; margin: 0 0 20px;">Orders waiting for completion.</p>
 
-            <!-- Mobile Card View -->
-            <div class="mobile-view">
-                {% for order in orders %}
-                <div class="order-card">
-                    <div class="order-header">
-                        <h3>{{ order.customer_name }}</h3>
-                        <span class="order-total">R{{ order.total }}</span>
-                    </div>
-                    <div class="order-details">
-                        <div class="detail-item">
-                            <strong>Phone:</strong> {{ order.customer_phone }}
-                        </div>
-                        <div class="detail-item">
-                            <strong>Created:</strong> {{ order.created_at }}
-                        </div>
-                        <div class="detail-items">
-                            <strong>Items:</strong>
-                            <ul>
-                                {% load dict_filters %}
-                                {% for item in order.items|parse_json %}
-                                <li>{{ item.product }} x{{ item.quantity }}</li>
-                                {% endfor %}
-                            </ul>
-                        </div>
-                    </div>
-                    <div class="order-actions">
-                        <button class="checkout-btn" onclick="checkoutOrder('{{ order.id }}')">Checkout</button>
-                        <button class="complete-btn" onclick="completeOrder('{{ order.id }}')">Complete</button>
-                        <button class="cancel-btn" onclick="cancelOrder('{{ order.id }}')">Cancel</button>
-                    </div>
-                </div>
-                {% endfor %}
-            </div>
-        {% else %}
-            <div class="empty-state">
-                <h3>No pending orders</h3>
-                <p>There are currently no pending orders to display.</p>
-            </div>
+  {% if not orders %}
+    <div style="padding: 25px; background: #fff; border-radius: 12px; border: 1px solid #eee; color: #666;">
+      No pending orders.
+    </div>
+  {% else %}
+    <div style="background: #fff; border-radius: 12px; border: 1px solid #eee; overflow: hidden;">
+      <table style="width: 100%; border-collapse: collapse;">
+        <thead>
+          <tr style="background: #f6f6f6; text-align: left;">
+            <th style="padding: 12px 14px; border-bottom: 1px solid #eee;">Order #</th>
+            <th style="padding: 12px 14px; border-bottom: 1px solid #eee;">Customer</th>
+            <th style="padding: 12px 14px; border-bottom: 1px solid #eee;">Phone</th>
+            <th style="padding: 12px 14px; border-bottom: 1px solid #eee;">Total</th>
+            <th style="padding: 12px 14px; border-bottom: 1px solid #eee;">Created</th>
+            <th style="padding: 12px 14px; border-bottom: 1px solid #eee;">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for order in orders %}
+            <tr>
+              <td style="padding: 12px 14px; border-bottom: 1px solid #f0f0f0;">#{{ order.id }}</td>
+              <td style="padding: 12px 14px; border-bottom: 1px solid #f0f0f0;">{{ order.customer_name }}</td>
+              <td style="padding: 12px 14px; border-bottom: 1px solid #f0f0f0;">{{ order.customer_phone }}</td>
+              <td style="padding: 12px 14px; border-bottom: 1px solid #f0f0f0;">R{{ order.total }}</td>
+              <td style="padding: 12px 14px; border-bottom: 1px solid #f0f0f0;">{{ order.created_at|date:"Y-m-d H:i" }}</td>
+              <td style="padding: 12px 14px; border-bottom: 1px solid #f0f0f0;">
+                <a class="nav-link" style="display:inline-block; padding: 8px 12px; border-radius: 8px; background:#f2f2f2; text-decoration:none;" href="{% url 'order_details' order_id=order.id %}">
+                  View
+                </a>
+                <a class="nav-link" style="display:inline-block; margin-left:8px; padding: 8px 12px; border-radius: 8px; background:#588157; color:#fff; text-decoration:none;" href="{% url 'complete_order' order_id=order.id %}">
+                  Complete
+                </a>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    {% if orders.has_other_pages %}
+      <div style="display:flex; justify-content:center; gap: 10px; margin-top: 16px;">
+        {% if orders.has_previous %}
+          <a href="?page={{ orders.previous_page_number }}" style="padding: 8px 12px; background:#f2f2f2; border-radius: 8px; text-decoration:none;">Previous</a>
         {% endif %}
-    <p><a href="{% url 'home' %}" class="back-link"><i class="fas fa-arrow-left"></i> Back to Home</a></p>
+        <span style="align-self:center; color:#666;">Page {{ orders.number }} of {{ orders.paginator.num_pages }}</span>
+        {% if orders.has_next %}
+          <a href="?page={{ orders.next_page_number }}" style="padding: 8px 12px; background:#f2f2f2; border-radius: 8px; text-decoration:none;">Next</a>
+        {% endif %}
+      </div>
+    {% endif %}
+  {% endif %}
 </div>
 {% endblock %}
 
-{% block extra_js %}
-<script src="{% static 'nano/pending_orders.js' %}"></script>
-{% endblock %}

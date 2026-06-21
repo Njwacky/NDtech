@@ -1,727 +1,207 @@
-<!DOCTYPE html>
+{% load static %}
+<!doctype html>
 <html lang="en">
-
 <head>
-    {% load static %}
-    <meta charset="UTF-8">
-    <meta name="viewport"
-        content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes, viewport-fit=cover">
-    <meta name="mobile-web-app-capable" content="yes">
-    <title>{% block title %}{{ user_company_name|default:"NDtech" }}{% endblock %}</title>
-
-    <!-- PWA Meta Tags -->
-    <meta name="theme-color" content="#007bff">
-    <meta name="description"
-        content="A comprehensive Point of Sale system for inventory management and order processing">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="default">
-    <meta name="apple-mobile-web-app-title" content="NDtech POS">
-    <meta name="application-name" content="NDtech POS">
-    <meta name="msapplication-TileColor" content="#007bff">
-    <meta name="msapplication-config" content="{% static 'nano/browserconfig.xml' %}">
-
-    <!-- PWA Manifest -->
-    <link rel="manifest" href="{% static 'nano/manifest.json' %}">
-
-    <!-- Favicon -->
-    <link rel="icon" type="image/png" sizes="16x16" href="{% static 'nano/icon-16.png' %}">
-    <link rel="icon" type="image/png" sizes="32x32" href="{% static 'nano/icon-32.png' %}">
-    <link rel="icon" type="image/png" sizes="48x48" href="{% static 'nano/icon-48.png' %}">
-    <link rel="icon" type="image/png" sizes="96x96" href="{% static 'nano/icon-96.png' %}">
-    <link rel="icon" type="image/png" sizes="128x128" href="{% static 'nano/icon-128.png' %}">
-    <link rel="icon" type="image/png" sizes="192x192" href="{% static 'nano/icon-192.png' %}">
-    <link rel="shortcut icon" type="image/x-icon" href="{% static 'nano/favicon.ico' %}">
-
-    <!-- Apple Touch Icons -->
-    <link rel="apple-touch-icon" sizes="57x57" href="{% static 'nano/icon-57.png' %}">
-    <link rel="apple-touch-icon" sizes="60x60" href="{% static 'nano/icon-60.png' %}">
-    <link rel="apple-touch-icon" sizes="72x72" href="{% static 'nano/icon-72.png' %}">
-    <link rel="apple-touch-icon" sizes="76x76" href="{% static 'nano/icon-76.png' %}">
-    <link rel="apple-touch-icon" sizes="114x114" href="{% static 'nano/icon-114.png' %}">
-    <link rel="apple-touch-icon" sizes="120x120" href="{% static 'nano/icon-120.png' %}">
-    <link rel="apple-touch-icon" sizes="144x144" href="{% static 'nano/icon-144.png' %}">
-    <link rel="apple-touch-icon" sizes="152x152" href="{% static 'nano/icon-152.png' %}">
-    <link rel="apple-touch-icon" sizes="180x180" href="{% static 'nano/icon-180.png' %}">
-
-    <!-- PWA Icons -->
-    <link rel="icon" type="image/png" sizes="192x192" href="{% static 'nano/icon-192.png' %}">
-    <link rel="icon" type="image/png" sizes="256x256" href="{% static 'nano/icon-256.png' %}">
-    <link rel="icon" type="image/png" sizes="384x384" href="{% static 'nano/icon-384.png' %}">
-    <link rel="icon" type="image/png" sizes="512x512" href="{% static 'nano/icon-512.png' %}">
-
-    <!-- Android Chrome Icons -->
-    <link rel="icon" type="image/png" sizes="36x36" href="{% static 'nano/icon-36.png' %}">
-    <link rel="icon" type="image/png" sizes="48x48" href="{% static 'nano/icon-48.png' %}">
-    <link rel="icon" type="image/png" sizes="72x72" href="{% static 'nano/icon-72.png' %}">
-    <link rel="icon" type="image/png" sizes="96x96" href="{% static 'nano/icon-96.png' %}">
-    <link rel="icon" type="image/png" sizes="144x144" href="{% static 'nano/icon-144.png' %}">
-    <link rel="icon" type="image/png" sizes="192x192" href="{% static 'nano/icon-192.png' %}">
-
-    <!-- Windows Tile -->
-    <meta name="msapplication-TileImage" content="{% static 'nano/icon-144.png' %}">
-    <meta name="msapplication-TileColor" content="#007bff">
-
-    <!-- Bootstrap CSS -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css">
-
-    <!-- Custom CSS -->
-    <link rel="stylesheet" href="{% static 'nano/styles.css' %}">
-    <link rel="stylesheet" href="{% static 'nano/notifications.css' %}">
-    <link rel="stylesheet" href="{% static 'nano/hamburger.css' %}">
-    <!-- Font Awesome: use v5 (matches existing fas/far/fab classes) with CDN fallback -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5.15.4/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer">
-    {% block extra_css %}{% endblock %}
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>{% block title %}NDtech POS{% endblock %}</title>
+  
+  <!-- Premium Typography -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="sha512-iecdLmaskl7CVkqkXNQ/ZH/XLlvWZOJyj7Yy7tcenmpD1ypASozpmT/E0iPtmFIB46ZmdtAc9eNBvH0H/ZpiBw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+  
+  <!-- Core & Navbar Styles -->
+  <link rel="stylesheet" href="{% static 'nano/css/app.css' %}" />
+  <link rel="stylesheet" href="{% static 'nano/css/navbar.css' %}" />
+  
+  {% block extra_css %}{% endblock %}
 </head>
+<body class="{% if request.user.is_authenticated %}has-navbar{% else %}auth-body{% endif %}">
 
-<body>
-    <!-- Navigation Bar -->
-    <header class="navbar">
-        <div class="nav-brand">
-            <h1><i class="fas fa-cash-register"></i> {{ user_company_name|default:"NDtech" }}</h1>
-        </div>
-        <nav class="nav-menu">
-            <a href="{% url 'home' %}" class="nav-link">
-                <i class="fas fa-home"></i> Dashboard
-            </a>
-            <a href="{% url 'add_stock' %}" class="nav-link">
-                <i class="fas fa-box"></i> Manage Stock
-            </a>
+  {% if request.user.is_authenticated %}
+  <!-- Main Glassmorphic Navbar -->
+  <nav class="main-navbar">
+    <div class="nav-container">
+      <a class="nav-brand" href="{% url 'home' %}">
+        <img class="nav-logo" src="{% static 'nano/icon-96.png' %}" alt="NDtech Logo" />
+        <span>NDtech POS</span>
+      </a>
 
-            <!-- Product Scanning Dropdown -->
-            <div class="nav-dropdown">
-                <button class="nav-link dropdown-toggle">
-                    <i class="fas fa-barcode"></i> Scanning
-                </button>
-                <div class="dropdown-menu">
-                    <a href="{% url 'upc_lookup' %}" class="dropdown-item">
-                        <i class="fas fa-search"></i> UPC Lookup
-                    </a>
-                    <a href="{% url 'barcode_scanner' %}" class="dropdown-item">
-                        <i class="fas fa-camera"></i> Barcode Scanner
-                    </a>
-                </div>
-            </div>
-
-            <!-- Orders Dropdown -->
-            <div class="nav-dropdown">
-                <button class="nav-link dropdown-toggle">
-                    <i class="fas fa-clipboard-list"></i> Orders
-                </button>
-                <div class="dropdown-menu">
-                    <a href="{% url 'pending_orders' %}" class="dropdown-item">
-                        <i class="fas fa-clock"></i> Pending Orders
-                    </a>
-                    {% if user.is_superuser or user.userprofile.role == 'admin' or user.userprofile.role == 'manager' %}
-                    <a href="{% url 'completed_orders' %}" class="dropdown-item">
-                        <i class="fas fa-check-circle"></i> Completed Orders
-                    </a>
-                    {% endif %}
-                </div>
-            </div>
-
-            <!-- Airtime Dropdown -->
-            <div class="nav-dropdown">
-                <button class="nav-link dropdown-toggle">
-                    <i class="fas fa-mobile-alt"></i> Airtime
-                </button>
-                <div class="dropdown-menu">
-                    <a href="{% url 'airtime_dashboard' %}" class="dropdown-item">
-                        <i class="fas fa-tachometer-alt"></i> Airtime Dashboard
-                    </a>
-                    {% if user.is_superuser or user.userprofile.role == 'admin' or user.userprofile.role == 'manager' %}
-                    <a href="{% url 'airtime_management' %}" class="dropdown-item">
-                        <i class="fas fa-cogs"></i> Manage Products
-                    </a>
-                    <a href="{% url 'airtime_sales' %}" class="dropdown-item">
-                        <i class="fas fa-shopping-cart"></i> Sales Management
-                    </a>
-                    <a href="{% url 'airtime_requests_management' %}" class="dropdown-item">
-                        <i class="fas fa-clipboard-list"></i> Request Management
-                    </a>
-                    {% endif %}
-                </div>
-            </div>
-
-            {% if user.is_superuser or user.userprofile.role == 'admin' or user.userprofile.role == 'manager' %}
-            <a href="{% url 'manage_users' %}" class="nav-link">
-                <i class="fas fa-users"></i> Manage Users
-            </a>
-            <a href="{% url 'warehouse_prices' %}" class="nav-link">
-                <i class="fas fa-warehouse"></i> Warehouse
-            </a>
+      <!-- Navigation Links -->
+      <ul class="nav-menu" id="nav-menu">
+        {% with company_display_name=request.user.userprofile.company_name|default:"NDtech" %}
+        <li class="nav-item {% if request.path == '/' %}active{% endif %}">
+          <a class="nav-link" href="{% url 'home' %}">
+            <i class="fas fa-cash-register"></i>
+            {% if company_display_name and company_display_name|length > 10 %}
+              POS
+            {% else %}
+              {{ company_display_name|default:"NDtech" }}
             {% endif %}
+          </a>
+        </li>
+        {% endwith %}
 
-            {% if user.is_authenticated %}
-            <a href="{% url 'notifications_page' %}" class="nav-link notification-bell">
-                <i class="fas fa-bell"></i>
-                <span class="notification-badge" id="notificationBadge" style="display: none;">0</span>
-            </a>
-            {% endif %}
-            <a href="{% url 'logout' %}" class="nav-link logout">
-                <i class="fas fa-sign-out-alt"></i> Logout
-            </a>
-        </nav>
-        <button class="hamburger-toggle" aria-label="Toggle mobile menu" style="display: none;">
-            <i class="fas fa-bars icon"></i>
+        <li class="nav-item {% if '/pending_orders/' in request.path %}active{% endif %}">
+          <a class="nav-link" href="{% url 'pending_orders' %}">
+            <i class="fas fa-clock"></i> Pending Orders
+          </a>
+        </li>
+        <li class="nav-item {% if '/completed_orders/' in request.path %}active{% endif %}">
+          <a class="nav-link" href="{% url 'completed_orders' %}">
+            <i class="fas fa-check"></i> Completed Orders
+          </a>
+        </li>
+        <li class="nav-item {% if '/airtime/' in request.path %}active{% endif %}">
+          <a class="nav-link" href="{% url 'airtime_dashboard' %}">
+            <i class="fas fa-mobile-screen-button"></i> Airtime
+          </a>
+        </li>
+        <li class="nav-item {% if '/warehouse/' in request.path %}active{% endif %}">
+          <a class="nav-link" href="{% url 'price_comparisons' %}">
+            <i class="fas fa-warehouse"></i> Warehouse
+          </a>
+        </li>
+        <li class="nav-item {% if '/add_stock/' in request.path %}active{% endif %}">
+          <a class="nav-link" href="{% url 'add_stock' %}">
+            <i class="fas fa-boxes-stacked"></i> Manage Stock
+          </a>
+        </li>
+        <li class="nav-item {% if '/manage_users/' in request.path %}active{% endif %}">
+          <a class="nav-link" href="{% url 'manage_users' %}">
+            <i class="fas fa-users-gear"></i> Manage Users
+          </a>
+        </li>
+      </ul>
+
+      <!-- User Profile & Action Actions -->
+      <div class="nav-actions">
+        <!-- Secret Admin Access Icon -->
+        {% if request.user.is_superuser or request.user.userprofile.role == 'admin' %}
+        <button class="secret-admin-btn" id="secret-admin-btn" title="Admin Access" style="background: none; border: none; color: #ff4f6d; font-size: 18px; cursor: pointer; padding: 8px; margin-right: 10px;">
+          <i class="fas fa-user-secret"></i>
         </button>
-    </header>
-
-    <!-- Floating Messages Button (Mobile Only) -->
-    {% if user.is_authenticated %}
-    <button class="floating-messages-btn" id="floatingMessagesBtn" aria-label="Messages">
-        <i class="fas fa-envelope"></i>
-        <span class="messages-badge" id="messagesBadge" style="display: none;">0</span>
-    </button>
-    {% endif %}
-
-    <!-- Mobile Navigation Menu -->
-    <nav class="mobile-nav" id="mobile-nav">
-        <div class="mobile-nav-header">
-            <div class="mobile-nav-brand">
-                <i class="fas fa-cash-register"></i> {{ user_company_name|default:"NDtech" }}
-            </div>
-            <button class="mobile-nav-close" aria-label="Close mobile menu">
-                <i class="fas fa-times"></i>
-            </button>
-        </div>
-        <div class="mobile-nav-menu">
-            <a href="{% url 'home' %}" class="mobile-nav-link">
-                <i class="fas fa-home"></i> Dashboard
-            </a>
-            <a href="{% url 'add_stock' %}" class="mobile-nav-link">
-                <i class="fas fa-box"></i> Add Stock
-            </a>
-
-            <!-- Mobile Product Scanning Section -->
-            <div class="mobile-nav-section">
-                <div class="mobile-nav-section-title">
-                    <i class="fas fa-barcode"></i> Scanning
-                </div>
-                <a href="{% url 'upc_lookup' %}" class="mobile-nav-link sub-link">
-                    <i class="fas fa-search"></i> UPC Lookup
-                </a>
-                <a href="{% url 'barcode_scanner' %}" class="mobile-nav-link sub-link">
-                    <i class="fas fa-camera"></i> Barcode Scanner
-                </a>
-            </div>
-
-            <!-- Mobile Orders Section -->
-            <div class="mobile-nav-section">
-                <div class="mobile-nav-section-title">
-                    <i class="fas fa-clipboard-list"></i> Orders
-                </div>
-                <a href="{% url 'pending_orders' %}" class="mobile-nav-link sub-link">
-                    <i class="fas fa-clock"></i> Pending Orders
-                </a>
-                {% if user.is_superuser or user.userprofile.role == 'admin' or user.userprofile.role == 'manager' %}
-                <a href="{% url 'completed_orders' %}" class="mobile-nav-link sub-link">
-                    <i class="fas fa-check-circle"></i> Completed Orders
-                </a>
-                {% endif %}
-            </div>
-
-            <!-- Mobile Airtime Section -->
-            <div class="mobile-nav-section">
-                <div class="mobile-nav-section-title">
-                    <i class="fas fa-mobile-alt"></i> Airtime
-                </div>
-                <a href="{% url 'airtime_dashboard' %}" class="mobile-nav-link sub-link">
-                    <i class="fas fa-tachometer-alt"></i> Airtime Dashboard
-                </a>
-                {% if user.is_superuser or user.userprofile.role == 'admin' or user.userprofile.role == 'manager' %}
-                <a href="{% url 'airtime_management' %}" class="mobile-nav-link sub-link">
-                    <i class="fas fa-cogs"></i> Manage Products
-                </a>
-                <a href="{% url 'airtime_sales' %}" class="mobile-nav-link sub-link">
-                    <i class="fas fa-shopping-cart"></i> Sales Management
-                </a>
-                <a href="{% url 'airtime_requests_management' %}" class="mobile-nav-link sub-link">
-                    <i class="fas fa-clipboard-list"></i> Request Management
-                </a>
-                {% endif %}
-            </div>
-
-            {% if user.is_superuser or user.userprofile.role == 'admin' or user.userprofile.role == 'manager' %}
-            <a href="{% url 'manage_users' %}" class="mobile-nav-link">
-                <i class="fas fa-users"></i> Manage Users
-            </a>
-            <a href="{% url 'warehouse_prices' %}" class="mobile-nav-link">
-                <i class="fas fa-warehouse"></i> Warehouse
-            </a>
-            {% endif %}
-
-            {% if user.is_authenticated %}
-            <a href="{% url 'notifications_page' %}" class="mobile-nav-link notification-bell">
-                <i class="fas fa-bell"></i>
-                <span class="notification-badge" id="mobileNotificationBadge" style="display: none;">0</span>
-            </a>
-            {% endif %}
-            <a href="{% url 'logout' %}" class="mobile-nav-link logout">
-                <i class="fas fa-sign-out-alt"></i> Logout
-            </a>
-        </div>
-    </nav>
-
-
-    <!-- Main Content -->
-    <main class="main-content">
-        {% if messages %}
-        <div class="messages">
-            {% for message in messages %}
-            <div class="message {{ message.tags }}">
-                {% if message.tags == 'success' %}✅{% elif message.tags == 'error' %}❌{% elif message.tags == 'warning'
-                %}⚠️{% else %}ℹ️{% endif %}
-                {{ message }}
-            </div>
-            {% endfor %}
-        </div>
         {% endif %}
 
-        <div class="content-wrapper">
-            {% block content %}{% endblock %}
+        <div class="nav-user">
+          <div class="user-avatar">
+            {{ request.user.username|first|upper }}
+          </div>
+          <div class="user-info">
+            <span class="user-name">{{ request.user.userprofile.get_display_name|default:request.user.username }}</span>
+            <span class="user-role-badge role-{{ request.user.userprofile.role|default:'cashier' }}">
+              {{ request.user.userprofile.role|default:'Cashier' }}
+            </span>
+          </div>
         </div>
-    </main>
+        
+        <a class="btn-nav-logout" href="{% url 'logout' %}" title="Logout">
+          <i class="fas fa-right-from-bracket"></i>
+        </a>
 
-    <!-- Mobile Bottom Navigation -->
-    <nav class="bottom-nav">
-        <a href="{% url 'home' %}"
-            class="bottom-nav-link {% if request.resolver_match.url_name == 'home' %}active{% endif %}">
-            <i class="fas fa-home"></i>
-            <span>Home</span>
-        </a>
-        <a href="{% url 'upc_lookup' %}"
-            class="bottom-nav-link {% if request.resolver_match.url_name == 'upc_lookup' %}active{% endif %}">
-            <i class="fas fa-search"></i>
-            <span>Search</span>
-        </a>
-        <a href="{% url 'add_stock' %}"
-            class="bottom-nav-link {% if request.resolver_match.url_name == 'add_stock' %}active{% endif %}">
-            <i class="fas fa-box"></i>
-            <span>Add Stock</span>
-        </a>
-        <a href="{% url 'pending_orders' %}"
-            class="bottom-nav-link {% if request.resolver_match.url_name == 'pending_orders' %}active{% endif %}">
-            <i class="fas fa-clock"></i>
-            <span>Orders</span>
-        </a>
-        <button class="bottom-nav-link menu-trigger" id="mobileMenuBtn">
-            <i class="fas fa-bars"></i>
-            <span>Menu</span>
+        <!-- Mobile Hamburger Menu Button -->
+        <button class="nav-toggle-btn" id="nav-toggle" aria-label="Toggle navigation menu">
+          <i class="fas fa-bars"></i>
         </button>
-    </nav>
+      </div>
+    </div>
+  </nav>
+  {% endif %}
 
-    {% csrf_token %}
+  <!-- Core Content Block -->
+  {% block content %}{% endblock %}
 
-    <!-- jQuery and Bootstrap - Required for interactive elements -->
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+  <!-- Feedback/Alert Dialogs -->
+  {% if messages %}
+  <div class="toasts" aria-live="polite" aria-relevant="additions">
+    {% for message in messages %}
+      <div class="toast toast-{{ message.tags }}">{{ message }}</div>
+    {% endfor %}
+  </div>
+  {% endif %}
 
-    <!-- Custom Scripts -->
-    <script src="{% static 'nano/notifications.js' %}"></script>
-    <script src="{% static 'nano/hamburger.js' %}"></script>
-    <script src="{% static 'nano/toast.js' %}"></script>
+  <!-- Mobile Menu Toggle Javascript -->
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      const toggleBtn = document.getElementById('nav-toggle');
+      const navMenu = document.getElementById('nav-menu');
 
-    <!-- PWA Service Worker Registration -->
-    <script>
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', function () {
-                navigator.serviceWorker.register("{% static 'nano/sw.js' %}")
-                    .then(function (registration) {
-                        console.log('ServiceWorker registration successful with scope: ', registration.scope);
+      if (toggleBtn && navMenu) {
+        toggleBtn.addEventListener('click', function(e) {
+          e.stopPropagation();
+          navMenu.classList.toggle('mobile-open');
+          const icon = toggleBtn.querySelector('i');
+          if (icon) {
+            if (navMenu.classList.contains('mobile-open')) {
+              icon.className = 'fas fa-xmark';
+            } else {
+              icon.className = 'fas fa-bars';
+            }
+          }
+        });
 
-                        // Check for updates periodically
-                        setInterval(() => {
-                            registration.update();
-                        }, 60 * 60 * 1000); // Check every hour
-                    })
-                    .catch(function (error) {
-                        console.log('ServiceWorker registration failed: ', error);
-                    });
+        // Close menu if clicking outside
+        document.addEventListener('click', function(e) {
+          if (navMenu.classList.contains('mobile-open') && !navMenu.contains(e.target) && !toggleBtn.contains(e.target)) {
+            navMenu.classList.remove('mobile-open');
+            const icon = toggleBtn.querySelector('i');
+            if (icon) {
+              icon.className = 'fas fa-bars';
+            }
+          }
+        });
+      }
+
+      // Secret Admin Access
+      const secretBtn = document.getElementById('secret-admin-btn');
+      if (secretBtn) {
+        secretBtn.addEventListener('click', function() {
+          const password = prompt('Enter admin password to access NDtechTrack:');
+          if (password) {
+            fetch('/verify-admin-password/', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+              },
+              body: JSON.stringify({ password: password })
+            })
+            .then(response => response.json())
+            .then(data => {
+              if (data.success) {
+                window.location.href = '/ndtechtrack/';
+              } else {
+                alert('Incorrect password');
+              }
+            })
+            .catch(error => {
+              alert('Error verifying password');
             });
+          }
+        });
+      }
+
+      function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+          const cookies = document.cookie.split(';');
+          for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+              cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+              break;
+            }
+          }
         }
-
-        // PWA Install Prompt
-        let deferredPrompt;
-        let installPromptShown = false;
-
-        window.addEventListener('beforeinstallprompt', (e) => {
-            e.preventDefault();
-            deferredPrompt = e;
-
-            // Don't show if already shown or dismissed
-            if (installPromptShown) return;
-
-            // Create mobile-friendly install popup
-            const installPopup = document.createElement('div');
-            installPopup.id = 'pwa-install-popup';
-            installPopup.innerHTML = `
-                <div class="pwa-install-overlay">
-                    <div class="pwa-install-modal">
-                        <div class="pwa-install-header">
-                            <img src="{% static 'nano/icon-192.png' %}" alt="NDtech POS" class="install-icon">
-                            <div class="install-text">
-                                <h3>Install NDtech POS</h3>
-                                <p>Get the full experience with our app</p>
-                            </div>
-                            <button class="close-btn" onclick="closeInstallPrompt()">&times;</button>
-                        </div>
-                        <div class="pwa-install-body">
-                            <div class="feature-list">
-                                <div class="feature-item">
-                                    <i class="fas fa-download"></i>
-                                    <span>Offline Access</span>
-                                </div>
-                                <div class="feature-item">
-                                    <i class="fas fa-bolt"></i>
-                                    <span>Fast Loading</span>
-                                </div>
-                                <div class="feature-item">
-                                    <i class="fas fa-mobile-alt"></i>
-                                    <span>Native Feel</span>
-                                </div>
-                            </div>
-                            <div class="install-actions">
-                                <button class="install-btn-primary" onclick="installPWA()">
-                                    <i class="fas fa-download"></i>
-                                    Install App
-                                </button>
-                                <button class="install-btn-secondary" onclick="closeInstallPrompt()">
-                                    Maybe Later
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            `;
-
-            // Add styles for the popup
-            const style = document.createElement('style');
-            style.textContent = `
-                #pwa-install-popup {
-                    position: fixed;
-                    top: 0;
-                    left: 0;
-                    width: 100%;
-                    height: 100%;
-                    z-index: 10000;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    animation: fadeIn 0.3s ease-out;
-                }
-                
-                .pwa-install-overlay {
-                    position: absolute;
-                    top: 0;
-                    left: 0;
-                    width: 100%;
-                    height: 100%;
-                    background: rgba(0, 0, 0, 0.5);
-                    backdrop-filter: blur(5px);
-                }
-                
-                .pwa-install-modal {
-                    background: white;
-                    border-radius: 20px;
-                    max-width: 400px;
-                    width: 90%;
-                    max-height: 80vh;
-                    overflow-y: auto;
-                    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-                    animation: slideUp 0.3s ease-out;
-                    position: relative;
-                }
-                
-                .pwa-install-header {
-                    display: flex;
-                    align-items: center;
-                    padding: 20px;
-                    border-bottom: 1px solid #eee;
-                    position: relative;
-                }
-                
-                .install-icon {
-                    width: 60px;
-                    height: 60px;
-                    border-radius: 12px;
-                    margin-right: 15px;
-                    box-shadow: 0 4px 8px rgba(0,123,255,0.2);
-                }
-                
-                .install-text h3 {
-                    margin: 0 0 5px 0;
-                    color: #2c3e50;
-                    font-size: 1.2rem;
-                    font-weight: 600;
-                }
-                
-                .install-text p {
-                    margin: 0;
-                    color: #666;
-                    font-size: 0.9rem;
-                }
-                
-                .close-btn {
-                    position: absolute;
-                    top: 15px;
-                    right: 15px;
-                    background: none;
-                    border: none;
-                    font-size: 1.5rem;
-                    color: #999;
-                    cursor: pointer;
-                    padding: 5px;
-                    border-radius: 50%;
-                    transition: all 0.2s;
-                }
-                
-                .close-btn:hover {
-                    background: #f5f5f5;
-                    color: #666;
-                }
-                
-                .pwa-install-body {
-                    padding: 20px;
-                }
-                
-                .feature-list {
-                    margin-bottom: 20px;
-                }
-                
-                .feature-item {
-                    display: flex;
-                    align-items: center;
-                    margin-bottom: 15px;
-                    padding: 10px;
-                    background: #f8f9fa;
-                    border-radius: 10px;
-                    transition: all 0.2s;
-                }
-                
-                .feature-item:hover {
-                    background: #e9ecef;
-                    transform: translateY(-2px);
-                }
-                
-                .feature-item i {
-                    width: 40px;
-                    height: 40px;
-                    background: #007bff;
-                    color: white;
-                    border-radius: 50%;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    margin-right: 15px;
-                    font-size: 1rem;
-                }
-                
-                .feature-item span {
-                    font-weight: 500;
-                    color: #2c3e50;
-                }
-                
-                .install-actions {
-                    display: flex;
-                    gap: 10px;
-                }
-                
-                .install-btn-primary {
-                    flex: 1;
-                    background: #007bff;
-                    color: white;
-                    border: none;
-                    padding: 15px 20px;
-                    border-radius: 10px;
-                    font-size: 1rem;
-                    font-weight: 600;
-                    cursor: pointer;
-                    transition: all 0.2s;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    gap: 8px;
-                }
-                
-                .install-btn-primary:hover {
-                    background: #0056b3;
-                    transform: translateY(-2px);
-                    box-shadow: 0 6px 20px rgba(0,123,255,0.4);
-                }
-                
-                .install-btn-secondary {
-                    flex: 1;
-                    background: #6c757d;
-                    color: white;
-                    border: none;
-                    padding: 15px 20px;
-                    border-radius: 10px;
-                    font-size: 1rem;
-                    font-weight: 500;
-                    cursor: pointer;
-                    transition: all 0.2s;
-                }
-                
-                .install-btn-secondary:hover {
-                    background: #5a6268;
-                    transform: translateY(-2px);
-                }
-                
-                @keyframes fadeIn {
-                    from { opacity: 0; }
-                    to { opacity: 1; }
-                }
-                
-                @keyframes slideUp {
-                    from { 
-                        opacity: 0;
-                        transform: translateY(30px);
-                    }
-                    to { 
-                        opacity: 1;
-                        transform: translateY(0);
-                    }
-                }
-                
-                @media (max-width: 480px) {
-                    .pwa-install-modal {
-                        width: 95%;
-                        margin: 10px;
-                    }
-                    
-                    .pwa-install-header {
-                        padding: 15px;
-                    }
-                    
-                    .install-icon {
-                        width: 50px;
-                        height: 50px;
-                        margin-right: 12px;
-                    }
-                    
-                    .install-text h3 {
-                        font-size: 1.1rem;
-                    }
-                    
-                    .install-text p {
-                        font-size: 0.85rem;
-                    }
-                    
-                    .pwa-install-body {
-                        padding: 15px;
-                    }
-                    
-                    .feature-item {
-                        margin-bottom: 12px;
-                        padding: 8px;
-                    }
-                    
-                    .feature-item i {
-                        width: 35px;
-                        height: 35px;
-                        margin-right: 12px;
-                        font-size: 0.9rem;
-                    }
-                    
-                    .install-actions {
-                        flex-direction: column;
-                    }
-                    
-                    .install-btn-primary, .install-btn-secondary {
-                        padding: 12px 15px;
-                        font-size: 0.9rem;
-                    }
-                }
-            `;
-
-            document.head.appendChild(style);
-            document.body.appendChild(installPopup);
-
-            // Auto-show after a short delay
-            setTimeout(() => {
-                installPromptShown = true;
-            }, 1000);
-        });
-
-        // Global functions for install prompt
-        window.closeInstallPrompt = function () {
-            const popup = document.getElementById('pwa-install-popup');
-            if (popup) {
-                popup.remove();
-                installPromptShown = true; // Mark as dismissed
-            }
-        };
-
-        window.installPWA = async function () {
-            if (deferredPrompt) {
-                deferredPrompt.prompt();
-                const { outcome } = await deferredPrompt.userChoice;
-                console.log(`User response to the install prompt: ${outcome}`);
-                deferredPrompt = null;
-                closeInstallPrompt();
-            }
-        };
-
-        // Handle app installed event
-        window.addEventListener('appinstalled', (evt) => {
-            console.log('NDtech POS was installed');
-            // Remove install button if it exists
-            const installButton = document.querySelector('button[textContent="Install NDtech POS"]');
-            if (installButton) {
-                installButton.remove();
-            }
-        });
-    </script>
-
-    {% block extra_js %}{% endblock %}
-
-    <!-- Floating Messages Button Script -->
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const floatingMessagesBtn = document.getElementById('floatingMessagesBtn');
-            const messagesBadge = document.getElementById('messagesBadge');
-            
-            if (floatingMessagesBtn) {
-                // Handle click event
-                floatingMessagesBtn.addEventListener('click', function() {
-                    // Navigate to notifications page
-                    window.location.href = "{% url 'notifications_page' %}";
-                });
-
-                // Update messages count from existing notification system
-                function updateMessagesBadge() {
-                    const notificationBadge = document.getElementById('notificationBadge');
-                    if (notificationBadge && messagesBadge) {
-                        const count = notificationBadge.textContent;
-                        if (count && count !== '0' && count !== '') {
-                            messagesBadge.textContent = count;
-                            messagesBadge.style.display = 'flex';
-                        } else {
-                            messagesBadge.style.display = 'none';
-                        }
-                    }
-                }
-
-                // Initial update
-                updateMessagesBadge();
-
-                // Watch for changes in the main notification badge
-                const observer = new MutationObserver(updateMessagesBadge);
-                const notificationBadge = document.getElementById('notificationBadge');
-                if (notificationBadge) {
-                    observer.observe(notificationBadge, {
-                        childList: true,
-                        characterData: true,
-                        subtree: true
-                    });
-                }
-
-                // Periodic sync with notification system
-                setInterval(updateMessagesBadge, 5000);
-            }
-        });
-    </script>
+        return cookieValue;
+      }
+    });
+  </script>
+  
+  {% block extra_js %}{% endblock %}
 </body>
-
 </html>

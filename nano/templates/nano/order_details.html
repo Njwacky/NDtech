@@ -1,492 +1,87 @@
 {% extends 'nano/base.html' %}
 {% load static %}
-{% load dict_filters %}
 
-{% block title %}Order Details #{{ order.id }} - NDtech{% endblock %}
-
-{% block extra_css %}
-<link rel="stylesheet" href="{% static 'nano/home.css' %}">
-<style>
-        .order-container {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
-            border-radius: 1rem;
-            padding: 2rem;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-            margin-top: 2rem;
-        }
-        
-        .order-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 2rem;
-            padding-bottom: 1rem;
-            border-bottom: 2px solid #e2e8f0;
-        }
-        
-        .order-title {
-            color: #2d3748;
-            font-size: 1.5rem;
-            font-weight: 700;
-        }
-        
-        .order-time {
-            color: #718096;
-            font-size: 0.9rem;
-        }
-        
-        .customer-info {
-            background: #f8f9fa;
-            border-radius: 0.75rem;
-            padding: 1.5rem;
-            margin-bottom: 2rem;
-        }
-        
-        .customer-info h3 {
-            color: #4a5568;
-            margin-bottom: 1rem;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-        
-        .customer-info h3 i {
-            color: #667eea;
-        }
-        
-        .customer-details {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 1rem;
-        }
-        
-        .customer-detail {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-        
-        .customer-detail i {
-            color: #718096;
-            width: 20px;
-        }
-        
-        .customer-detail span {
-            color: #2d3748;
-            font-weight: 500;
-        }
-        
-        .items-section {
-            margin-bottom: 2rem;
-        }
-        
-        .items-section h3 {
-            color: #4a5568;
-            margin-bottom: 1rem;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-        
-        .items-section h3 i {
-            color: #667eea;
-        }
-        
-        .items-table {
-            width: 100%;
-            background: white;
-            border-radius: 0.75rem;
-            overflow: hidden;
-            border: 2px solid #e2e8f0;
-        }
-        
-        .items-table thead {
-            background: linear-gradient(135deg, #667eea, #764ba2);
-            color: white;
-        }
-        
-        .items-table th,
-        .items-table td {
-            padding: 1rem;
-            text-align: left;
-        }
-        
-        .items-table tbody tr {
-            border-bottom: 1px solid #e2e8f0;
-            transition: background-color 0.2s ease;
-        }
-        
-        .items-table tbody tr:hover {
-            background: #f8f9fa;
-        }
-        
-        .items-table tbody tr:last-child {
-            border-bottom: none;
-        }
-        
-        .item-name {
-            font-weight: 600;
-            color: #2d3748;
-        }
-        
-        .item-quantity {
-            color: #718096;
-        }
-        
-        .item-price {
-            color: #667eea;
-            font-weight: 600;
-        }
-        
-        .item-total {
-            color: #2d3748;
-            font-weight: 700;
-        }
-        
-        .payment-summary {
-            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-            border-radius: 0.75rem;
-            padding: 1.5rem;
-            border: 2px solid #e2e8f0;
-        }
-        
-        .payment-summary h3 {
-            color: #4a5568;
-            margin-bottom: 1rem;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-        
-        .payment-summary h3 i {
-            color: #667eea;
-        }
-        
-        .payment-details {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-            gap: 1rem;
-        }
-        
-        .payment-detail {
-            text-align: center;
-            padding: 1rem;
-            background: white;
-            border-radius: 0.5rem;
-            border: 1px solid #e2e8f0;
-        }
-        
-        .payment-detail-label {
-            font-size: 0.8rem;
-            color: #718096;
-            margin-bottom: 0.5rem;
-        }
-        
-        .payment-detail-value {
-            font-weight: 700;
-            font-size: 1.1rem;
-        }
-        
-        .total-amount {
-            color: #667eea;
-        }
-        
-        .cash-received {
-            color: #48bb78;
-        }
-        
-        .change-given {
-            color: #ed8936;
-        }
-        
-        .processed-by {
-            color: #9f7aea;
-        }
-        
-        .back-btn {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.5rem;
-            padding: 0.75rem 1.5rem;
-            background: linear-gradient(135deg, #667eea, #764ba2);
-            color: white;
-            text-decoration: none;
-            border-radius: 0.5rem;
-            font-weight: 600;
-            transition: all 0.3s ease;
-        }
-        
-        .back-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
-        }
-        
-        .print-btn {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.5rem;
-            padding: 0.75rem 1.5rem;
-            background: linear-gradient(135deg, #48bb78, #38a169);
-            color: white;
-            text-decoration: none;
-            border-radius: 0.5rem;
-            font-weight: 600;
-            transition: all 0.3s ease;
-            margin-left: 1rem;
-        }
-        
-        .print-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 15px rgba(72, 187, 120, 0.3);
-        }
-        
-        .payment-input {
-            width: 100%;
-            padding: 0.5rem;
-            border: 1px solid #e2e8f0;
-            border-radius: 0.25rem;
-            font-size: 0.9rem;
-            text-align: center;
-        }
-        
-        .payment-input:focus {
-            outline: none;
-            border-color: #667eea;
-            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-        }
-        
-        .complete-btn {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.5rem;
-            padding: 0.75rem 1.5rem;
-            background: linear-gradient(135deg, #48bb78, #38a169);
-            color: white;
-            border: none;
-            border-radius: 0.5rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            text-decoration: none;
-        }
-        
-        .complete-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 15px rgba(72, 187, 120, 0.3);
-        }
-        
-        .cancel-btn {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.5rem;
-            padding: 0.75rem 1.5rem;
-            background: linear-gradient(135deg, #f56565, #e53e3e);
-            color: white;
-            text-decoration: none;
-            border-radius: 0.5rem;
-            font-weight: 600;
-            transition: all 0.3s ease;
-        }
-        
-        .cancel-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 15px rgba(245, 101, 101, 0.3);
-        }
-        
-        .form-actions {
-            display: flex;
-            gap: 1rem;
-            justify-content: center;
-            margin-top: 2rem;
-        }
-        
-        @media print {
-            .navbar, .back-btn, .print-btn {
-                display: none;
-            }
-            
-            .order-container {
-                box-shadow: none;
-                background: white;
-            }
-        }
-    </style>
-{% endblock %}
+{% block title %}Order Details - NDtech{% endblock %}
 
 {% block content %}
-        <div class="order-container">
-            <div class="order-header">
-                <div>
-                    <h1 class="order-title">Order #{{ order.id }}</h1>
-                    <div class="order-time">
-                        <i class="fas fa-clock"></i> {{ order.created_at|date:"H:i, d M Y" }}
-                    </div>
-                </div>
-                <div>
-                    <a href="{% url 'completed_orders' %}" class="back-btn">
-                        <i class="fas fa-arrow-left"></i> Back to Orders
-                    </a>
-                    <button onclick="window.print()" class="print-btn">
-                        <i class="fas fa-print"></i> Print
-                    </button>
-                </div>
-            </div>
+<div style="padding: 20px; max-width: 1100px; margin: 0 auto;">
+  <a href="{% url 'pending_orders' %}" style="display:inline-flex; align-items:center; gap:8px; padding:10px 14px; border-radius:10px; background:#f2f2f2; text-decoration:none; margin-bottom: 16px;">
+    <i class="fas fa-arrow-left"></i> Back
+  </a>
 
-            <!-- Customer Information -->
-            <div class="customer-info">
-                <h3><i class="fas fa-user"></i> Customer Information</h3>
-                <div class="customer-details">
-                    <div class="customer-detail">
-                        <i class="fas fa-user"></i>
-                        <span>{{ order.customer_name }}</span>
-                    </div>
-                    <div class="customer-detail">
-                        <i class="fas fa-phone"></i>
-                        <span>{{ order.customer_phone }}</span>
-                    </div>
-                    <div class="customer-detail">
-                        <i class="fas fa-cash-register"></i>
-                        <span>Created by: {{ order.user.username|default:"System" }}</span>
-                    </div>
-                </div>
-            </div>
+  <h1 style="margin: 0 0 8px;">Order #{{ order.id }}</h1>
+  <div style="color:#666; margin-bottom: 18px;">
+    Customer: <strong>{{ order.customer_name }}</strong> • {{ order.customer_phone }}
+  </div>
 
-            <!-- Order Items -->
-            <div class="items-section">
-                <h3><i class="fas fa-shopping-cart"></i> Order Items</h3>
-                <table class="items-table">
-                    <thead>
-                        <tr>
-                            <th>Product</th>
-                            <th>Quantity</th>
-                            <th>Unit Price</th>
-                            <th>Total</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for item in items_with_totals %}
-                        <tr>
-                            <td class="item-name">{{ item.product }}</td>
-                            <td class="item-quantity">{{ item.quantity }}</td>
-                            <td class="item-price">R{{ item.price }}</td>
-                            <td class="item-total">R{{ item.total }}</td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
+  <div style="background:#fff; border:1px solid #eee; border-radius:12px; padding:16px; margin-bottom: 18px;">
+    <div style="display:flex; justify-content:space-between; flex-wrap:wrap; gap: 10px;">
+      <div>
+        <div style="font-size:12px; color:#666;">Total</div>
+        <div style="font-size:24px; font-weight:800; color:#588157;">R{{ order.total }}</div>
+      </div>
+      <div>
+        <div style="font-size:12px; color:#666;">Status</div>
+        <div style="font-weight:700;">{{ order.status }}</div>
+      </div>
+    </div>
+  </div>
 
-            <!-- Checkout Form -->
-            {% if order.status == 'pending' %}
-            <div class="checkout-form">
-                <h3><i class="fas fa-cash-register"></i> Complete Order</h3>
-                <form method="post" action="{% url 'complete_order' order.id %}" id="checkoutForm">
-                    {% csrf_token %}
-                    
-                    <div class="payment-details">
-                        <div class="payment-detail">
-                            <div class="payment-detail-label">Total Amount</div>
-                            <div class="payment-detail-value total-amount">R{{ order.total }}</div>
-                        </div>
-                        
-                        <div class="payment-detail">
-                            <label for="cash_received" class="payment-detail-label">Cash Received</label>
-                            <input type="number" 
-                                   id="cash_received" 
-                                   name="cash_received" 
-                                   class="payment-input" 
-                                   value="{{ order.total }}" 
-                                   step="0.01" 
-                                   min="0" 
-                                   required>
-                        </div>
-                        
-                        <div class="payment-detail">
-                            <label for="payment_method" class="payment-detail-label">Payment Method</label>
-                            <select id="payment_method" name="payment_method" class="payment-input">
-                                <option value="cash">Cash</option>
-                                <option value="card">Card</option>
-                                <option value="mobile">Mobile Payment</option>
-                            </select>
-                        </div>
-                        
-                        <div class="payment-detail">
-                            <div class="payment-detail-label">Change Due</div>
-                            <div class="payment-detail-value change-given" id="changeDue">R{{ order.total }}</div>
-                        </div>
-                    </div>
-                    
-                    <div class="form-actions">
-                        <button type="submit" class="complete-btn">
-                            <i class="fas fa-check-circle"></i> Complete Order
-                        </button>
-                        <a href="{% url 'pending_orders' %}" class="cancel-btn">
-                            <i class="fas fa-times-circle"></i> Cancel
-                        </a>
-                    </div>
-                </form>
-            </div>
-            {% endif %}
-            
-            <!-- Payment Summary for Completed Orders -->
-            {% if order.status == 'completed' %}
-            <div class="payment-summary">
-                <h3><i class="fas fa-money-bill-wave"></i> Payment Summary</h3>
-                <div class="payment-details">
-                    <div class="payment-detail">
-                        <div class="payment-detail-label">Total Amount</div>
-                        <div class="payment-detail-value total-amount">R{{ order.total }}</div>
-                    </div>
-                    {% if order.cash_received %}
-                    <div class="payment-detail">
-                        <div class="payment-detail-label">Cash Received</div>
-                        <div class="payment-detail-value cash-received">R{{ order.cash_received }}</div>
-                    </div>
-                    {% endif %}
-                    {% if order.change_given %}
-                    <div class="payment-detail">
-                        <div class="payment-detail-label">Change Given</div>
-                        <div class="payment-detail-value change-given">R{{ order.change_given }}</div>
-                    </div>
-                    {% endif %}
-                    {% if order.payment_method %}
-                    <div class="payment-detail">
-                        <div class="payment-detail-label">Payment Method</div>
-                        <div class="payment-detail-value processed-by">{{ order.get_payment_method_display }}</div>
-                    </div>
-                    {% endif %}
-                    {% if order.processed_by %}
-                    <div class="payment-detail">
-                        <div class="payment-detail-label">Processed By</div>
-                        <div class="payment-detail-value processed-by">{{ order.processed_by.username }}</div>
-                    </div>
-                    {% endif %}
-                </div>
-            </div>
-            {% endif %}
+  {% if items_with_totals %}
+    <div style="background:#fff; border:1px solid #eee; border-radius:12px; overflow:hidden;">
+      <table style="width:100%; border-collapse:collapse;">
+        <thead>
+          <tr style="background:#f6f6f6; text-align:left;">
+            <th style="padding:12px 14px; border-bottom:1px solid #eee;">Product</th>
+            <th style="padding:12px 14px; border-bottom:1px solid #eee;">Qty</th>
+            <th style="padding:12px 14px; border-bottom:1px solid #eee;">Price</th>
+            <th style="padding:12px 14px; border-bottom:1px solid #eee;">Line Total</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for item in items_with_totals %}
+            <tr>
+              <td style="padding:12px 14px; border-bottom:1px solid #f0f0f0;">{{ item.product }}</td>
+              <td style="padding:12px 14px; border-bottom:1px solid #f0f0f0;">{{ item.quantity }}</td>
+              <td style="padding:12px 14px; border-bottom:1px solid #f0f0f0;">R{{ item.price }}</td>
+              <td style="padding:12px 14px; border-bottom:1px solid #f0f0f0;">R{{ item.total }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% endif %}
+
+  <div style="background:#fff; border:1px solid #eee; border-radius:12px; padding:16px; margin-top:18px;">
+    <h2 style="margin:0 0 12px; font-size:18px;">Complete Order</h2>
+
+    <form method="POST" action="{% url 'complete_order' order_id=order.id %}">
+      {% csrf_token %}
+      <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+        <div>
+          <label style="display:block; font-size:13px; color:#666; margin-bottom:6px;">Cash Received</label>
+          <input type="number" name="cash_received" step="0.01" min="0" value="{{ order.total }}" required style="width:100%; padding:10px 12px; border:1px solid #ddd; border-radius:10px;" />
         </div>
+        <div>
+          <label style="display:block; font-size:13px; color:#666; margin-bottom:6px;">Payment Method</label>
+          <select name="payment_method" style="width:100%; padding:10px 12px; border:1px solid #ddd; border-radius:10px;">
+            <option value="cash">Cash</option>
+            <option value="card">Card</option>
+            <option value="mobile">Mobile Payment</option>
+          </select>
+        </div>
+      </div>
+
+      <div style="margin-top: 14px; display:flex; gap:10px; flex-wrap:wrap;">
+        <button type="submit" style="padding:12px 18px; border:none; border-radius:10px; background:#588157; color:#fff; font-weight:700; cursor:pointer;">
+          <i class="fas fa-check"></i> Complete
+        </button>
+        <a href="{% url 'pending_orders' %}" style="padding:12px 18px; border-radius:10px; background:#f2f2f2; text-decoration:none; font-weight:700; color:#333;">
+          Cancel
+        </a>
+      </div>
+    </form>
+  </div>
+</div>
 {% endblock %}
 
-{% block extra_js %}
-<script>
-    // Mobile menu toggle functionality is handled by base template
-    
-    // Handle checkout form
-    document.addEventListener('DOMContentLoaded', function() {
-        const cashReceivedInput = document.getElementById('cash_received');
-        const changeDueElement = document.getElementById('changeDue');
-        
-        if (cashReceivedInput && changeDueElement) {
-            cashReceivedInput.addEventListener('input', function() {
-                const cashReceived = parseFloat(this.value) || 0;
-                const totalAmount = parseFloat('{{ order.total }}') || 0;
-                const change = cashReceived - totalAmount;
-                
-                changeDueElement.textContent = `R${Math.abs(change).toFixed(2)}`;
-                changeDueElement.style.color = change >= 0 ? '#48bb78' : '#ed8936';
-            });
-        }
-    });
-</script>
-{% endblock %}

@@ -21,7 +21,32 @@ from .models import (
 
 logger = logging.getLogger('security_audit')
 
+
+def _get_workspace_from_request(request):
+    """Best-effort workspace extraction. Middleware/signal handlers may run without an authenticated user."""
+
+    if not request:
+        return None
+
+    try:
+        user = getattr(request, 'user', None)
+        if not user or not getattr(user, 'is_authenticated', False):
+            return None
+        profile = getattr(user, 'userprofile', None)
+        if not profile:
+            return None
+        return getattr(profile, 'workspace', None)
+    except Exception:
+        return None
+
+
+# Ensure `workspace` is always defined for legacy code paths.
+# Most workspace-scoped logging can treat None as "no workspace".
+workspace = None
+
+
 class SecurityAuditMiddleware(MiddlewareMixin):
+
     """
     Middleware to log security events and API calls
     """
@@ -97,7 +122,7 @@ class SecurityAuditMiddleware(MiddlewareMixin):
                     user_agent=context['user_agent'],
                     request_data=self._sanitize_request_data(request),
                     detection_method='middleware_exception',
-                )
+                 workspace=workspace)
         except Exception as e:
             logger.error(f"Error logging exception: {str(e)}")
         
@@ -228,7 +253,7 @@ class SecurityAuditMiddleware(MiddlewareMixin):
                 authentication_method=self._get_auth_method(request) or 'unknown',
                 is_suspicious=is_suspicious,
                 security_flags=security_flags,
-            )
+             workspace=workspace)
 
         except Exception as e:
             logger.error(f"Error logging API call: {str(e)}")
@@ -248,7 +273,7 @@ class SecurityAuditMiddleware(MiddlewareMixin):
                     username_attempted=request.POST.get('username', request.GET.get('username', '')),
                     request_data=self._sanitize_request_data(request),
                     detection_method='middleware_response',
-                )
+                 workspace=workspace)
 
             # Check for suspicious patterns
             if self._is_suspicious_request(request, response):
@@ -261,7 +286,7 @@ class SecurityAuditMiddleware(MiddlewareMixin):
                     user_agent=context['user_agent'],
                     request_data=self._sanitize_request_data(request),
                     detection_method='pattern_detection',
-                )
+                 workspace=workspace)
 
         except Exception as e:
             logger.error(f"Error logging security event: {str(e)}")
@@ -290,7 +315,7 @@ class SecurityAuditMiddleware(MiddlewareMixin):
                                 user_agent=context['user_agent'],
                                 request_url=request.get_full_path(),
                                 session_key=request.session.session_key if hasattr(request, 'session') else '',
-                            )
+                             workspace=workspace)
                             break
 
         except Exception as e:
@@ -388,7 +413,7 @@ def log_user_login(sender, request, user, **kwargs):
             user_agent=request.META.get('HTTP_USER_AGENT', ''),
             session_key=request.session.session_key if hasattr(request, 'session') else '',
             detection_method='django_signal',
-        )
+         workspace=workspace)
     except Exception as e:
         logger.error(f"Error logging user login: {str(e)}")
 
@@ -408,7 +433,7 @@ def log_user_logout(sender, request, user, **kwargs):
             user_agent=request.META.get('HTTP_USER_AGENT', ''),
             session_key=request.session.session_key if hasattr(request, 'session') else '',
             detection_method='django_signal',
-        )
+         workspace=workspace)
     except Exception as e:
         logger.error(f"Error logging user logout: {str(e)}")
 
@@ -432,7 +457,7 @@ def log_failed_login(sender, credentials, request, **kwargs):
             username_attempted=credentials.get('username', ''),
             request_data={'username': credentials.get('username', '')},
             detection_method='django_signal',
-        )
+         workspace=workspace)
     except Exception as e:
         logger.error(f"Error logging failed login: {str(e)}")
 
@@ -530,7 +555,7 @@ def log_data_modification(sender, instance, **kwargs):
                 request_url=request_url or '',
                 old_values={field: data['old'] for field, data in changed_fields.items()},
                 new_values={field: data['new'] for field, data in changed_fields.items()},
-            )
+             workspace=workspace)
 
     except Exception as e:
         logger.error(f"Error logging data modification: {str(e)}")
@@ -607,7 +632,7 @@ def log_data_creation(sender, instance, created, **kwargs):
                 field.name: str(getattr(instance, field.name))
                 for field in instance._meta.fields
             },
-        )
+         workspace=workspace)
 
     except Exception as e:
         logger.error(f"Error logging data creation: {str(e)}")
@@ -681,7 +706,7 @@ def log_data_deletion(sender, instance, **kwargs):
                 field.name: str(getattr(instance, field.name))
                 for field in instance._meta.fields
             },
-        )
+         workspace=workspace)
 
     except Exception as e:
         logger.error(f"Error logging data deletion: {str(e)}")

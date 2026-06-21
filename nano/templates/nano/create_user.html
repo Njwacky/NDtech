@@ -1,71 +1,229 @@
 {% extends 'nano/base.html' %}
 {% load static %}
 
-{% block title %}Create User - NDtech{% endblock %}
+{% block title %}Add User - NDtech POS{% endblock %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="{% static 'nano/auth.css' %}">
+<style>
+  .create-user-page {
+    min-height: calc(100vh - 70px);
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding: 2.5rem 1rem 3rem;
+  }
+
+  .create-user-card {
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 20px;
+    padding: 2.5rem;
+    width: 100%;
+    max-width: 520px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+  }
+
+  .create-user-card h1 {
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: #fff;
+    margin: 0 0 0.3rem;
+  }
+
+  .create-user-card .subtitle {
+    color: rgba(255,255,255,0.5);
+    font-size: 0.9rem;
+    margin: 0 0 2rem;
+  }
+
+  .form-group {
+    margin-bottom: 1.25rem;
+  }
+
+  .form-group label {
+    display: block;
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: rgba(255,255,255,0.7);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-bottom: 0.45rem;
+  }
+
+  .form-group input,
+  .form-group select {
+    width: 100%;
+    background: rgba(255,255,255,0.07);
+    border: 1.5px solid rgba(255,255,255,0.12);
+    border-radius: 10px;
+    padding: 0.75rem 1rem;
+    color: #fff;
+    font-size: 0.95rem;
+    font-family: inherit;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    box-sizing: border-box;
+  }
+
+  .form-group input::placeholder {
+    color: rgba(255,255,255,0.3);
+  }
+
+  .form-group input:focus,
+  .form-group select:focus {
+    outline: none;
+    border-color: rgba(139, 92, 246, 0.7);
+    box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.15);
+    background: rgba(255,255,255,0.1);
+  }
+
+  .form-group select option {
+    background: #1e1b4b;
+    color: #fff;
+  }
+
+  .role-note {
+    font-size: 0.78rem;
+    color: rgba(255,255,255,0.4);
+    margin-top: 0.35rem;
+  }
+
+  .form-divider {
+    border: none;
+    border-top: 1px solid rgba(255,255,255,0.08);
+    margin: 1.75rem 0;
+  }
+
+  .form-actions {
+    display: flex;
+    gap: 0.75rem;
+    margin-top: 1.75rem;
+  }
+
+  .btn-create {
+    flex: 1;
+    background: linear-gradient(135deg, #7c3aed, #6d28d9);
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    padding: 0.85rem 1.5rem;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity 0.2s, transform 0.15s;
+    font-family: inherit;
+  }
+
+  .btn-create:hover {
+    opacity: 0.9;
+    transform: translateY(-1px);
+  }
+
+  .btn-cancel {
+    background: rgba(255,255,255,0.07);
+    color: rgba(255,255,255,0.7);
+    border: 1.5px solid rgba(255,255,255,0.12);
+    border-radius: 10px;
+    padding: 0.85rem 1.25rem;
+    font-size: 0.95rem;
+    font-weight: 500;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    transition: background 0.2s;
+    font-family: inherit;
+  }
+
+  .btn-cancel:hover {
+    background: rgba(255,255,255,0.12);
+  }
+
+  .page-header-back {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: rgba(255,255,255,0.5);
+    text-decoration: none;
+    font-size: 0.875rem;
+    margin-bottom: 1.5rem;
+    transition: color 0.2s;
+  }
+
+  .page-header-back:hover {
+    color: rgba(255,255,255,0.9);
+  }
+</style>
 {% endblock %}
 
 {% block content %}
-<div class="auth-container">
-    <h1>Create New User</h1>
-    <form action="{% url 'create_user' %}" method="post">
-        {% csrf_token %}
-        {% if messages %}
-            {% for message in messages %}
-                <div class="message {{ message.tags }}">{{ message }}</div>
-            {% endfor %}
+<div class="create-user-page">
+  <div class="create-user-card">
+    <a href="{% url 'manage_users' %}" class="page-header-back">
+      <i class="fas fa-arrow-left"></i> Back to Users
+    </a>
+
+    <h1>Add New User</h1>
+    <p class="subtitle">New users are added to your workspace automatically.</p>
+
+    <form method="post" action="{% url 'create_user' %}">
+      {% csrf_token %}
+
+      <div class="form-group">
+        <label for="id_username">Username</label>
+        <input id="id_username" name="username" type="text" autocomplete="username" required
+               placeholder="e.g. john_doe"
+               value="{{ request.POST.username|default:'' }}" />
+      </div>
+
+      <div class="form-group">
+        <label for="id_email">Email</label>
+        <input id="id_email" name="email" type="email" autocomplete="email" required
+               placeholder="user@example.com"
+               value="{{ request.POST.email|default:'' }}" />
+      </div>
+
+      <div class="form-group">
+        <label for="id_role">Role</label>
+        <select id="id_role" name="role" required>
+          <option value="" disabled {% if not request.POST.role %}selected{% endif %}>Select a role…</option>
+          {% if request.user.is_superuser %}
+            <option value="superuser" {% if request.POST.role == 'superuser' %}selected{% endif %}>Superuser</option>
+            <option value="admin" {% if request.POST.role == 'admin' %}selected{% endif %}>Admin</option>
+          {% elif user_role == 'admin' %}
+            <option value="admin" {% if request.POST.role == 'admin' %}selected{% endif %}>Admin</option>
+          {% endif %}
+          {% if user_role == 'admin' or user_role == 'manager' or request.user.is_superuser %}
+            <option value="manager" {% if request.POST.role == 'manager' %}selected{% endif %}>Manager</option>
+            <option value="cashier" {% if request.POST.role == 'cashier' or not request.POST.role %}selected{% endif %}>Cashier</option>
+          {% endif %}
+        </select>
+        {% if user_role == 'manager' %}
+          <p class="role-note"><i class="fas fa-info-circle"></i> As a manager, you can create Manager and Cashier accounts.</p>
         {% endif %}
-        
-        <label for="username">Username:</label>
-        <input type="text" id="username" name="username" required><br><br>
-        
-        <label for="email">Email:</label>
-        <input type="email" id="email" name="email" required><br><br>
-        
-        <label for="password">Password:</label>
-        <input type="password" id="password" name="password" required><br><br>
-        
-        <label for="confirm_password">Confirm Password:</label>
-        <input type="password" id="confirm_password" name="confirm_password" required><br><br>
-        
-        <label for="role">Role:</label>
-        <select id="role" name="role" required>
-            <option value="">Select Role</option>
-            {% if user_role == 'admin' or request.user.is_superuser %}
-            {% if request.user.is_superuser %}
-            <option value="superuser">Superuser</option>
-            {% endif %}
-            <option value="admin">Admin</option>
-            <option value="manager">Manager</option>
-            <option value="cashier">Cashier</option>
-            {% elif user_role == 'manager' %}
-            <option value="manager">Manager</option>
-            <option value="cashier">Cashier</option>
-            {% endif %}
-        </select><br><br>
-        
-        <div class="role-descriptions">
-            <h3>Role Permissions:</h3>
-            <ul>
-                {% if request.user.is_superuser %}
-                <li><strong>Superuser:</strong> Full system access, can create other superusers</li>
-                {% endif %}
-                {% if user_role == 'admin' or request.user.is_superuser %}
-                <li><strong>Admin:</strong> Can manage all users, products, sales, and view reports</li>
-                {% endif %}
-                <li><strong>Manager:</strong> Can create and manage their own team, manage products and sales</li>
-                <li><strong>Cashier:</strong> Can process sales and manage orders</li>
-            </ul>
-            {% if user_role == 'manager' %}
-            <p><em>Note: As a Manager, you can create other Managers and Cashiers for your workspace.</em></p>
-            {% endif %}
-        </div>
-        
-        <button type="submit">Create User</button>
+      </div>
+
+      <hr class="form-divider" />
+
+      <div class="form-group">
+        <label for="id_password">Password</label>
+        <input id="id_password" name="password" type="password" autocomplete="new-password" required
+               placeholder="Minimum 6 characters" />
+      </div>
+
+      <div class="form-group">
+        <label for="id_confirm_password">Confirm Password</label>
+        <input id="id_confirm_password" name="confirm_password" type="password" autocomplete="new-password" required
+               placeholder="Repeat password" />
+      </div>
+
+      <div class="form-actions">
+        <a href="{% url 'manage_users' %}" class="btn-cancel">Cancel</a>
+        <button type="submit" class="btn-create">
+          <i class="fas fa-user-plus"></i> Create User
+        </button>
+      </div>
     </form>
-    
-    <p><a href="{% url 'manage_users' %}">Back to User Management</a></p>
+  </div>
 </div>
 {% endblock %}
