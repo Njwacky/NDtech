@@ -64,6 +64,8 @@ __all__ = [
     'manage_sales',
     
     # Order management (from views_legacy)
+    'spaza_pos',
+    'spaza_pos_complete_sale',
     'pending_orders',
     'save_order',
     'complete_order',

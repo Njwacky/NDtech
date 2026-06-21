@@ -44,6 +44,8 @@ from .user_views import (
 from ..views_legacy import (
     add_stock,
     manage_sales,
+    spaza_pos,
+    spaza_pos_complete_sale,
     save_order,
     pending_orders,
     complete_order,
