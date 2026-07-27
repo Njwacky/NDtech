@@ -1,39 +1,28 @@
-"use client";
+import { Button } from "@/components/ui/button"
+import Link from "next/link"
 
-import InteractiveCheckout, { type Product } from "@/components/ui/interactive-checkout";
+export default function Home() {
+  return (
+    <main className="flex min-h-screen flex-col items-center justify-center p-24">
+      <div className="z-10 max-w-5xl w-full items-center justify-between font-mono text-sm lg:flex">
+        <h1 className="text-4xl font-bold mb-8">NDtech POS System</h1>
+      </div>
 
+      <div className="mb-8 text-center">
+        <p className="text-xl mb-4">Point of Sale & Inventory Management</p>
+        <p className="text-muted-foreground">
+          Modern POS system with real-time inventory tracking
+        </p>
+      </div>
 
-const defaultProducts: Product[] = [
-  {
-    id: "1",
-    name: "Air Max 90",
-    price: 129.99,
-    category: "Running",
-    image:
-      "https://images.unsplash.com/photo-1528701800489-20be3c1e9d8b?auto=format&fit=crop&w=400&h=400&q=80",
-    color: "Black/White",
-  },
-  {
-    id: "2",
-    name: "Ultra Boost",
-    price: 179.99,
-    category: "Performance",
-    image:
-      "https://images.unsplash.com/photo-1528702748617-c94d5d6b17d8?auto=format&fit=crop&w=400&h=400&q=80",
-    color: "Grey/Blue",
-  },
-  {
-    id: "3",
-    name: "Classic Trainer",
-    price: 89.99,
-    category: "Casual",
-    image:
-      "https://images.unsplash.com/photo-1528700771517-7aa4c9e0d4d3?auto=format&fit=crop&w=400&h=400&q=80",
-    color: "White/Red",
-  },
-];
-
-export default function HomePage() {
-  return <InteractiveCheckout products={defaultProducts} />;
+      <div className="flex gap-4">
+        <Button asChild>
+          <Link href="/cart">View Cart Demo</Link>
+        </Button>
+        <Button variant="outline" asChild>
+          <Link href="/dashboard">Dashboard</Link>
+        </Button>
+      </div>
+    </main>
+  )
 }
-
