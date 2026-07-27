@@ -1,6 +1,9 @@
-from django.shortcuts import render, get_object_or_404
+"""
+POS/Inventory Views
+"""
+
+from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib import messages
-from django.shortcuts import redirect
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.models import User
 from django.contrib.auth.decorators import login_required
@@ -12,213 +15,24 @@ from django.views.decorators.csrf import csrf_exempt
 from django.db.models import Q, Count, Sum, Min, Avg, Max
 from django.core.files.storage import default_storage
 from django.core.files.base import ContentFile
+from django.conf import settings
 import pandas as pd
+
 import json
 import re
 import csv
 import io
+import logging
 from decimal import Decimal, InvalidOperation
-from .models import Product, Sale, UserProfile, PendingOrder, CompletedOrder, Notification, WarehousePrice, PriceComparison, FCMToken, DeviceConnection, ErrorLog, UserActivity
+from .models import Product, Sale, UserProfile, PendingOrder, CompletedOrder, Notification, WarehousePrice, PriceComparison, FCMToken, DeviceConnection, ErrorLog, UserActivity, AirtimeProduct, AirtimeSale, AirtimeRequest
 from .fcm_service import fcm_service, send_fcm_notification_to_user
-from .brevo_service import send_receipt_email
+
+# Set up logger
+logger = logging.getLogger(__name__)
 
 # Create your views here.
-def check_low_stock():
-    """Check for low stock products and create notifications"""
-    low_stock_products = Product.objects.filter(stock__lt=10)
-    for product in low_stock_products:
-        # Create notification for admins/managers for low stock
-        admin_users = User.objects.filter(
-            Q(is_superuser=True) |
-            Q(userprofile__role__in=['admin', 'manager'])
-        ).distinct()
 
-        for admin_user in admin_users:
-            notification = Notification.objects.create(
-                title=f"Low Stock Alert: {product.name}",
-                message=f"Low stock alert: {product.name} has only {product.stock} units remaining",
-                notification_type='low_stock',
-                target_role='admin',  # Default to admin role
-                target_user=admin_user,
-                product=product
-            , workspace=workspace)
 
-            # Send FCM notification
-            send_fcm_notification_to_user(notification.target_user, notification.title, notification.message)
-
-@login_required
-def home(request):
-    workspace = getattr(request.user.userprofile, 'workspace', None) if hasattr(getattr(request, 'user', None), 'userprofile') else None
-    # POS Dashboard
-    products = Product.objects.all()
-
-    # Check for low stock products when dashboard is loaded
-    check_low_stock()
-
-    return render(request, 'nano/home.html', {'products': products})
-
-def register(request):
-    workspace = getattr(request.user.userprofile, 'workspace', None) if hasattr(getattr(request, 'user', None), 'userprofile') else None
-    return render(request, 'nano/register.html')
-
-def sign_up(request):
-    workspace = getattr(request.user.userprofile, 'workspace', None) if hasattr(getattr(request, 'user', None), 'userprofile') else None
-    # Check if any users already exist
-    existing_users = User.objects.exists()
-
-    if request.method == 'POST':
-        username = request.POST.get('username', '').strip()
-        email = request.POST.get('email', '').strip()
-        password = request.POST.get('password', '')
-        confirm_password = request.POST.get('confirm_password', '')
-
-        errors = {}
-
-        if not username:
-            errors['username'] = 'Username is required'
-        elif len(username) < 3:
-            errors['username'] = 'Username must be at least 3 characters'
-        elif User.objects.filter(username=username).exists():
-            errors['username'] = 'Username already exists'
-
-        if not email:
-            errors['email'] = 'Email is required'
-        elif '@' not in email or '.' not in email:
-            errors['email'] = 'Invalid email format'
-        elif User.objects.filter(email=email).exists():
-            errors['email'] = 'Email already exists'
-
-        if not password:
-            errors['password'] = 'Password is required'
-        elif len(password) < 6:
-            errors['password'] = 'Password must be at least 6 characters'
-
-        if password != confirm_password:
-            errors['confirm_password'] = 'Passwords do not match'
-
-        if errors:
-            for field, error in errors.items():
-                messages.error(request, error)
-            return render(request, 'nano/sign_up.html', {'existing_users': existing_users})
-
-        from django.db import transaction
-
-        try:
-            with transaction.atomic():
-                user = User.objects.create_user(username=username, email=email, password=password)
-
-                # If this is the first user, make them an admin
-                if not existing_users:
-                    user.is_staff = True  # Make staff to access admin
-                    user.save()
-
-                    # Create or update admin profile (not superuser)
-                    profile, created = UserProfile.objects.get_or_create(user=user)
-                    profile.role = 'admin'
-                    profile.created_by = None  # First user has no creator
-                    profile.save()
-                    messages.success(request, 'Admin account created successfully! You can now manage other users.')
-                else:
-                    # For subsequent users, they need to be created by an existing superuser/admin
-                    messages.error(request, 'Registration is closed. New users must be created by a superuser or admin.')
-                    return redirect('sign_in')
-        except Exception as e:
-            messages.error(request, f'Error creating account: {str(e)}')
-            return redirect('sign_in')
-
-        return redirect('sign_in')
-
-    return render(request, 'nano/sign_up.html', {'existing_users': existing_users})
-
-def sign_in(request):
-    workspace = getattr(request.user.userprofile, 'workspace', None) if hasattr(getattr(request, 'user', None), 'userprofile') else None
-    if request.method == 'POST':
-        username = request.POST.get('username', '').strip()
-        password = request.POST.get('password', '')
-
-        errors = {}
-
-        if not username:
-            errors['username'] = 'Username is required'
-
-        if not password:
-            errors['password'] = 'Password is required'
-
-        if errors:
-            for field, error in errors.items():
-                messages.error(request, error)
-            return redirect('sign_in')
-
-        user = authenticate(request, username=username, password=password)
-        if user is not None:
-            login(request, user)
-            return redirect('home')
-        else:
-            messages.error(request, 'Invalid username or password')
-            return redirect('sign_in')
-
-    return render(request, 'nano/sign_in.html')
-
-def logout_view(request):
-    workspace = getattr(request.user.userprofile, 'workspace', None) if hasattr(getattr(request, 'user', None), 'userprofile') else None
-    logout(request)
-    return redirect('register')
-
-def forgot_password(request):
-    workspace = getattr(request.user.userprofile, 'workspace', None) if hasattr(getattr(request, 'user', None), 'userprofile') else None
-    """Handle forgot password requests"""
-    if request.method == 'POST':
-        username = request.POST.get('username', '').strip()
-
-        if not username:
-            messages.error(request, 'Username is required')
-            return render(request, 'nano/forgot_password.html')
-
-        try:
-            user = User.objects.get(username=username)
-
-            # Create notification for admins/managers
-            admin_users = User.objects.filter(
-                Q(is_superuser=True) |
-                Q(userprofile__role__in=['admin', 'manager'])
-            ).distinct()
-
-            if not admin_users.exists():
-                messages.error(request, 'No admin users found to handle password reset requests')
-                return render(request, 'nano/forgot_password.html')
-
-            notifications_created = []
-            for admin_user in admin_users:
-                notification = Notification.objects.create(
-                    title=f"Password Reset Request: {user.username}",
-                    message=f"Password reset requested for user: {user.username} ({user.email}). Click to edit user and set new password.",
-                    notification_type='cashier_request',
-                    target_role='admin',
-                    target_user=admin_user,
-                    created_by=user,  # The user requesting the reset
-                    request_type='password_reset',
-                    request_data={
-                        'username': user.username,
-                        'email': user.email,
-                        'user_id': user.id,
-                        'request_time': timezone.now().isoformat()
-                    }
-                , workspace=workspace)
-                notifications_created.append(notification.id)
-
-                # Send FCM notification
-                send_fcm_notification_to_user(admin_user, notification.title, notification.message)
-
-            return redirect('sign_in')
-
-        except User.DoesNotExist:
-            # Don't reveal if user exists or not for security
-            messages.success(request, 'If the username exists, a password reset request has been sent to the administrators.')
-            return redirect('sign_in')
-
-    return render(request, 'nano/forgot_password.html')
-
-@login_required
 def add_stock(request):
     workspace = getattr(request.user.userprofile, 'workspace', None) if hasattr(getattr(request, 'user', None), 'userprofile') else None
     # Allow only superusers or users with admin/manager/cashier roles
@@ -229,8 +43,8 @@ def add_stock(request):
     is_manager = request.user.is_superuser or (hasattr(request.user, 'userprofile') and request.user.userprofile.role in ['admin', 'manager'])
 
     if request.method == 'POST':
-        mode = request.POST.get('mode', 'add_stock')  # 'add_stock', 'add_product', or 'delete_product'
-        
+        mode = request.POST.get('mode', 'add_stock')  # 'add_stock', 'add_product', 'import_products', or 'delete_product'
+
         if mode == 'delete_product':
             # Delete Product mode - only for managers
             if not is_manager:
@@ -252,6 +66,134 @@ def add_stock(request):
 
             return redirect('add_stock')
 
+        elif mode == 'import_products':
+            # Import Products mode - only for managers
+            if not is_manager:
+                return HttpResponseForbidden("Only managers can import products.")
+
+            if 'file' not in request.FILES:
+                messages.error(request, 'Please select a file to upload')
+                return redirect('add_stock')
+
+            file = request.FILES['file']
+
+            # Check file extension
+            file_extension = file.name.split('.')[-1].lower()
+            if file_extension not in ['csv', 'xlsx', 'xls']:
+                messages.error(request, 'Only CSV and Excel files are supported')
+                return redirect('add_stock')
+
+            try:
+                # Read file using pandas
+                if file_extension == 'csv':
+                    df = pd.read_csv(file)
+                else:  # Excel file
+                    df = pd.read_excel(file)
+
+                # Validate required columns
+                required_columns = ['name', 'price', 'category']
+                missing_columns = [col for col in required_columns if col not in df.columns]
+
+                if missing_columns:
+                    messages.error(request, (
+                        f'Missing required columns: {", ".join(missing_columns)}. '
+                        'Ensure your file includes the following columns: name, price, category. '
+                        'You can use the sample CSV `sample_products_import.csv` as a template.'
+                    ))
+                    return redirect('add_stock')
+
+                # Process each row with detailed error reporting
+                imported_count = 0
+                skipped_rows = []  # collect (row_number, reason)
+
+                for index, row in df.iterrows():
+                    row_number = index + 2  # account for header row in CSV/Excel
+                    try:
+                        # Clean and validate data
+                        product_name = str(row['name']).strip() if 'name' in row and pd.notna(row['name']) else ''
+                        try:
+                            price = float(row['price']) if 'price' in row and pd.notna(row['price']) else 0
+                        except Exception:
+                            price = 0
+                        category = str(row['category']).strip() if 'category' in row and pd.notna(row['category']) else ''
+
+                        # Optional fields
+                        description = str(row.get('description', '')).strip() if 'description' in row and pd.notna(row['description']) else ''
+                        stock = int(row.get('stock', 0)) if 'stock' in row and pd.notna(row['stock']) else 0
+                        barcode = str(row.get('barcode', '')).strip() if 'barcode' in row and pd.notna(row['barcode']) else None
+                        expiry_date_str = str(row.get('expiry_date', '')).strip() if 'expiry_date' in row and pd.notna(row['expiry_date']) else None
+
+                        # Validate required fields
+                        if not product_name:
+                            skipped_rows.append((row_number, 'Missing product name'))
+                            continue
+                        if price <= 0:
+                            skipped_rows.append((row_number, 'Invalid or missing price (must be > 0)'))
+                            continue
+                        if not category:
+                            skipped_rows.append((row_number, 'Missing category'))
+                            continue
+
+                        # Validate category value
+                        if category not in dict(Product.CATEGORY_CHOICES):
+                            skipped_rows.append((row_number, f'Invalid category: "{category}"'))
+                            continue
+
+                        # Parse expiry date if provided
+                        expiry_date = None
+                        no_expiry_date = str(row.get('no_expiry_date', '')).strip().lower() in ['true', '1', 'yes', 'on']
+                        
+                        if not no_expiry_date and expiry_date_str:
+                            try:
+                                try:
+                                    expiry_date = timezone.datetime.strptime(expiry_date_str, '%Y-%m-%d').date()
+                                except ValueError:
+                                    expiry_date = timezone.datetime.strptime(expiry_date_str, '%d/%m/%Y').date()
+                            except ValueError:
+                                skipped_rows.append((row_number, f'Invalid expiry date format: "{expiry_date_str}"'))
+                                continue
+
+                        # Check if product already exists (case-insensitive)
+                        if Product.objects.filter(name__iexact=product_name).exists():
+                            skipped_rows.append((row_number, 'Duplicate product (already exists)'))
+                            continue
+
+                        # Create the product
+                        Product.objects.create(
+                            name=product_name,
+                            price=price,
+                            category=category,
+                            description=description,
+                            stock=stock,
+                            barcode=barcode or '',
+                            expiry_date=expiry_date
+                        , workspace=workspace)
+                        imported_count += 1
+
+                    except Exception as e:
+                        skipped_rows.append((row_number, f'Unexpected error: {str(e)}'))
+                        continue
+
+                # Build friendly messages for the user
+                if imported_count > 0:
+                    messages.success(request, f'Successfully imported {imported_count} products.')
+
+                if skipped_rows:
+                    total_skipped = len(skipped_rows)
+                    # Show up to 6 example row errors to help the user identify problems
+                    examples = '; '.join([f'Row {r}: {reason}' for r, reason in skipped_rows[:6]])
+                    messages.warning(request, (
+                        f'{total_skipped} rows were skipped due to issues. Examples: {examples}. '
+                        'Please check your file and correct these rows. Required columns: name, price, category. '
+                        'See sample CSV `sample_products_import.csv` for the expected format.'
+                    ))
+
+                return redirect('add_stock')
+
+            except Exception as e:
+                messages.error(request, f'Error processing file: {str(e)}')
+                return redirect('add_stock')
+
         elif mode == 'add_product':
             # Add Product mode - only for managers
             if not is_manager:
@@ -263,6 +205,9 @@ def add_stock(request):
             category = request.POST.get('category', '').strip()
             expiry_date_str = request.POST.get('expiry_date', '').strip()
             stock_str = request.POST.get('stock', '').strip()
+            # Check for no_expiry_date checkbox - handle various truthy values
+            no_expiry_val = request.POST.get('no_expiry_date')
+            no_expiry_date = no_expiry_val in ['on', 'true', 'True', '1', 'checked']
 
             errors = {}
 
@@ -288,15 +233,23 @@ def add_stock(request):
             elif category not in dict(Product.CATEGORY_CHOICES):
                 errors['category'] = 'Invalid category'
 
-            if not expiry_date_str:
-                errors['expiry_date'] = 'Expiry date is required'
-            else:
-                try:
-                    expiry_date = timezone.datetime.strptime(expiry_date_str, '%Y-%m-%d').date()
-                    if expiry_date <= timezone.now().date():
-                        errors['expiry_date'] = 'Expiry date must be in the future'
-                except ValueError:
-                    errors['expiry_date'] = 'Invalid date format'
+            # Validate expiry date only if "No Expiry Date" is not checked
+            expiry_date = None
+            if not no_expiry_date:
+                if not expiry_date_str:
+                    errors['expiry_date'] = 'Expiry date is required (or check "No Expiry Date")'
+                else:
+                    try:
+                        expiry_date = timezone.datetime.strptime(expiry_date_str, '%Y-%m-%d').date()
+                        # Allow adding products that are already expired (maybe keeping stock record), 
+                        # but warn? Or strictly forbid?
+                        # User might be adding old stock. Let's allow past dates but maybe just for valid dates.
+                        # The previous code forbade past dates: if expiry_date <= timezone.now().date()
+                        # Let's keep that restriction if that's the business rule.
+                        if expiry_date <= timezone.now().date():
+                            errors['expiry_date'] = 'Expiry date must be in the future'
+                    except ValueError:
+                        errors['expiry_date'] = 'Invalid date format'
 
             if not stock_str:
                 errors['stock'] = 'Stock quantity is required'
@@ -412,6 +365,8 @@ def add_stock(request):
     })
 
 @login_required
+
+
 def manage_sales(request):
     workspace = getattr(request.user.userprofile, 'workspace', None) if hasattr(getattr(request, 'user', None), 'userprofile') else None
     # Allow only superusers or users with admin/manager roles
@@ -515,238 +470,161 @@ def manage_sales(request):
     return render(request, 'nano/manage_sales.html', {'products': page_obj})
 
 @login_required
-def create_user(request):
-    workspace = getattr(request.user.userprofile, 'workspace', None) if hasattr(getattr(request, 'user', None), 'userprofile') else None
-    # Allow only superusers or users with admin role
-    if not (request.user.is_superuser or (hasattr(request.user, 'userprofile') and request.user.userprofile.role in ['superuser', 'admin'])):
+
+
+def spaza_pos(request):
+    """DreamsPOS-style cashier screen for quick spaza shop counter sales."""
+    if not (request.user.is_superuser or (hasattr(request.user, 'userprofile') and request.user.userprofile.role in ['admin', 'manager', 'cashier'])):
         return HttpResponseForbidden("You do not have permission to access this page.")
 
-    if request.method == 'POST':
-        username = request.POST.get('username', '').strip()
-        email = request.POST.get('email', '').strip()
-        password = request.POST.get('password', '')
-        confirm_password = request.POST.get('confirm_password', '')
-        role = request.POST.get('role', '')
+    products = Product.objects.filter(stock__gt=0).order_by('category', 'name')
+    product_payload = []
+    for product in products:
+        current_price = product.get_current_price()
+        product_payload.append({
+            'id': product.id,
+            'name': product.name,
+            'price': float(current_price),
+            'regular_price': float(product.price),
+            'category': product.category,
+            'category_display': product.get_category_display(),
+            'stock': product.stock,
+            'barcode': product.barcode or '',
+            'on_sale': product.is_currently_on_sale(),
+        })
 
-        errors = {}
+    categories = [
+        {'value': value, 'label': label}
+        for value, label in Product.CATEGORY_CHOICES
+        if products.filter(category=value).exists()
+    ]
 
-        if not username:
-            errors['username'] = 'Username is required'
-        elif len(username) < 3:
-            errors['username'] = 'Username must be at least 3 characters'
-        elif User.objects.filter(username=username).exists():
-            errors['username'] = 'Username already exists'
-
-        if not email:
-            errors['email'] = 'Email is required'
-        elif '@' not in email or '.' not in email:
-            errors['email'] = 'Invalid email format'
-        elif User.objects.filter(email=email).exists():
-            errors['email'] = 'Email already exists'
-
-        if not password:
-            errors['password'] = 'Password is required'
-        elif len(password) < 6:
-            errors['password'] = 'Password must be at least 6 characters'
-
-        if password != confirm_password:
-            errors['confirm_password'] = 'Passwords do not match'
-
-        if not role:
-            errors['role'] = 'Role is required'
-        elif role not in ['superuser', 'admin', 'manager', 'cashier']:
-            errors['role'] = 'Invalid role'
-
-        # Check if trying to create superuser (only superusers can create superusers)
-        if role == 'superuser' and not request.user.is_superuser:
-            errors['role'] = 'Only superusers can create other superusers'
-
-        if errors:
-            for field, error in errors.items():
-                messages.error(request, error)
-            return render(request, 'nano/create_user.html')
-
-        user = User.objects.create_user(username=username, email=email, password=password)
-
-        # Set superuser status if role is superuser
-        if role == 'superuser':
-            user.is_superuser = True
-            user.is_staff = True
-            user.save()
-
-        # Create or update user profile (handle case where signal already created one)
-        profile, created = UserProfile.objects.get_or_create(user=user)
-        profile.role = role
-        profile.created_by = request.user
-        profile.save()
-
-        messages.success(request, f'User "{username}" created successfully with role "{role}"!')
-        return redirect('manage_users')
-
-    return render(request, 'nano/create_user.html')
-
-@login_required
-def manage_users(request):
-    workspace = getattr(request.user.userprofile, 'workspace', None) if hasattr(getattr(request, 'user', None), 'userprofile') else None
-    # Allow only superusers or users with admin role
-    if not (request.user.is_superuser or (hasattr(request.user, 'userprofile') and request.user.userprofile.role in ['superuser', 'admin'])):
-        return HttpResponseForbidden("You do not have permission to access this page.")
-
-    users = User.objects.all().order_by('username')
-
-    # Pagination
-    paginator = Paginator(users, 20)
-    page_number = request.GET.get('page')
-    page_obj = paginator.get_page(page_number)
-
-    return render(request, 'nano/manage_users.html', {'users': page_obj})
-
-@login_required
-def edit_user(request, user_id):
-    workspace = getattr(request.user.userprofile, 'workspace', None) if hasattr(getattr(request, 'user', None), 'userprofile') else None
-    # Allow only superusers or users with admin role
-    if not (request.user.is_superuser or (hasattr(request.user, 'userprofile') and request.user.userprofile.role == 'admin')):
-        return HttpResponseForbidden("You do not have permission to access this page.")
-
-    user = get_object_or_404(User, id=user_id)
-
-    if request.method == 'POST':
-        username = request.POST.get('username', '').strip()
-        email = request.POST.get('email', '').strip()
-        role = request.POST.get('role', '')
-
-        # Password fields (optional)
-        current_password = request.POST.get('current_password', '').strip()
-        new_password = request.POST.get('new_password', '').strip()
-        confirm_password = request.POST.get('confirm_password', '').strip()
-
-        errors = {}
-
-        if not username:
-            errors['username'] = 'Username is required'
-        elif User.objects.filter(username=username).exclude(id=user_id).exists():
-            errors['username'] = 'Username already exists'
-
-        if not email:
-            errors['email'] = 'Email is required'
-        elif User.objects.filter(email=email).exclude(id=user_id).exists():
-            errors['email'] = 'Email already exists'
-
-        # Password validation (only if user is trying to change password)
-        password_change_attempt = new_password or confirm_password
-
-        if password_change_attempt:
-            # Admin users can change other users' passwords without current password
-            # But users changing their own password need current password
-            is_admin_changing_other_user = (
-                request.user.is_superuser or 
-                (hasattr(request.user, 'userprofile') and request.user.userprofile.role == 'admin')
-            ) and request.user.id != user.id
-
-            if not is_admin_changing_other_user:
-                if not current_password:
-                    errors['current_password'] = 'Current password is required to change password'
-                elif not user.check_password(current_password):
-                    errors['current_password'] = 'Current password is incorrect'
-
-            if not new_password:
-                errors['new_password'] = 'New password is required'
-            elif len(new_password) < 6:
-                errors['new_password'] = 'Password must be at least 6 characters'
-
-            if new_password != confirm_password:
-                errors['confirm_password'] = 'Passwords do not match'
-
-        if errors:
-            for field, error in errors.items():
-                messages.error(request, error)
-        else:
-            # Update user info
-            user.username = username
-            user.email = email
-
-            # Update password if provided
-            if password_change_attempt and new_password:
-                user.set_password(new_password)
-                messages.success(request, f'User "{username}" and password updated successfully!')
-            else:
-                messages.success(request, f'User "{username}" updated successfully!')
-
-            user.save()
-
-            # Update or create user profile
-            profile, created = UserProfile.objects.get_or_create(user=user)
-            profile.role = role
-            profile.save()
-
-            return redirect('manage_users')
-
-    # Get user profile
-    profile = getattr(user, 'userprofile', None)
-    current_role = profile.role if profile else 'cashier'
-
-    return render(request, 'nano/edit_user.html', {
-        'user': user,
-        'current_role': current_role
+    return render(request, 'nano/spaza_pos.html', {
+        'products_json': json.dumps(product_payload),
+        'categories_json': json.dumps(categories),
+        'products_count': products.count(),
     })
 
-@login_required
-def delete_user(request, user_id):
-    workspace = getattr(request.user.userprofile, 'workspace', None) if hasattr(getattr(request, 'user', None), 'userprofile') else None
-    # Allow only superusers or users with admin role
-    if not (request.user.is_superuser or (hasattr(request.user, 'userprofile') and request.user.userprofile.role == 'admin')):
-        return HttpResponseForbidden("You do not have permission to access this page.")
-
-    user = get_object_or_404(User, id=user_id)
-
-    if request.method == 'POST':
-        username = request.POST.get('username', '').strip()
-
-        if username != user.username:
-            messages.error(request, 'Username does not match. User not deleted.')
-        else:
-            user.delete()
-            messages.success(request, f'User "{username}" deleted successfully!')
-            return redirect('manage_users')
-
-    return render(request, 'nano/delete_user.html', {'user': user})
 
 @login_required
-def bulk_delete_users(request):
-    workspace = getattr(request.user.userprofile, 'workspace', None) if hasattr(getattr(request, 'user', None), 'userprofile') else None
-    # Allow only superusers or users with admin role
-    if not (request.user.is_superuser or (hasattr(request.user, 'userprofile') and request.user.userprofile.role == 'admin')):
-        return HttpResponseForbidden("You do not have permission to access this page.")
 
-    if request.method == 'POST':
-        user_ids = request.POST.getlist('user_ids')
 
-        if not user_ids:
-            messages.error(request, 'No users selected for deletion.')
-            return redirect('manage_users')
+def spaza_pos_complete_sale(request):
+    """Create a completed order directly from the cashier POS cart and reduce stock."""
+    if not (request.user.is_superuser or (hasattr(request.user, 'userprofile') and request.user.userprofile.role in ['admin', 'manager', 'cashier'])):
+        return JsonResponse({'success': False, 'error': 'Permission denied'}, status=403)
 
-        deleted_count = 0
-        for user_id in user_ids:
-            try:
-                user = User.objects.get(id=user_id)
-                # Don't allow deletion of superusers or self
-                if user.is_superuser or user.id == request.user.id:
-                    continue
-                user.delete()
-                deleted_count += 1
-            except User.DoesNotExist:
-                continue
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'error': 'Invalid request method'}, status=405)
 
-        if deleted_count > 0:
-            messages.success(request, f'{deleted_count} users deleted successfully!')
-        else:
-            messages.warning(request, 'No users were deleted.')
+    try:
+        from django.db import transaction
 
-        return redirect('manage_users')
+        data = json.loads(request.body)
+        cart_items = data.get('items', [])
+        customer_name = (data.get('customer_name') or 'Walk-in').strip() or 'Walk-in'
+        customer_phone = (data.get('customer_phone') or '').strip()
+        payment_method = (data.get('payment_method') or 'cash').strip().lower()
+        cash_received = Decimal(str(data.get('cash_received') or 0))
 
-    return redirect('manage_users')
+        payment_map = {
+            'cash': 'cash',
+            'card': 'card',
+            'eft': 'mobile',
+            'mobile': 'mobile',
+            'other': 'mobile',
+        }
+        payment_method = payment_map.get(payment_method, 'cash')
+
+        if not cart_items:
+            return JsonResponse({'success': False, 'error': 'Cart is empty'})
+
+        normalized_items = []
+        calculated_total = Decimal('0.00')
+
+        with transaction.atomic():
+            # Lock product rows while checking and updating stock.
+            for item in cart_items:
+                product_id = item.get('product_id') or item.get('id')
+                try:
+                    quantity = int(item.get('quantity') or item.get('qty') or 0)
+                except (TypeError, ValueError):
+                    return JsonResponse({'success': False, 'error': 'Invalid quantity in cart'})
+
+                if not product_id or quantity <= 0:
+                    return JsonResponse({'success': False, 'error': 'Invalid cart item'})
+
+                product = Product.objects.select_for_update().get(id=product_id)
+                if product.stock < quantity:
+                    return JsonResponse({
+                        'success': False,
+                        'error': f'Insufficient stock for {product.name}. Available: {product.stock}, Required: {quantity}'
+                    })
+
+                unit_price = Decimal(str(product.get_current_price())).quantize(Decimal('0.01'))
+                line_total = (unit_price * quantity).quantize(Decimal('0.01'))
+                calculated_total += line_total
+
+                normalized_items.append({
+                    'product_id': product.id,
+                    'product': product.name,
+                    'quantity': quantity,
+                    'price': float(unit_price),
+                    'total': float(line_total),
+                    'category': product.get_category_display(),
+                    'barcode': product.barcode or '',
+                })
+
+            calculated_total = calculated_total.quantize(Decimal('0.01'))
+            if payment_method != 'cash' and cash_received <= 0:
+                cash_received = calculated_total
+
+            if payment_method == 'cash' and cash_received < calculated_total:
+                return JsonResponse({'success': False, 'error': 'Cash received is less than the sale total'})
+
+            change_given = max(Decimal('0.00'), cash_received - calculated_total).quantize(Decimal('0.01'))
+
+            completed_order = CompletedOrder.objects.create(
+                customer_name=customer_name,
+                customer_phone=customer_phone,
+                items=normalized_items,
+                total=calculated_total,
+                cash_received=cash_received,
+                change_given=change_given,
+                payment_method=payment_method,
+                processed_by=request.user,
+            )
+
+            for item in normalized_items:
+                product = Product.objects.select_for_update().get(id=item['product_id'])
+                product.stock -= item['quantity']
+                product.save(update_fields=['stock'])
+                Sale.objects.create(
+                    product=product,
+                    quantity=item['quantity'],
+                    total_price=Decimal(str(item['total']))
+                )
+
+        return JsonResponse({
+            'success': True,
+            'order_id': completed_order.id,
+            'receipt_url': f'/completed_order_details/{completed_order.id}/',
+            'total': str(calculated_total),
+            'change': str(change_given),
+            'message': f'Sale completed successfully. Receipt #{completed_order.id}'
+        })
+
+    except Product.DoesNotExist:
+        return JsonResponse({'success': False, 'error': 'One of the products no longer exists'})
+    except (json.JSONDecodeError, InvalidOperation):
+        return JsonResponse({'success': False, 'error': 'Invalid sale data'})
+    except Exception as e:
+        logger.exception('Error completing spaza POS sale')
+        return JsonResponse({'success': False, 'error': str(e)})
 
 @login_required
+
+
 def pending_orders(request):
     workspace = getattr(request.user.userprofile, 'workspace', None) if hasattr(getattr(request, 'user', None), 'userprofile') else None
     # Allow only superusers or users with admin/manager/cashier roles
@@ -763,6 +641,8 @@ def pending_orders(request):
     return render(request, 'nano/pending_orders.html', {'orders': page_obj})
 
 @login_required
+
+
 def save_order(request):
     workspace = getattr(request.user.userprofile, 'workspace', None) if hasattr(getattr(request, 'user', None), 'userprofile') else None
     if request.method == 'POST':
@@ -779,10 +659,10 @@ def save_order(request):
             # Validate customer information
             if not customer_name:
                 return JsonResponse({'success': False, 'error': 'Customer name is required'})
-            
+
             if not customer_phone:
                 return JsonResponse({'success': False, 'error': 'Customer phone number is required'})
-            
+
             # Validate phone number format
             import re
             phone_regex = r'^[0-9]{10,15}$'
@@ -809,6 +689,8 @@ def save_order(request):
     return JsonResponse({'success': False, 'error': 'Invalid request method'})
 
 @login_required
+
+
 def order_details(request, order_id):
     workspace = getattr(request.user.userprofile, 'workspace', None) if hasattr(getattr(request, 'user', None), 'userprofile') else None
     # Allow only superusers or users with admin/manager/cashier roles
@@ -819,6 +701,8 @@ def order_details(request, order_id):
     return render(request, 'nano/order_details.html', {'order': order})
 
 @login_required
+
+
 def complete_order(request, order_id):
     workspace = getattr(request.user.userprofile, 'workspace', None) if hasattr(getattr(request, 'user', None), 'userprofile') else None
     # Allow only superusers or users with admin/manager/cashier roles
@@ -832,13 +716,13 @@ def complete_order(request, order_id):
             # Validate form data
             cash_received_str = request.POST.get('cash_received', str(order.total))
             payment_method = request.POST.get('payment_method', 'cash')
-            
+
             # Validate payment method
             valid_payment_methods = [choice[0] for choice in CompletedOrder.PAYMENT_METHOD_CHOICES]
             if payment_method not in valid_payment_methods:
                 messages.error(request, f'Invalid payment method. Must be one of: {", ".join(valid_payment_methods)}')
                 return redirect('order_details', order_id=order_id)
-            
+
             # Validate cash received
             try:
                 cash_received = float(cash_received_str)
@@ -848,17 +732,17 @@ def complete_order(request, order_id):
             except ValueError:
                 messages.error(request, 'Invalid cash received amount')
                 return redirect('order_details', order_id=order_id)
-            
+
             # Check if order is already completed
             if order.status == 'completed':
                 messages.warning(request, 'This order has already been completed')
                 return redirect('completed_orders')
-            
+
             # Update product stock with better error handling
             cart_items = order.items
             stock_issues = []
             products_updated = []
-            
+
             for item in cart_items:
                 # Handle both product_id (for backward compatibility) and product name
                 product_id = item.get('product_id')
@@ -883,7 +767,7 @@ def complete_order(request, order_id):
                         product.stock -= quantity
                         product.save()
                         products_updated.append(product.name)
-                        
+
                         # Create sale record for inventory tracking
                         Sale.objects.create(
                             product=product,
@@ -901,7 +785,7 @@ def complete_order(request, order_id):
                         stock_issues.append(f'Product not found in item: {item}')
                 except Exception as e:
                     stock_issues.append(f'Error updating {item.get("product", "unknown product")}: {str(e)}')
-            
+
             # If there are stock issues, show error and don't complete order
             if stock_issues:
                 for issue in stock_issues:
@@ -934,7 +818,7 @@ def complete_order(request, order_id):
                 success_msg += f' Change: R{change_given:.2f}'
             if products_updated:
                 success_msg += f' Updated stock for: {", ".join(products_updated)}'
-            
+
             messages.success(request, success_msg)
             return redirect('completed_orders')
 
@@ -960,6 +844,8 @@ def complete_order(request, order_id):
     })
 
 @login_required
+
+
 def completed_orders(request):
     workspace = getattr(request.user.userprofile, 'workspace', None) if hasattr(getattr(request, 'user', None), 'userprofile') else None
     # Allow only superusers or users with admin/manager/cashier roles
@@ -970,7 +856,7 @@ def completed_orders(request):
 
     # Calculate statistics
     total_orders = orders.count()
-    total_revenue = orders.aggregate(total=Sum('total'))['total'] or 0
+    total_revenue = round(orders.aggregate(total=Sum('total'))['total'] or 0, 2) if orders else 0.00    # Round to 2 decimal places  orders.aggregate(total=Sum('total'))['total'] or 0
     total_cash_received = orders.aggregate(total=Sum('cash_received'))['total'] or 0
     total_change_given = orders.aggregate(total=Sum('change_given'))['total'] or 0
 
@@ -988,6 +874,8 @@ def completed_orders(request):
     })
 
 @login_required
+
+
 def completed_order_details(request, order_id):
     workspace = getattr(request.user.userprofile, 'workspace', None) if hasattr(getattr(request, 'user', None), 'userprofile') else None
     # Allow only superusers or users with admin/manager/cashier roles
@@ -1014,6 +902,8 @@ def completed_order_details(request, order_id):
     })
 
 @login_required
+
+
 def checkout(request):
     workspace = getattr(request.user.userprofile, 'workspace', None) if hasattr(getattr(request, 'user', None), 'userprofile') else None
     if request.method == 'POST':
@@ -1078,56 +968,8 @@ def checkout(request):
     return JsonResponse({'success': False, 'error': 'Invalid request method'})
 
 @login_required
-def get_notifications(request):
-    workspace = getattr(request.user.userprofile, 'workspace', None) if hasattr(getattr(request, 'user', None), 'userprofile') else None
-    """Get notifications for the current user"""
-    notifications = Notification.objects.filter(
-        target_user=request.user
-    ).order_by('-created_at')
 
-    notification_data = []
-    for notification in notifications:
-        notification_data.append({
-            'id': notification.id,
-            'title': notification.title,
-            'message': notification.message,
-            'notification_type': notification.notification_type,
-            'created_at': notification.created_at.strftime('%Y-%m-%d %H:%M:%S'),
-            'is_read': notification.is_read,
-            'is_dismissed': notification.is_dismissed,
-            'reminder_count': notification.reminder_count,
-            'can_remind': notification.can_remind(),
-            'created_by_id': notification.created_by.id if notification.created_by else None,
-            'request_type': getattr(notification, 'request_type', ''),
-            'sender_username': notification.created_by.username if notification.created_by else None,
-            'sender_is_admin': notification.created_by.is_superuser if notification.created_by else False
-        })
 
-    print(f"DEBUG: get_notifications called for user: {request.user.username}")
-    print(f"DEBUG: Found {len(notifications)} notifications for user: {request.user.username}")
-
-    return JsonResponse({'notifications': notification_data})
-
-@login_required
-def mark_notification_read(request, notification_id):
-    workspace = getattr(request.user.userprofile, 'workspace', None) if hasattr(getattr(request, 'user', None), 'userprofile') else None
-    """Mark a notification as read"""
-    try:
-        notification = Notification.objects.get(id=notification_id, target_user=request.user)
-        notification.is_read = True
-        notification.save()
-        return JsonResponse({'status': 'success'})
-    except Notification.DoesNotExist:
-        return JsonResponse({'status': 'error', 'error': 'Notification not found'})
-
-@login_required
-def mark_all_notifications_read(request):
-    workspace = getattr(request.user.userprofile, 'workspace', None) if hasattr(getattr(request, 'user', None), 'userprofile') else None
-    """Mark all notifications as read for the current user"""
-    Notification.objects.filter(target_user=request.user, is_read=False).update(is_read=True)
-    return JsonResponse({'success': True})
-
-@login_required
 def cancel_order(request, order_id):
     workspace = getattr(request.user.userprofile, 'workspace', None) if hasattr(getattr(request, 'user', None), 'userprofile') else None
     """Cancel a pending order"""
@@ -1146,6 +988,8 @@ def cancel_order(request, order_id):
     return render(request, 'nano/order_details.html', {'order': order})
 
 @login_required
+
+
 def checkout_order(request, order_id=None):
     workspace = getattr(request.user.userprofile, 'workspace', None) if hasattr(getattr(request, 'user', None), 'userprofile') else None
     """Checkout an order (with or without order_id)"""
@@ -1287,10 +1131,10 @@ def checkout_order(request, order_id=None):
                 # Validate customer information
                 if not customer_name:
                     return JsonResponse({'status': 'error', 'message': 'Customer name is required'})
-                
+
                 if not customer_phone:
                     return JsonResponse({'status': 'error', 'message': 'Customer phone number is required'})
-                
+
                 # Validate phone number format
                 import re
                 phone_regex = r'^[0-9]{10,15}$'
@@ -1316,7 +1160,7 @@ def checkout_order(request, order_id=None):
                                 product = possible_products.first()
                             else:
                                 return JsonResponse({'status': 'error', 'message': f'Product not found: {product_name}'})
-                    
+
                     if product.stock < quantity:
                         return JsonResponse({
                             'status': 'error',
@@ -1355,7 +1199,7 @@ def checkout_order(request, order_id=None):
                                 product = possible_products.first()
                             else:
                                 continue  # Skip this item if product not found
-                    
+
                     Sale.objects.create(
                         product=product,
                         quantity=quantity,
@@ -1381,52 +1225,12 @@ def checkout_order(request, order_id=None):
                                 product = possible_products.first()
                             else:
                                 continue  # Skip this item if product not found
-                    
+
                     product.stock -= quantity
                     product.save()
 
-                # Send receipt email if customer email is provided
-                customer_email = data.get('customer_email', '').strip()
-                if customer_email:
-                    try:
-                        # Prepare order data for email
-                        order_data = {
-                            'order_id': completed_order.id,
-                            'items': cart_items,
-                            'total': total_amount,
-                            'cash_received': cash_received,
-                            'change_given': change_given,
-                            'payment_method': 'cash',
-                            'customer_phone': customer_phone,
-                            'processed_by': request.user.username,
-                            'order_date': completed_order.completed_at
-                        }
-
-                        # Send receipt email
-                        email_result = send_receipt_email(
-                            order_data=order_data,
-                            customer_email=customer_email,
-                            customer_name=customer_name
-                        )
-
-                        if email_result['success']:
-                            return JsonResponse({
-                                'status': 'success',
-                                'message': f'Order completed successfully! Receipt sent to {customer_email}'
-                            })
-                        else:
-                            return JsonResponse({
-                                'status': 'success',
-                                'message': f'Order completed successfully! But email failed: {email_result.get("error", "Unknown error")}'
-                            })
-
-                    except Exception as e:
-                        return JsonResponse({
-                            'status': 'success',
-                            'message': f'Order completed successfully! But email failed: {str(e)}'
-                        })
-                else:
-                    return JsonResponse({'status': 'success', 'message': 'Order completed successfully!'})
+                # Send receipt email login removed
+                return JsonResponse({'status': 'success', 'message': 'Order completed successfully!'})
 
             except json.JSONDecodeError:
                 return JsonResponse({'status': 'error', 'message': 'Invalid data format'})
@@ -1436,102 +1240,8 @@ def checkout_order(request, order_id=None):
         return JsonResponse({'status': 'error', 'message': 'Invalid request method'})
 
 @login_required
-def dismiss_notification(request, notification_id):
-    workspace = getattr(request.user.userprofile, 'workspace', None) if hasattr(getattr(request, 'user', None), 'userprofile') else None
-    """Dismiss a notification (mark as read)"""
-    try:
-        notification = Notification.objects.get(id=notification_id, target_user=request.user)
-        notification.is_read = True
-        notification.save()
-        return JsonResponse({'status': 'success'})
-    except Notification.DoesNotExist:
-        return JsonResponse({'status': 'error', 'error': 'Notification not found'})
 
-@login_required
-def create_cashier_request(request):
-    workspace = getattr(request.user.userprofile, 'workspace', None) if hasattr(getattr(request, 'user', None), 'userprofile') else None
-    """Create a cashier request for approval"""
-    if request.method == 'POST':
-        try:
-            data = json.loads(request.body)
-            request_type = data.get('request_type', '').strip()
-            message = data.get('message', '').strip()
-            urgent = data.get('urgent', False)
 
-            if not request_type or not message:
-                return JsonResponse({
-                    'success': False,
-                    'error': 'Request type and message are required'
-                })
-
-            # Create notification for admins/managers
-            admin_users = User.objects.filter(
-                Q(is_superuser=True) |
-                Q(userprofile__role__in=['admin', 'manager'])
-            ).distinct()
-
-            if not admin_users.exists():
-                return JsonResponse({
-                    'success': False,
-                    'error': 'No admin users found to receive the request'
-                })
-
-            notifications_created = []
-            for admin_user in admin_users:
-                notification = Notification.objects.create(
-                    title=f"Cashier Request: {request_type}",
-                    message=f"Request from {request.user.username}: {message}",
-                    notification_type='cashier_request',
-                    target_role='admin',
-                    target_user=admin_user,
-                    created_by=request.user,
-                    request_type=request_type,
-                    request_data={
-                        'message': message,
-                        'urgent': urgent,
-                        'sender': request.user.username,
-                        'sender_id': request.user.id,
-                        'timestamp': timezone.now().isoformat()
-                    }
-                , workspace=workspace)
-
-            return JsonResponse({'success': True, 'message': 'Request submitted successfully'})
-
-        except json.JSONDecodeError:
-            return JsonResponse({'success': False, 'error': 'Invalid JSON data format'})
-        except Exception as e:
-            print(f"DEBUG: Exception in create_cashier_request: {str(e)}")
-            import traceback
-            traceback.print_exc()
-            return JsonResponse({
-                'success': False,
-                'error': f'Error creating request: {str(e)}'
-            })
-
-    print(f"DEBUG: create_cashier_request called with method: {request.method}")
-    return JsonResponse({
-        'success': False,
-        'error': 'Only POST requests are supported'
-    })
-
-@login_required
-def check_role(request):
-    workspace = getattr(request.user.userprofile, 'workspace', None) if hasattr(getattr(request, 'user', None), 'userprofile') else None
-    """Check if user has specific role"""
-    if request.method == 'GET':
-        role = request.GET.get('role', '')
-
-        if hasattr(request.user, 'userprofile'):
-            user_role = request.user.userprofile.role
-            has_role = user_role == role
-        else:
-            has_role = False
-
-        return JsonResponse({'has_role': has_role, 'user_role': getattr(request.user.userprofile, 'role', None) if hasattr(request.user, 'userprofile') else None})
-
-    return JsonResponse({'has_role': False})
-
-@login_required
 def check_low_stock_api(request):
     workspace = getattr(request.user.userprofile, 'workspace', None) if hasattr(getattr(request, 'user', None), 'userprofile') else None
     """API endpoint to check for low stock products"""
@@ -1552,32 +1262,8 @@ def check_low_stock_api(request):
     return JsonResponse({'low_stock_products': []})
 
 @login_required
-def get_user_by_username(request):
-    workspace = getattr(request.user.userprofile, 'workspace', None) if hasattr(getattr(request, 'user', None), 'userprofile') else None
-    """Get user by username"""
-    if request.method == 'GET':
-        username = request.GET.get('username', '').strip()
 
-        if not username:
-            return JsonResponse({'success': False, 'error': 'Username is required'})
 
-        try:
-            user = User.objects.get(username=username)
-            user_data = {
-                'id': user.id,
-                'username': user.username,
-                'email': user.email,
-                'first_name': user.first_name,
-                'last_name': user.last_name,
-                'role': getattr(user.userprofile, 'role', None) if hasattr(user, 'userprofile') else None
-            }
-            return JsonResponse({'success': True, 'user': user_data})
-        except User.DoesNotExist:
-            return JsonResponse({'success': False, 'error': 'User not found'})
-
-    return JsonResponse({'success': False, 'error': 'Invalid request method'})
-
-@login_required
 def get_product_by_barcode(request):
     workspace = getattr(request.user.userprofile, 'workspace', None) if hasattr(getattr(request, 'user', None), 'userprofile') else None
     """Get product by barcode"""
@@ -1602,6 +1288,8 @@ def get_product_by_barcode(request):
             return JsonResponse({'success': False, 'error': 'Product not found'})
 
     return JsonResponse({'success': False, 'error': 'Invalid request method'})
+
+
 
 def run_price_comparison():
     """Run automated price comparison on all warehouse prices"""
@@ -1639,6 +1327,8 @@ def run_price_comparison():
 
 # Warehouse views - complete implementations
 @login_required
+
+
 def warehouse_import(request):
     workspace = getattr(request.user.userprofile, 'workspace', None) if hasattr(getattr(request, 'user', None), 'userprofile') else None
     """Import warehouse prices from CSV/Excel files"""
@@ -1671,13 +1361,47 @@ def warehouse_import(request):
             else:  # Excel file
                 df = pd.read_excel(file)
 
-            # Validate required columns
-            required_columns = ['product_name', 'price']
-            missing_columns = [col for col in required_columns if col not in df.columns]
-
-            if missing_columns:
-                messages.error(request, f'Missing required columns: {", ".join(missing_columns)}')
+            # Validate required columns - support both naming conventions
+            required_columns_options = [
+                ['Product Name', 'Price'],  # Warehouse format
+                ['name', 'price']           # Product format
+            ]
+            
+            valid_columns = None
+            for required_columns in required_columns_options:
+                missing_columns = [col for col in required_columns if col not in df.columns]
+                if not missing_columns:
+                    valid_columns = required_columns
+                    break
+            
+            if not valid_columns:
+                # Show both expected formats in error message
+                messages.error(request, (
+                    'Missing required columns. Please use one of these formats:<br>'
+                    '<strong>Warehouse Format:</strong> Product Name, Price<br>'
+                    '<strong>Product Format:</strong> name, price<br>'
+                    'You can use the sample CSV files as templates.'
+                ))
                 return redirect('warehouse_import')
+            
+            # Map column names to standard names for processing
+            column_mapping = {}
+            if valid_columns == ['name', 'price']:
+                column_mapping = {
+                    'name': 'Product Name',
+                    'price': 'Price',
+                    'category': 'Category',
+                    'stock': 'Stock',
+                    'barcode': 'Barcode',
+                    'sku': 'SKU',
+                    'supplier': 'Supplier',
+                    'status': 'Status',
+                    'description': 'Description'
+                }
+            
+            # Apply column mapping if needed
+            if column_mapping:
+                df = df.rename(columns=column_mapping)
 
             # Process each row
             imported_count = 0
@@ -1686,12 +1410,15 @@ def warehouse_import(request):
             for index, row in df.iterrows():
                 try:
                     # Clean and validate data
-                    product_name = str(row['product_name']).strip()
-                    price = float(row['price'])
-                    barcode = str(row.get('barcode', '')).strip() if 'barcode' in row and pd.notna(row['barcode']) else None
-                    category = str(row.get('category', '')).strip() if 'category' in row and pd.notna(row['category']) else None
-                    stock_quantity = int(row['stock_quantity']) if 'stock_quantity' in row and pd.notna(row['stock_quantity']) else None
-                    unit_size = str(row.get('unit_size', '')).strip() if 'unit_size' in row and pd.notna(row['unit_size']) else None
+                    product_name = str(row['Product Name']).strip()
+                    price = float(row['Price'])
+                    barcode = str(row.get('Barcode', '')).strip() if 'Barcode' in row and pd.notna(row['Barcode']) else None
+                    category = str(row.get('Category', '')).strip() if 'Category' in row and pd.notna(row['Category']) else None
+                    stock_quantity = int(row['Stock']) if 'Stock' in row and pd.notna(row['Stock']) else None
+                    sku = str(row.get('SKU', '')).strip() if 'SKU' in row and pd.notna(row['SKU']) else None
+                    supplier = str(row.get('Supplier', '')).strip() if 'Supplier' in row and pd.notna(row['Supplier']) else None
+                    status = str(row.get('Status', '')).strip() if 'Status' in row and pd.notna(row['Status']) else None
+                    description = str(row.get('Description', '')).strip() if 'Description' in row and pd.notna(row['Description']) else None
 
                     if product_name and price > 0:
                         # Create or update warehouse price
@@ -1703,7 +1430,10 @@ def warehouse_import(request):
                                 'price': price,
                                 'category': category,
                                 'stock_quantity': stock_quantity,
-                                'unit_size': unit_size,
+                                'sku': sku,
+                                'supplier': supplier,
+                                'status': status,
+                                'description': description,
                                 'imported_by': request.user,
                                 'file_name': file.name
                             }
@@ -1733,6 +1463,8 @@ def warehouse_import(request):
     return render(request, 'nano/warehouse_import.html')
 
 @login_required
+
+
 def warehouse_prices(request):
     workspace = getattr(request.user.userprofile, 'workspace', None) if hasattr(getattr(request, 'user', None), 'userprofile') else None
     """Display warehouse prices with search and filtering"""
@@ -1776,6 +1508,8 @@ def warehouse_prices(request):
     })
 
 @login_required
+
+
 def price_comparisons(request):
     workspace = getattr(request.user.userprofile, 'workspace', None) if hasattr(getattr(request, 'user', None), 'userprofile') else None
     """Display price comparisons"""
@@ -1841,6 +1575,8 @@ def price_comparisons(request):
     })
 
 @login_required
+
+
 def sync_warehouse_data(request):
     workspace = getattr(request.user.userprofile, 'workspace', None) if hasattr(getattr(request, 'user', None), 'userprofile') else None
     """Sync warehouse data"""
@@ -1855,6 +1591,8 @@ def sync_warehouse_data(request):
     return redirect('warehouse_prices')
 
 @login_required
+
+
 def export_warehouse_prices(request):
     workspace = getattr(request.user.userprofile, 'workspace', None) if hasattr(getattr(request, 'user', None), 'userprofile') else None
     """Export warehouse prices"""
@@ -1867,6 +1605,8 @@ def export_warehouse_prices(request):
     return redirect('warehouse_prices')
 
 @login_required
+
+
 def export_price_comparisons(request):
     workspace = getattr(request.user.userprofile, 'workspace', None) if hasattr(getattr(request, 'user', None), 'userprofile') else None
     """Export price comparisons"""
@@ -1879,6 +1619,8 @@ def export_price_comparisons(request):
     return redirect('price_comparisons')
 
 @login_required
+
+
 def warehouse_api_prices(request):
     workspace = getattr(request.user.userprofile, 'workspace', None) if hasattr(getattr(request, 'user', None), 'userprofile') else None
     """API endpoint for warehouse prices"""
@@ -1889,6 +1631,8 @@ def warehouse_api_prices(request):
     return JsonResponse({'prices': []})
 
 @login_required
+
+
 def run_price_comparison_view(request):
     workspace = getattr(request.user.userprofile, 'workspace', None) if hasattr(getattr(request, 'user', None), 'userprofile') else None
     """Run price comparison via AJAX"""
@@ -1906,6 +1650,8 @@ def run_price_comparison_view(request):
     return JsonResponse({'success': False, 'error': 'Invalid request method'})
 
 @login_required
+
+
 def price_comparison_details(request, comparison_id):
     workspace = getattr(request.user.userprofile, 'workspace', None) if hasattr(getattr(request, 'user', None), 'userprofile') else None
     """Get detailed price comparison data via AJAX"""
@@ -1944,6 +1690,8 @@ def price_comparison_details(request, comparison_id):
         return JsonResponse({'success': False, 'error': str(e)})
 
 @login_required
+
+
 def price_comparisons_marketing(request):
     workspace = getattr(request.user.userprofile, 'workspace', None) if hasattr(getattr(request, 'user', None), 'userprofile') else None
     """Display marketing-focused price comparisons dashboard"""
@@ -2054,6 +1802,8 @@ def price_comparisons_marketing(request):
     })
 
 @login_required
+
+
 def marketing_analytics_data(request):
     workspace = getattr(request.user.userprofile, 'workspace', None) if hasattr(getattr(request, 'user', None), 'userprofile') else None
     """API endpoint for marketing analytics data"""
@@ -2166,6 +1916,8 @@ def marketing_analytics_data(request):
         return JsonResponse({'success': False, 'error': str(e)})
 
 @login_required
+
+
 def export_marketing_report(request):
     workspace = getattr(request.user.userprofile, 'workspace', None) if hasattr(getattr(request, 'user', None), 'userprofile') else None
     """Export marketing report"""
@@ -2272,764 +2024,3 @@ def export_marketing_report(request):
     return redirect('price_comparisons_marketing')
 
 @login_required
-def notifications_page(request):
-    workspace = getattr(request.user.userprofile, 'workspace', None) if hasattr(getattr(request, 'user', None), 'userprofile') else None
-    """Dedicated notifications page"""
-    return render(request, 'nano/notifications_page.html')
-
-@login_required
-def test_notifications_complete(request):
-    workspace = getattr(request.user.userprofile, 'workspace', None) if hasattr(getattr(request, 'user', None), 'userprofile') else None
-    """Complete notification system test page"""
-    return render(request, 'nano/test_notifications_complete.html')
-
-# FCM (Firebase Cloud Messaging) Views
-@csrf_exempt
-def register_fcm_token(request):
-    workspace = getattr(request.user.userprofile, 'workspace', None) if hasattr(getattr(request, 'user', None), 'userprofile') else None
-    """Register FCM token for push notifications"""
-    if request.method == 'POST':
-        try:
-            data = json.loads(request.body)
-            token = data.get('token', '').strip()
-            device_id = data.get('device_id', '').strip()
-            device_type = data.get('device_type', 'web').strip()
-
-            if not token:
-                return JsonResponse({'success': False, 'error': 'FCM token is required'})
-
-            # Get or create user (for demo purposes, you might want to require authentication)
-            user = getattr(request, 'user', None)
-            if not user or not user.is_authenticated:
-                # For demo, create a demo user or use a default user
-                # In production, you should require proper authentication
-                return JsonResponse({'success': False, 'error': 'Authentication required'})
-
-            # Create or update FCM token
-            fcm_token, created = FCMToken.objects.update_or_create(
-                user=user,
-                token=token,
-                defaults={
-                    'device_id': device_id,
-                    'device_type': device_type,
-                    'is_active': True
-                }
-            )
-
-            if created:
-                message = 'FCM token registered successfully'
-            else:
-                message = 'FCM token updated successfully'
-
-            return JsonResponse({
-                'success': True,
-                'message': message,
-                'token_id': fcm_token.id
-            })
-
-        except json.JSONDecodeError:
-            return JsonResponse({'success': False, 'error': 'Invalid JSON data'})
-        except Exception as e:
-            return JsonResponse({'success': False, 'error': str(e)})
-
-    return JsonResponse({'success': False, 'error': 'Only POST requests are supported'})
-
-@csrf_exempt
-def unregister_fcm_token(request):
-    workspace = getattr(request.user.userprofile, 'workspace', None) if hasattr(getattr(request, 'user', None), 'userprofile') else None
-    """Unregister FCM token"""
-    if request.method == 'POST':
-        try:
-            data = json.loads(request.body)
-            token = data.get('token', '').strip()
-
-            if not token:
-                return JsonResponse({'success': False, 'error': 'FCM token is required'})
-
-            # Get user
-            user = getattr(request, 'user', None)
-            if not user or not user.is_authenticated:
-                return JsonResponse({'success': False, 'error': 'Authentication required'})
-
-            # Delete the token
-            deleted_count, _ = FCMToken.objects.filter(user=user, token=token).delete()
-
-            if deleted_count > 0:
-                return JsonResponse({'success': True, 'message': 'FCM token unregistered successfully'})
-            else:
-                return JsonResponse({'success': False, 'error': 'FCM token not found'})
-
-        except json.JSONDecodeError:
-            return JsonResponse({'success': False, 'error': 'Invalid JSON data'})
-        except Exception as e:
-            return JsonResponse({'success': False, 'error': str(e)})
-
-    return JsonResponse({'success': False, 'error': 'Only POST requests are supported'})
-
-@login_required
-def send_test_notification(request):
-    workspace = getattr(request.user.userprofile, 'workspace', None) if hasattr(getattr(request, 'user', None), 'userprofile') else None
-    """Send a test push notification to the current user"""
-    if request.method == 'POST':
-        try:
-            data = json.loads(request.body)
-            title = data.get('title', 'Test Notification')
-            message = data.get('message', 'This is a test notification from futurePOS')
-
-            # Send FCM notification
-            success = send_fcm_notification_to_user(request.user, title, message)
-
-            if success:
-                return JsonResponse({
-                    'success': True,
-                    'message': 'Test notification sent successfully'
-                })
-            else:
-                return JsonResponse({
-                    'success': False,
-                    'error': 'Failed to send test notification. Make sure you have registered an FCM token.'
-                })
-
-        except json.JSONDecodeError:
-            return JsonResponse({'success': False, 'error': 'Invalid JSON data'})
-        except Exception as e:
-            return JsonResponse({'success': False, 'error': str(e)})
-
-    return JsonResponse({'success': False, 'error': 'Only POST requests are supported'})
-
-@login_required
-def send_price_change_notification(request):
-    workspace = getattr(request.user.userprofile, 'workspace', None) if hasattr(getattr(request, 'user', None), 'userprofile') else None
-    """Send price change notification to a customer"""
-    if request.method == 'POST':
-        try:
-            data = json.loads(request.body)
-            customer_name = data.get('customer_name', '').strip()
-            item_name = data.get('item_name', '').strip()
-            new_price = float(data.get('new_price', 0))
-            price_change = float(data.get('price_change', 0))
-            customer_token = data.get('customer_token', '').strip()
-
-            if not all([customer_name, item_name, customer_token]):
-                return JsonResponse({
-                    'success': False,
-                    'error': 'Customer name, item name, and customer token are required'
-                })
-
-            # Send price change notification
-            success = fcm_service.send_price_change_notification(
-                customer_name, item_name, new_price, price_change, customer_token
-            )
-
-            if success:
-                return JsonResponse({
-                    'success': True,
-                    'message': f'Price change notification sent to {customer_name}'
-                })
-            else:
-                return JsonResponse({
-                    'success': False,
-                    'error': 'Failed to send price change notification'
-                })
-
-        except json.JSONDecodeError:
-            return JsonResponse({'success': False, 'error': 'Invalid JSON data'})
-        except ValueError as e:
-            return JsonResponse({'success': False, 'error': f'Invalid price data: {str(e)}'})
-        except Exception as e:
-            return JsonResponse({'success': False, 'error': str(e)})
-
-    return JsonResponse({'success': False, 'error': 'Only POST requests are supported'})
-
-@login_required
-def test_fcm_connection(request):
-    workspace = getattr(request.user.userprofile, 'workspace', None) if hasattr(getattr(request, 'user', None), 'userprofile') else None
-    """Test FCM connection"""
-    if request.method == 'GET':
-        try:
-            is_connected = fcm_service.test_fcm_connection()
-
-            return JsonResponse({
-                'success': is_connected,
-                'message': 'FCM connection successful' if is_connected else 'FCM connection failed',
-                'api_key_configured': bool(getattr(settings, 'AIzaSyABApzh-74Kr5oOz_kv_M8mlJa33TCadPA', None))
-            })
-
-        except Exception as e:
-            return JsonResponse({
-                'success': False,
-                'error': str(e)
-            })
-
-    return JsonResponse({'success': False, 'error': 'Only GET requests are supported'})
-
-@login_required
-def get_user_fcm_tokens(request):
-    workspace = getattr(request.user.userprofile, 'workspace', None) if hasattr(getattr(request, 'user', None), 'userprofile') else None
-    """Get all FCM tokens for the current user"""
-    if request.method == 'GET':
-        try:
-            tokens = FCMToken.objects.filter(user=request.user, is_active=True)
-
-            token_data = []
-            for token_obj in tokens:
-                token_data.append({
-                    'id': token_obj.id,
-                    'token': token_obj.token[:50] + '...' if len(token_obj.token) > 50 else token_obj.token,
-                    'device_id': token_obj.device_id,
-                    'device_type': token_obj.device_type,
-                    'created_at': token_obj.created_at.strftime('%Y-%m-%d %H:%M:%S'),
-                    'last_used': token_obj.last_used.strftime('%Y-%m-%d %H:%M:%S')
-                })
-
-            return JsonResponse({
-                'success': True,
-                'tokens': token_data,
-                'total_tokens': len(token_data)
-            })
-
-        except Exception as e:
-            return JsonResponse({'success': False, 'error': str(e)})
-
-    return JsonResponse({'success': False, 'error': 'Only GET requests are supported'})
-
-# Enhanced notification functions with FCM integration
-def send_fcm_for_notification(notification):
-    """
-    Send FCM notification for a database notification
-
-    Args:
-        notification: Notification object
-    """
-    try:
-        if notification.target_user:
-            # Send to specific user
-            send_fcm_notification_to_user(
-                notification.target_user,
-                notification.title,
-                notification.message,
-                {
-                    'notification_id': notification.id,
-                    'notification_type': notification.notification_type,
-                    'created_at': notification.created_at.isoformat()
-                }
-            )
-
-        elif notification.target_role:
-            # Send to all users with the target role
-            from django.contrib.auth.models import User
-            from .models import UserProfile
-
-            target_users = User.objects.filter(
-                userprofile__role=notification.target_role
-            )
-
-            for user in target_users:
-                send_fcm_notification_to_user(
-                    user,
-                    notification.title,
-                    notification.message,
-                    {
-                        'notification_id': notification.id,
-                        'notification_type': notification.notification_type,
-                        'created_at': notification.created_at.isoformat()
-                    }
-                )
-
-    except Exception as e:
-        logger.error(f"Error sending FCM for notification {notification.id}: {str(e)}")
-
-@login_required
-def fcm_test_page(request):
-    workspace = getattr(request.user.userprofile, 'workspace', None) if hasattr(getattr(request, 'user', None), 'userprofile') else None
-    """FCM test page for push notifications"""
-    return render(request, 'nano/fcm_test.html')
-
-# PWA Views
-def service_worker(request):
-    workspace = getattr(request.user.userprofile, 'workspace', None) if hasattr(getattr(request, 'user', None), 'userprofile') else None
-    """Serve the service worker file"""
-    return HttpResponse(
-        open('nano/static/nano/sw.js').read(),
-        content_type='application/javascript'
-    )
-
-def manifest(request):
-    workspace = getattr(request.user.userprofile, 'workspace', None) if hasattr(getattr(request, 'user', None), 'userprofile') else None
-    """Serve the PWA manifest file"""
-    return HttpResponse(
-        open('nano/static/nano/manifest.json').read(),
-        content_type='application/json'
-    )
-
-def offline(request):
-    workspace = getattr(request.user.userprofile, 'workspace', None) if hasattr(getattr(request, 'user', None), 'userprofile') else None
-    """Offline fallback page"""
-    return render(request, 'nano/offline.html')
-
-# Error Tracking Views
-@login_required
-def tracking_dashboard(request):
-    workspace = getattr(request.user.userprofile, 'workspace', None) if hasattr(getattr(request, 'user', None), 'userprofile') else None
-    """Main tracking dashboard"""
-    # Allow only superusers or users with admin/manager roles
-    if not (request.user.is_superuser or (hasattr(request.user, 'userprofile') and request.user.userprofile.role in ['admin', 'manager'])):
-        return HttpResponseForbidden("You do not have permission to access this page.")
-    
-    # Get statistics
-    total_errors = ErrorLog.objects.count()
-    unresolved_errors = ErrorLog.objects.filter(is_resolved=False).count()
-    critical_errors = ErrorLog.objects.filter(severity='critical', is_resolved=False).count()
-    
-    # Get recent errors
-    recent_errors = ErrorLog.objects.order_by('-created_at')[:10]
-    
-    # Get error statistics by type
-    error_types = ErrorLog.objects.values('error_type').annotate(count=Count('id')).order_by('-count')
-    
-    # Get error statistics by severity
-    severity_stats = ErrorLog.objects.values('severity').annotate(count=Count('id')).order_by('-count')
-    
-    return render(request, 'nano/tracking_dashboard.html', {
-        'total_errors': total_errors,
-        'unresolved_errors': unresolved_errors,
-        'critical_errors': critical_errors,
-        'recent_errors': recent_errors,
-        'error_types': error_types,
-        'severity_stats': severity_stats
-    })
-
-@login_required
-def device_tracking(request):
-    workspace = getattr(request.user.userprofile, 'workspace', None) if hasattr(getattr(request, 'user', None), 'userprofile') else None
-    """Device connection tracking"""
-    # Allow only superusers or users with admin/manager roles
-    if not (request.user.is_superuser or (hasattr(request.user, 'userprofile') and request.user.userprofile.role in ['admin', 'manager'])):
-        return HttpResponseForbidden("You do not have permission to access this page.")
-    
-    # Get search parameters
-    search_query = request.GET.get('search', '').strip()
-    device_type_filter = request.GET.get('device_type', '')
-    
-    # Build query
-    device_connections = DeviceConnection.objects.all()
-    
-    if search_query:
-        device_connections = device_connections.filter(
-            Q(user__username__icontains=search_query) |
-            Q(device_id__icontains=search_query) |
-            Q(ip_address__icontains=search_query)
-        )
-    
-    if device_type_filter:
-        device_connections = device_connections.filter(device_type=device_type_filter)
-    
-    # Order by last activity
-    device_connections = device_connections.order_by('-last_activity')
-    
-    # Get statistics
-    total_connections = device_connections.count()
-    active_connections = device_connections.filter(is_active=True).count()
-    
-    # Get device type statistics
-    device_types = DeviceConnection.objects.values('device_type').annotate(count=Count('id')).order_by('-count')
-    
-    # Pagination
-    paginator = Paginator(device_connections, 25)
-    page_number = request.GET.get('page')
-    page_obj = paginator.get_page(page_number)
-    
-    return render(request, 'nano/device_tracking.html', {
-        'device_connections': page_obj,
-        'total_connections': total_connections,
-        'active_connections': active_connections,
-        'device_types': device_types,
-        'search_query': search_query,
-        'device_type_filter': device_type_filter
-    })
-
-@login_required
-def error_tracking(request):
-    workspace = getattr(request.user.userprofile, 'workspace', None) if hasattr(getattr(request, 'user', None), 'userprofile') else None
-    """Error log tracking and management"""
-    # Allow only superusers or users with admin/manager roles
-    if not (request.user.is_superuser or (hasattr(request.user, 'userprofile') and request.user.userprofile.role in ['admin', 'manager'])):
-        return HttpResponseForbidden("You do not have permission to access this page.")
-    
-    # Get search parameters
-    search_query = request.GET.get('search', '').strip()
-    error_type_filter = request.GET.get('error_type', '')
-    severity_filter = request.GET.get('severity', '')
-    status_filter = request.GET.get('status', '')
-    date_from = request.GET.get('date_from', '')
-    date_to = request.GET.get('date_to', '')
-    
-    # Build query
-    errors = ErrorLog.objects.all()
-    
-    if search_query:
-        errors = errors.filter(
-            Q(error_message__icontains=search_query) |
-            Q(url__icontains=search_query) |
-            Q(user__username__icontains=search_query)
-        )
-    
-    if error_type_filter:
-        errors = errors.filter(error_type=error_type_filter)
-    
-    if severity_filter:
-        errors = errors.filter(severity=severity_filter)
-    
-    if status_filter == 'resolved':
-        errors = errors.filter(is_resolved=True)
-    elif status_filter == 'unresolved':
-        errors = errors.filter(is_resolved=False)
-    
-    if date_from:
-        try:
-            date_from_obj = timezone.datetime.strptime(date_from, '%Y-%m-%d').date()
-            errors = errors.filter(created_at__date__gte=date_from_obj)
-        except ValueError:
-            pass
-    
-    if date_to:
-        try:
-            date_to_obj = timezone.datetime.strptime(date_to, '%Y-%m-%d').date()
-            errors = errors.filter(created_at__date__lte=date_to_obj)
-        except ValueError:
-            pass
-    
-    # Order by most recent
-    errors = errors.order_by('-created_at')
-    
-    # Get statistics
-    total_errors = errors.count()
-    unresolved_errors = errors.filter(is_resolved=False).count()
-    critical_errors = errors.filter(severity='critical', is_resolved=False).count()
-    
-    # Pagination
-    paginator = Paginator(errors, 50)
-    page_number = request.GET.get('page')
-    page_obj = paginator.get_page(page_number)
-    
-    return render(request, 'nano/error_tracking.html', {
-        'errors': page_obj,
-        'total_errors': total_errors,
-        'unresolved_errors': unresolved_errors,
-        'critical_errors': critical_errors,
-        'search_query': search_query,
-        'error_type_filter': error_type_filter,
-        'severity_filter': severity_filter,
-        'status_filter': status_filter,
-        'date_from': date_from,
-        'date_to': date_to
-    })
-
-@login_required
-def error_details(request, error_id):
-    workspace = getattr(request.user.userprofile, 'workspace', None) if hasattr(getattr(request, 'user', None), 'userprofile') else None
-    """Detailed view of a specific error"""
-    # Allow only superusers or users with admin/manager roles
-    if not (request.user.is_superuser or (hasattr(request.user, 'userprofile') and request.user.userprofile.role in ['admin', 'manager'])):
-        return HttpResponseForbidden("You do not have permission to access this page.")
-    
-    error = get_object_or_404(ErrorLog, id=error_id)
-    
-    # Find similar errors (same error message and type, different instances)
-    similar_errors = ErrorLog.objects.filter(
-        error_message=error.error_message,
-        error_type=error.error_type
-    ).exclude(id=error.id).order_by('-created_at')[:10]
-    
-    return render(request, 'nano/error_details.html', {
-        'error': error,
-        'similar_errors': similar_errors
-    })
-
-@login_required
-def resolve_error(request, error_id):
-    workspace = getattr(request.user.userprofile, 'workspace', None) if hasattr(getattr(request, 'user', None), 'userprofile') else None
-    """Mark an error as resolved"""
-    # Allow only superusers or users with admin/manager roles
-    if not (request.user.is_superuser or (hasattr(request.user, 'userprofile') and request.user.userprofile.role in ['admin', 'manager'])):
-        return HttpResponseForbidden("You do not have permission to access this page.")
-    
-    error = get_object_or_404(ErrorLog, id=error_id)
-    
-    if request.method == 'POST':
-        resolution_notes = request.POST.get('resolution_notes', '').strip()
-        
-        error.mark_resolved(request.user, resolution_notes)
-        messages.success(request, f'Error #{error.id} marked as resolved successfully!')
-        
-        return redirect('error_tracking')
-    
-    return render(request, 'nano/resolve_error.html', {'error': error})
-
-@login_required
-def user_activity_tracking(request):
-    workspace = getattr(request.user.userprofile, 'workspace', None) if hasattr(getattr(request, 'user', None), 'userprofile') else None
-    """User activity tracking"""
-    # Allow only superusers or users with admin/manager roles
-    if not (request.user.is_superuser or (hasattr(request.user, 'userprofile') and request.user.userprofile.role in ['admin', 'manager'])):
-        return HttpResponseForbidden("You do not have permission to access this page.")
-    
-    # Get search parameters
-    search_query = request.GET.get('search', '').strip()
-    activity_type_filter = request.GET.get('activity_type', '')
-    user_filter = request.GET.get('user', '')
-    date_from = request.GET.get('date_from', '')
-    date_to = request.GET.get('date_to', '')
-    
-    # Build query
-    activities = UserActivity.objects.all()
-    
-    if search_query:
-        activities = activities.filter(
-            Q(user__username__icontains=search_query) |
-            Q(description__icontains=search_query) |
-            Q(page_url__icontains=search_query)
-        )
-    
-    if activity_type_filter:
-        activities = activities.filter(activity_type=activity_type_filter)
-    
-    if user_filter:
-        activities = activities.filter(user__username__icontains=user_filter)
-    
-    if date_from:
-        try:
-            date_from_obj = timezone.datetime.strptime(date_from, '%Y-%m-%d').date()
-            activities = activities.filter(created_at__date__gte=date_from_obj)
-        except ValueError:
-            pass
-    
-    if date_to:
-        try:
-            date_to_obj = timezone.datetime.strptime(date_to, '%Y-%m-%d').date()
-            activities = activities.filter(created_at__date__lte=date_to_obj)
-        except ValueError:
-            pass
-    
-    # Order by most recent
-    activities = activities.order_by('-created_at')
-    
-    # Get statistics
-    total_activities = activities.count()
-    
-    # Get activity type statistics
-    activity_types = UserActivity.objects.values('activity_type').annotate(count=Count('id')).order_by('-count')
-    
-    # Pagination
-    paginator = Paginator(activities, 50)
-    page_number = request.GET.get('page')
-    page_obj = paginator.get_page(page_number)
-    
-    return render(request, 'nano/user_activity_tracking.html', {
-        'activities': page_obj,
-        'total_activities': total_activities,
-        'activity_types': activity_types,
-        'search_query': search_query,
-        'activity_type_filter': activity_type_filter,
-        'user_filter': user_filter,
-        'date_from': date_from,
-        'date_to': date_to
-    })
-
-# Tracking API Views
-@csrf_exempt
-def track_device_connection(request):
-    workspace = getattr(request.user.userprofile, 'workspace', None) if hasattr(getattr(request, 'user', None), 'userprofile') else None
-    """API endpoint to track device connections"""
-    if request.method == 'POST':
-        try:
-            data = json.loads(request.body)
-            
-            # Get user from request (should be authenticated)
-            if not request.user.is_authenticated:
-                return JsonResponse({'success': False, 'error': 'Authentication required'})
-            
-            # Extract device information
-            device_id = data.get('device_id', '')
-            device_type = data.get('device_type', 'web')
-            ip_address = data.get('ip_address', '')
-            user_agent = data.get('user_agent', '')
-            
-            # Get location data if available
-            location_country = data.get('location_country', '')
-            location_city = data.get('location_city', '')
-            latitude = data.get('latitude')
-            longitude = data.get('longitude')
-            
-            # Create or update device connection
-            device_connection, created = DeviceConnection.objects.update_or_create(
-                user=request.user,
-                device_id=device_id,
-                defaults={
-                    'device_type': device_type,
-                    'ip_address': ip_address,
-                    'user_agent': user_agent,
-                    'location_country': location_country,
-                    'location_city': location_city,
-                    'latitude': latitude,
-                    'longitude': longitude,
-                    'is_active': True
-                }
-            )
-            
-            # Update activity
-            device_connection.update_activity()
-            
-            return JsonResponse({
-                'success': True,
-                'device_connection_id': device_connection.id,
-                'created': created
-            })
-            
-        except json.JSONDecodeError:
-            return JsonResponse({'success': False, 'error': 'Invalid JSON data'})
-        except Exception as e:
-            return JsonResponse({'success': False, 'error': str(e)})
-    
-    return JsonResponse({'success': False, 'error': 'Only POST requests are supported'})
-
-@csrf_exempt
-def track_user_activity(request):
-    workspace = getattr(request.user.userprofile, 'workspace', None) if hasattr(getattr(request, 'user', None), 'userprofile') else None
-    """API endpoint to track user activities"""
-    if request.method == 'POST':
-        try:
-            data = json.loads(request.body)
-            
-            # Get user from request (should be authenticated)
-            if not request.user.is_authenticated:
-                return JsonResponse({'success': False, 'error': 'Authentication required'})
-            
-            # Extract activity information
-            activity_type = data.get('activity_type', '')
-            description = data.get('description', '')
-            page_url = data.get('page_url', '')
-            object_type = data.get('object_type', '')
-            object_id = data.get('object_id')
-            
-            # Get request context
-            ip_address = data.get('ip_address', '')
-            user_agent = data.get('user_agent', '')
-            device_connection_id = data.get('device_connection_id')
-            
-            # Additional metadata
-            metadata = data.get('metadata', {})
-            duration_ms = data.get('duration_ms')
-            
-            # Get device connection if provided
-            device_connection = None
-            if device_connection_id:
-                try:
-                    device_connection = DeviceConnection.objects.get(id=device_connection_id)
-                except DeviceConnection.DoesNotExist:
-                    pass
-            
-            # Create user activity
-            activity = UserActivity.objects.create(
-                user=request.user,
-                activity_type=activity_type,
-                description=description,
-                page_url=page_url,
-                object_type=object_type,
-                object_id=object_id,
-                ip_address=ip_address,
-                user_agent=user_agent,
-                device_connection=device_connection,
-                metadata=metadata,
-                duration_ms=duration_ms
-            , workspace=workspace)
-            
-            return JsonResponse({
-                'success': True,
-                'activity_id': activity.id
-            })
-            
-        except json.JSONDecodeError:
-            return JsonResponse({'success': False, 'error': 'Invalid JSON data'})
-        except Exception as e:
-            return JsonResponse({'success': False, 'error': str(e)})
-    
-    return JsonResponse({'success': False, 'error': 'Only POST requests are supported'})
-
-@csrf_exempt
-def log_error(request):
-    workspace = getattr(request.user.userprofile, 'workspace', None) if hasattr(getattr(request, 'user', None), 'userprofile') else None
-    """API endpoint to log errors"""
-    if request.method == 'POST':
-        try:
-            data = json.loads(request.body)
-            
-            # Get user from request (can be anonymous for system errors)
-            user = getattr(request, 'user', None)
-            if not user or not user.is_authenticated:
-                user = None
-            
-            # Extract error information
-            error_type = data.get('error_type', 'system_error')
-            severity = data.get('severity', 'medium')
-            error_message = data.get('error_message', '')
-            error_code = data.get('error_code', '')
-            
-            # Request information
-            url = data.get('url', '')
-            request_method = data.get('request_method', '')
-            request_data = data.get('request_data', {})
-            user_agent = data.get('user_agent', '')
-            ip_address = data.get('ip_address', '')
-            
-            # Stack trace and debugging
-            stack_trace = data.get('stack_trace', '')
-            line_number = data.get('line_number')
-            file_name = data.get('file_name', '')
-            function_name = data.get('function_name', '')
-            
-            # User action context
-            user_action = data.get('user_action', '')
-            form_data = data.get('form_data', {})
-            
-            # Get device connection if provided
-            device_connection_id = data.get('device_connection_id')
-            device_connection = None
-            if device_connection_id:
-                try:
-                    device_connection = DeviceConnection.objects.get(id=device_connection_id)
-                except DeviceConnection.DoesNotExist:
-                    pass
-            
-            # Create error log
-            error = ErrorLog.objects.create(
-                error_type=error_type,
-                severity=severity,
-                error_message=error_message,
-                error_code=error_code,
-                user=user,
-                device_connection=device_connection,
-                url=url,
-                request_method=request_method,
-                request_data=request_data,
-                user_agent=user_agent,
-                ip_address=ip_address,
-                stack_trace=stack_trace,
-                line_number=line_number,
-                file_name=file_name,
-                function_name=function_name,
-                user_action=user_action,
-                form_data=form_data
-            , workspace=workspace)
-            
-            return JsonResponse({
-                'success': True,
-                'error_id': error.id
-            })
-            
-        except json.JSONDecodeError:
-            return JsonResponse({'success': False, 'error': 'Invalid JSON data'})
-        except Exception as e:
-            return JsonResponse({'success': False, 'error': str(e)})
-    
-    return JsonResponse({'success': False, 'error': 'Only POST requests are supported'})
