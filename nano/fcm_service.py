@@ -358,3 +358,5 @@ def cleanup_invalid_tokens(user: User, sent_tokens: List[str], results: List[Dic
         logger.warning("FCMToken model not found - cannot cleanup invalid tokens")
     except Exception as e:
         logger.error(f"Error cleaning up invalid tokens: {str(e)}")
+from .models import Notification
+# Notification service linked
