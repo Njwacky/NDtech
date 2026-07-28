@@ -22,3 +22,7 @@ All frontend implementation tasks have been completed. The Next.js + React + Typ
 - [ ] Set up CI/CD pipeline
 - [ ] Improve documentation structure
 - [ ] Configure production deployment (PostgreSQL, etc.)
+- Added CI/CD, tests, icon fix, pagination, validation, docs update
+Fix icons: install lucide-react and import in layout/components
+Next: add API tests
+Next: configure CI/CD pipeline

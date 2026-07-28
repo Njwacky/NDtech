@@ -1,3 +1,4 @@
+import { Menu, Bell } from "lucide-react";
 import type { Metadata } from "next"
 import { Inter } from "next/font/google"
 import "./globals.css"
