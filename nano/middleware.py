@@ -22,6 +22,16 @@ from .models import (
 logger = logging.getLogger('security_audit')
 
 
+def _audit_table_ready():
+    """Do not write audit rows while migrations/tests are building the schema."""
+    if getattr(settings, 'TESTING', False):
+        return False
+    try:
+        return DataModificationLog._meta.db_table in connection.introspection.table_names()
+    except Exception:
+        return False
+
+
 def _get_workspace_from_request(request):
     """Best-effort workspace extraction. Middleware/signal handlers may run without an authenticated user."""
 
@@ -218,13 +228,9 @@ class SecurityAuditMiddleware(MiddlewareMixin):
             elif 'third-party' in request.path:
                 endpoint_type = 'third_party'
 
-            # Safely get request and response data
-            request_body = ''
-            try:
-                if hasattr(request, 'body') and request.body:
-                    request_body = request.body.decode('utf-8', errors='ignore')[:1000]
-            except Exception:
-                request_body = '[Body not accessible]'
+            # Never read or store raw request bodies: they may contain passwords,
+            # tokens, customer data, or an already-consumed upload stream.
+            request_body = '[REDACTED]' if request.method in {'POST', 'PUT', 'PATCH'} else ''
 
             response_body = ''
             try:
@@ -314,7 +320,7 @@ class SecurityAuditMiddleware(MiddlewareMixin):
                                 ip_address=context['ip_address'],
                                 user_agent=context['user_agent'],
                                 request_url=request.get_full_path(),
-                                session_key=request.session.session_key if hasattr(request, 'session') else '',
+                                session_key=(getattr(request.session, 'session_key', '') or '') if hasattr(request, 'session') else '',
                              workspace=workspace)
                             break
 
@@ -411,7 +417,7 @@ def log_user_login(sender, request, user, **kwargs):
             description=f"User {user.username} logged in successfully",
             ip_address=ip_address,
             user_agent=request.META.get('HTTP_USER_AGENT', ''),
-            session_key=request.session.session_key if hasattr(request, 'session') else '',
+            session_key=(getattr(request.session, 'session_key', '') or '') if hasattr(request, 'session') else '',
             detection_method='django_signal',
          workspace=workspace)
     except Exception as e:
@@ -431,7 +437,7 @@ def log_user_logout(sender, request, user, **kwargs):
             description=f"User {user.username} logged out",
             ip_address=ip_address,
             user_agent=request.META.get('HTTP_USER_AGENT', ''),
-            session_key=request.session.session_key if hasattr(request, 'session') else '',
+            session_key=(getattr(request.session, 'session_key', '') or '') if hasattr(request, 'session') else '',
             detection_method='django_signal',
          workspace=workspace)
     except Exception as e:
@@ -465,6 +471,8 @@ def log_failed_login(sender, credentials, request, **kwargs):
 @receiver(pre_save)
 def log_data_modification(sender, instance, **kwargs):
     """Log data modifications before save"""
+    if not _audit_table_ready():
+        return
     try:
         # Skip logging for audit models themselves to avoid infinite loops
         if sender.__name__ in ['SecurityAuditLog', 'DataModificationLog', 'AdminActionLog', 'APICallLog', 'SensitiveDataAccessLog']:
@@ -564,6 +572,8 @@ def log_data_modification(sender, instance, **kwargs):
 @receiver(post_save)
 def log_data_creation(sender, instance, created, **kwargs):
     """Log data creation"""
+    if not created or not _audit_table_ready():
+        return
     try:
         # Skip logging for audit models themselves
         if sender.__name__ in ['SecurityAuditLog', 'DataModificationLog', 'AdminActionLog', 'APICallLog', 'SensitiveDataAccessLog']:
@@ -641,6 +651,8 @@ def log_data_creation(sender, instance, created, **kwargs):
 @receiver(post_delete)
 def log_data_deletion(sender, instance, **kwargs):
     """Log data deletion"""
+    if not _audit_table_ready():
+        return
     try:
         # Skip logging for audit models themselves
         # Skip logging for audit models themselves

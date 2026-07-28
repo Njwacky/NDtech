@@ -48,7 +48,7 @@ pip install requests
 The API key is already configured in `nano/upc_views.py`:
 
 ```python
-UPC_API_KEY = "0EF8A07BB103C1A35F6CAF9B64535DD5"
+UPC_API_KEY = config('UPC_API_KEY')  # store in environment, never in source
 UPC_API_BASE_URL = "https://api.upcdatabase.org"
 ```
 

@@ -55,6 +55,37 @@ class ProductSerializer(serializers.ModelSerializer):
                  'is_expired']
         read_only_fields = ['id', 'date_added']
 
+    def validate_price(self, value):
+        if value <= 0:
+            raise serializers.ValidationError('Price must be greater than zero.')
+        return value
+
+    def validate_stock(self, value):
+        if value < 0:
+            raise serializers.ValidationError('Stock cannot be negative.')
+        return value
+
+    def validate(self, attrs):
+        sale_price = attrs.get('sale_price')
+        price = attrs.get('price', getattr(self.instance, 'price', None))
+        if sale_price is not None and price is not None and sale_price <= 0:
+            raise serializers.ValidationError({'sale_price': 'Sale price must be greater than zero.'})
+        if sale_price is not None and price is not None and sale_price >= price:
+            raise serializers.ValidationError({'sale_price': 'Sale price must be lower than the regular price.'})
+        return attrs
+
+
+class OrderItemSerializer(serializers.Serializer):
+    product_id = serializers.IntegerField(min_value=1)
+    quantity = serializers.IntegerField(min_value=1)
+
+
+class PendingOrderCreateSerializer(serializers.Serializer):
+    items = OrderItemSerializer(many=True, allow_empty=False)
+    customer_name = serializers.CharField(max_length=100, allow_blank=False)
+    customer_phone = serializers.RegexField(r'^[0-9]{10,15}$')
+    idempotency_key = serializers.CharField(max_length=64, required=False, allow_blank=True)
+
 
 class NotificationSerializer(serializers.ModelSerializer):
     """Serializer for Notification model"""

@@ -8,10 +8,13 @@ from django.views.decorators.csrf import csrf_exempt
 from django.utils import timezone
 from .models import Product, UserProfile
 from .openfoodfacts_integration import fetch_openfoodfacts_data
+from confige.security import rate_limit
 
 # UPC Database API Configuration
-UPC_API_KEY = "0EF8A07BB103C1A35F6CAF9B64535DD5"
-UPC_API_BASE_URL = "https://api.upcdatabase.org"
+from decouple import config
+
+UPC_API_KEY = config('UPC_API_KEY', default='')
+UPC_API_BASE_URL = config('UPC_API_BASE_URL', default='https://api.upcdatabase.org')
 
 def suggest_category_from_barcode(barcode):
     """Suggest category based on barcode patterns"""
@@ -437,8 +440,8 @@ def map_category(api_category):
     # Default category
     return 'basic_groceries'
 
-@csrf_exempt
 @login_required
+@rate_limit('upc', limit=60, window=60)
 def api_upc_lookup(request):
     """API endpoint for UPC lookup (AJAX)"""
     # Allow only superusers or users with admin/manager/cashier roles
@@ -488,8 +491,8 @@ def barcode_scanner(request):
     
     return render(request, 'nano/barcode_scanner.html')
 
-@csrf_exempt
 @login_required
+@rate_limit('upc', limit=60, window=60)
 def api_upc_lookup_detail(request, barcode):
     """API endpoint for detailed barcode lookup (for scanner)"""
     # Allow only superusers or users with admin/manager/cashier roles

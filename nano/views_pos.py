@@ -8,7 +8,7 @@ from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.models import User
 from django.contrib.auth.decorators import login_required
 from django.http import HttpResponseForbidden, JsonResponse, HttpResponse
-from django.db import models
+from django.db import models, transaction
 from django.utils import timezone
 from django.core.paginator import Paginator
 from django.views.decorators.csrf import csrf_exempt
@@ -16,6 +16,7 @@ from django.db.models import Q, Count, Sum, Min, Avg, Max
 from django.core.files.storage import default_storage
 from django.core.files.base import ContentFile
 from django.conf import settings
+from confige.security import rate_limit
 import pandas as pd
 
 import json
@@ -26,6 +27,7 @@ import logging
 from decimal import Decimal, InvalidOperation
 from .models import Product, Sale, UserProfile, PendingOrder, CompletedOrder, Notification, WarehousePrice, PriceComparison, FCMToken, DeviceConnection, ErrorLog, UserActivity, AirtimeProduct, AirtimeSale, AirtimeRequest
 from .fcm_service import fcm_service, send_fcm_notification_to_user
+from .serializers import PendingOrderCreateSerializer
 
 # Set up logger
 logger = logging.getLogger(__name__)
@@ -648,10 +650,22 @@ def save_order(request):
     if request.method == 'POST':
         try:
             data = json.loads(request.body)
-            cart_items = data.get('items', [])
-            total_amount = data.get('total_amount', 0)
-            customer_name = data.get('customer_name', '').strip()
-            customer_phone = data.get('customer_phone', '').strip()
+            input_serializer = PendingOrderCreateSerializer(data=data)
+            if not input_serializer.is_valid():
+                return JsonResponse({'success': False, 'errors': input_serializer.errors}, status=400)
+            validated = input_serializer.validated_data
+            cart_items = validated['items']
+            customer_name = validated['customer_name']
+            customer_phone = validated['customer_phone']
+            idempotency_key = validated.get('idempotency_key', '')
+
+            # A retry with the same key returns the original order instead of creating a duplicate.
+            if idempotency_key:
+                existing_order = PendingOrder.objects.filter(
+                    idempotency_key=idempotency_key, user=request.user
+                ).first()
+                if existing_order:
+                    return JsonResponse({'success': True, 'order_id': existing_order.id, 'duplicate': True})
 
             if not cart_items:
                 return JsonResponse({'success': False, 'error': 'No items in cart'})
@@ -669,14 +683,37 @@ def save_order(request):
             if not re.match(phone_regex, customer_phone):
                 return JsonResponse({'success': False, 'error': 'Please enter a valid phone number (10-15 digits)'})
 
-            # Create pending order with validated customer info
+            # Recalculate prices and totals from the database. Never trust browser prices.
+            normalized_items = []
+            server_total = Decimal('0.00')
+            for item in cart_items:
+                try:
+                    product_id = int(item.get('product_id'))
+                    quantity = int(item.get('quantity'))
+                    if quantity <= 0:
+                        raise ValueError
+                    product = Product.objects.get(pk=product_id)
+                except (TypeError, ValueError, Product.DoesNotExist):
+                    return JsonResponse({'success': False, 'error': 'Invalid product or quantity'})
+                line_total = product.price * quantity
+                server_total += line_total
+                normalized_items.append({
+                    **item,
+                    'product_id': product.pk,
+                    'quantity': quantity,
+                    'price': str(product.price),
+                    'line_total': str(line_total),
+                })
+
+            # Create pending order with server-calculated customer and pricing data.
             order = PendingOrder.objects.create(
                 user=request.user,
                 customer_name=customer_name,
                 customer_phone=customer_phone,
-                items=cart_items,
-                total=total_amount,
-                status='pending'
+                items=normalized_items,
+                total=server_total,
+                status='pending',
+                idempotency_key=idempotency_key or None
             , workspace=workspace)
 
             return JsonResponse({'success': True, 'order_id': order.id})
@@ -698,6 +735,12 @@ def order_details(request, order_id):
         return HttpResponseForbidden("You do not have permission to access this page.")
 
     order = get_object_or_404(PendingOrder, id=order_id)
+    is_manager = request.user.is_superuser or (
+        hasattr(request.user, 'userprofile')
+        and request.user.userprofile.role in ['admin', 'manager']
+    )
+    if order.user_id != request.user.id and not is_manager:
+        return HttpResponseForbidden('You can only view your own orders.')
     return render(request, 'nano/order_details.html', {'order': order})
 
 @login_required
@@ -980,16 +1023,28 @@ def cancel_order(request, order_id):
     order = get_object_or_404(PendingOrder, id=order_id)
 
     if request.method == 'POST':
+        if order.status != 'pending':
+            messages.error(request, 'Only pending orders can be cancelled.')
+            return redirect('pending_orders')
+
+        # Cashiers may cancel their own orders; managers/admins may cancel any order.
+        is_manager = request.user.is_superuser or (
+            hasattr(request.user, 'userprofile')
+            and request.user.userprofile.role in ['admin', 'manager']
+        )
+        if order.user_id != request.user.id and not is_manager:
+            return HttpResponseForbidden('You can only cancel your own orders.')
+
         order.status = 'cancelled'
-        order.save()
+        order.save(update_fields=['status'])
         messages.success(request, 'Order cancelled successfully!')
         return redirect('pending_orders')
 
     return render(request, 'nano/order_details.html', {'order': order})
 
 @login_required
-
-
+@rate_limit('checkout', limit=30, window=60)
+@transaction.atomic
 def checkout_order(request, order_id=None):
     workspace = getattr(request.user.userprofile, 'workspace', None) if hasattr(getattr(request, 'user', None), 'userprofile') else None
     """Checkout an order (with or without order_id)"""
@@ -998,10 +1053,15 @@ def checkout_order(request, order_id=None):
         if not (request.user.is_superuser or (hasattr(request.user, 'userprofile') and request.user.userprofile.role in ['admin', 'manager', 'cashier'])):
             return HttpResponseForbidden("You do not have permission to access this page.")
 
-        order = get_object_or_404(PendingOrder, id=order_id)
+        order = get_object_or_404(
+            PendingOrder.objects.select_for_update(), id=order_id
+        )
 
         if request.method == 'POST':
             try:
+                if order.status != 'pending':
+                    return JsonResponse({'success': False, 'error': 'Order is no longer pending'}, status=400)
+
                 # Process the checkout
                 cart_items = order.items
                 total_amount = order.total
@@ -1012,7 +1072,7 @@ def checkout_order(request, order_id=None):
                     quantity = item.get('quantity', 0)
 
                     try:
-                        product = Product.objects.get(id=product_id)
+                        product = Product.objects.select_for_update().get(id=product_id)
                         if product.stock < quantity:
                             return JsonResponse({
                                 'success': False,
@@ -1040,11 +1100,11 @@ def checkout_order(request, order_id=None):
                     price = item.get('price', 0)
 
                     try:
-                        product = Product.objects.get(id=product_id)
+                        product = Product.objects.select_for_update().get(id=product_id)
                         Sale.objects.create(
                             product=product,
                             quantity=quantity,
-                            total_price=price * quantity
+                            total_price=product.price * quantity
                         , workspace=workspace)
                     except Product.DoesNotExist:
                         continue
@@ -1055,7 +1115,7 @@ def checkout_order(request, order_id=None):
                     quantity = item.get('quantity', 0)
 
                     try:
-                        product = Product.objects.get(id=product_id)
+                        product = Product.objects.select_for_update().get(id=product_id)
                         product.stock -= quantity
                         product.save()
                     except Product.DoesNotExist:
@@ -2022,5 +2082,3 @@ def export_marketing_report(request):
             return redirect('price_comparisons_marketing')
 
     return redirect('price_comparisons_marketing')
-
-@login_required

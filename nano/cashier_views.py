@@ -18,7 +18,6 @@ def cashier_airtime_quick_sell(request):
     return render(request, 'nano/cashier_airtime_quick_sell.html', context)
 
 @login_required
-@csrf_exempt
 def process_cashier_airtime_sale(request):
     """Process cashier airtime sale"""
     if request.method != 'POST':
@@ -127,7 +126,6 @@ def process_cashier_airtime_sale(request):
         return JsonResponse({'success': False, 'error': 'An error occurred while processing sale'})
 
 @login_required
-@csrf_exempt
 def process_quick_airtime_sale(request):
     """Process quick airtime sale from airtime management page"""
     if request.method != 'POST':

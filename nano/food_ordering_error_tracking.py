@@ -214,7 +214,6 @@ def enhanced_food_scanner_lookup(request, barcode):
         
         return JsonResponse({'success': False, 'error': str(e)})
 
-@csrf_exempt
 @login_required
 def enhanced_add_to_cart(request):
     workspace = getattr(request.user.userprofile, 'workspace', None) if hasattr(getattr(request, 'user', None), 'userprofile') else None

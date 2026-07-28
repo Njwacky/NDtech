@@ -118,30 +118,34 @@ NDtech/
    ```
    Frontend runs at: http://localhost:3000
 
-## 🧪 Testing
+## 🧪 Testing and quality checks
 
-### **Backend Tests**
+### **Backend setup and tests**
+
+Use a virtual environment so local dependencies do not affect the system Python:
+
 ```bash
-# Run all tests
-python manage.py test
-
-# Run specific test module
-python manage.py test nano.tests_api
-python manage.py test nano.test_data_protection
+python -m venv .venv
+source .venv/bin/activate       # Windows: .venv\\Scripts\\activate
+pip install -r requirements.txt
+cp .env.example .env           # set a real DJANGO_SECRET_KEY
+python manage.py check
+python manage.py migrate
+python manage.py test --verbosity 2
 ```
 
-### **Frontend Tests**
+The test suite covers API authentication, role permissions, product access, and core feature regressions. Add a regression test whenever a production bug is fixed.
+
+### **Frontend checks**
+
 ```bash
 cd frontend
-npm test
-npm run test:watch
-npm run test:coverage
+npm ci
+npm run typecheck
+npm run build
 ```
 
-### **View Structure Tests**
-```bash
-python3 test_view_imports.py
-```
+The same backend and frontend checks run automatically in GitHub Actions for pushes and pull requests. See `.github/workflows/ci.yml`.
 
 ## 📚 API Documentation
 
