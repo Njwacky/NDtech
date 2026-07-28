@@ -197,7 +197,6 @@ def food_scanner_integration(request):
     
     return render(request, 'nano/food_scanner.html')
 
-@csrf_exempt
 @login_required
 def api_food_scanner_lookup(request, barcode):
     workspace = getattr(request.user.userprofile, 'workspace', None) if hasattr(getattr(request, 'user', None), 'userprofile') else None
@@ -295,7 +294,6 @@ def api_food_scanner_lookup(request, barcode):
     
     return JsonResponse({'success': False, 'error': 'Invalid request method'})
 
-@csrf_exempt
 @login_required
 def api_add_food_item_to_pos(request):
     workspace = getattr(request.user.userprofile, 'workspace', None) if hasattr(getattr(request, 'user', None), 'userprofile') else None

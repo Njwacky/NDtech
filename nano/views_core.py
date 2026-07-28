@@ -540,5 +540,3 @@ def get_user_by_username(request):
             return JsonResponse({'success': False, 'error': 'User not found'})
 
     return JsonResponse({'success': False, 'error': 'Invalid request method'})
-
-@login_required

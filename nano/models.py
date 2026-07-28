@@ -157,6 +157,8 @@ class PendingOrder(models.Model):
     status = models.CharField(max_length=20, default='pending')  # pending, completed, cancelled
     user = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True)
     workspace = models.ForeignKey(Workspace, on_delete=models.CASCADE, null=True, blank=True, related_name='pending_orders')
+    # Client-generated key prevents double-click/retry requests creating duplicate orders.
+    idempotency_key = models.CharField(max_length=64, unique=True, null=True, blank=True)
 
     def __str__(self):
         return f"Order for {self.customer_name} - {self.total}"

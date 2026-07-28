@@ -31,7 +31,14 @@ from .serializers import (
 class IsAdminOrManager(permissions.BasePermission):
     """Custom permission to only allow admins and managers"""
     def has_permission(self, request, view):
-        return request.user and request.user.is_authenticated
+        if not request.user or not request.user.is_authenticated:
+            return False
+        if request.user.is_superuser:
+            return True
+        try:
+            return request.user.userprofile.role in ['admin', 'manager']
+        except UserProfile.DoesNotExist:
+            return False
     
     def has_object_permission(self, request, view, obj):
         if request.user.is_superuser:
@@ -71,6 +78,17 @@ class UserViewSet(viewsets.ReadOnlyModelViewSet):
     search_fields = ['username', 'email', 'first_name', 'last_name']
     ordering_fields = ['username', 'date_joined', 'last_login']
     ordering = ['username']
+
+    def get_queryset(self):
+        user = self.request.user
+        if user.is_superuser:
+            return User.objects.all()
+        try:
+            if user.userprofile.role in ['admin', 'manager']:
+                return User.objects.all()
+        except UserProfile.DoesNotExist:
+            pass
+        return User.objects.filter(pk=user.pk)
 
     @extend_schema(summary="Get current user info")
     @action(detail=False, methods=['get'])
@@ -181,6 +199,14 @@ class NotificationViewSet(viewsets.ModelViewSet):
     ordering_fields = ['created_at', 'title']
     ordering = ['-created_at']
 
+    def get_permissions(self):
+        if self.action in ['create', 'update', 'partial_update', 'destroy']:
+            self.permission_classes = [IsAuthenticated, IsAdminOrManager]
+        return super().get_permissions()
+
+    def perform_create(self, serializer):
+        serializer.save(created_by=self.request.user)
+
     def get_queryset(self):
         """Filter notifications based on user role and target"""
         user = self.request.user
@@ -216,7 +242,7 @@ class NotificationViewSet(viewsets.ModelViewSet):
     @extend_schema(summary="Mark all notifications as read")
     @action(detail=False, methods=['post'])
     def mark_all_as_read(self, request):
-        """Mark all user's notifications as read"""
+        """Mark all user notifications as read"""
         user_notifications = self.get_queryset().filter(is_read=False)
         count = user_notifications.update(is_read=True)
         return Response({'status': f'marked {count} notifications as read'})

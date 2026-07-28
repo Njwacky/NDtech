@@ -26,6 +26,7 @@ import logging
 from decimal import Decimal, InvalidOperation
 from .models import Product, Sale, UserProfile, PendingOrder, CompletedOrder, Notification, WarehousePrice, PriceComparison, FCMToken, DeviceConnection, ErrorLog, UserActivity, AirtimeProduct, AirtimeSale, AirtimeRequest
 from .fcm_service import fcm_service, send_fcm_notification_to_user
+from confige.security import rate_limit
 
 # Set up logger
 logger = logging.getLogger(__name__)
@@ -182,7 +183,6 @@ def test_notifications_complete(request):
     return render(request, 'nano/test_notifications_complete.html')
 
 # FCM (Firebase Cloud Messaging) Views
-@csrf_exempt
 
 
 def register_fcm_token(request):
@@ -921,8 +921,7 @@ def process_airtime_sale(request):
     return JsonResponse({'success': False, 'error': 'Invalid request method'})
 
 @login_required
-
-
+@rate_limit('airtime', limit=20, window=60)
 def process_quick_airtime_sale(request):
     workspace = getattr(request.user.userprofile, 'workspace', None) if hasattr(getattr(request, 'user', None), 'userprofile') else None
     """Process quick airtime sale from management page"""
@@ -1791,7 +1790,6 @@ def user_activity_tracking(request):
     })
 
 # Tracking API Views
-@csrf_exempt
 
 
 def track_device_connection(request):
@@ -1849,7 +1847,6 @@ def track_device_connection(request):
 
     return JsonResponse({'success': False, 'error': 'Only POST requests are supported'})
 
-@csrf_exempt
 
 
 def track_user_activity(request):
@@ -1914,7 +1911,6 @@ def track_user_activity(request):
 
     return JsonResponse({'success': False, 'error': 'Only POST requests are supported'})
 
-@csrf_exempt
 
 
 def log_error(request):

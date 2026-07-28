@@ -15,6 +15,7 @@ from django.contrib.auth.decorators import login_required
 import json
 from ..models import UserProfile, Notification
 from ..fcm_service import send_fcm_notification_to_user
+from confige.security import rate_limit
 
 
 def register(request):
@@ -112,6 +113,7 @@ def sign_up(request):
     return render(request, 'nano/sign_up.html', {'is_first_user': is_first_user})
 
 
+@rate_limit('login', limit=10, window=300)
 def sign_in(request):
     workspace = getattr(request.user.userprofile, 'workspace', None) if hasattr(getattr(request, 'user', None), 'userprofile') else None
     """User login view"""
@@ -205,7 +207,6 @@ def forgot_password(request):
     return render(request, 'nano/forgot_password.html')
 
 
-@csrf_exempt
 @login_required
 def verify_admin_password(request):
     """Verify admin password for secret NDtechTrack access"""

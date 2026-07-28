@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
 from pathlib import Path
+import sys
 from decouple import config
 from django.core.exceptions import ImproperlyConfigured
 
@@ -30,6 +31,7 @@ if not SECRET_KEY or (isinstance(SECRET_KEY, str) and (SECRET_KEY in INSECURE_KE
 # SECURITY WARNING: don't run with debug turned on in production!
 # Default to False for production safety - explicitly set True for development
 DEBUG = config('DJANGO_DEBUG', default=False, cast=bool)
+TESTING = 'test' in sys.argv if 'sys' in globals() else False
 
 # Developer Mode Settings
 DEVELOPER_MODE = config('DEVELOPER_MODE', default=DEBUG, cast=bool)

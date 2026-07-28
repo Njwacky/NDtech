@@ -12,8 +12,27 @@ from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured
 from django.utils import timezone
 import logging
+from functools import wraps
+from django.core.cache import cache
+from django.http import JsonResponse
 
 logger = logging.getLogger('security')
+
+
+def rate_limit(key_prefix, limit=10, window=60):
+    """Return 429 after too many requests from one client in a short window."""
+    def decorator(view):
+        @wraps(view)
+        def wrapped(request, *args, **kwargs):
+            client = request.META.get('REMOTE_ADDR', 'unknown')
+            key = f'ratelimit:{key_prefix}:{client}'
+            count = cache.get(key, 0)
+            if count >= limit:
+                return JsonResponse({'success': False, 'error': 'Too many requests. Try again later.'}, status=429)
+            cache.set(key, count + 1, window)
+            return view(request, *args, **kwargs)
+        return wrapped
+    return decorator
 
 class SecurityUtils:
     """Utility class for security operations"""
