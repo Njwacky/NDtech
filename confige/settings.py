@@ -31,7 +31,7 @@ if not SECRET_KEY or (isinstance(SECRET_KEY, str) and (SECRET_KEY in INSECURE_KE
 # SECURITY WARNING: don't run with debug turned on in production!
 # Default to False for production safety - explicitly set True for development
 DEBUG = config('DJANGO_DEBUG', default=False, cast=bool)
-TESTING = 'test' in sys.argv if 'sys' in globals() else False
+TESTING = 'test' in sys.argv
 
 # Developer Mode Settings
 DEVELOPER_MODE = config('DEVELOPER_MODE', default=DEBUG, cast=bool)
@@ -380,8 +380,10 @@ X_FRAME_OPTIONS = 'DENY'
 # Django REST Framework Configuration
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
-        'rest_framework.authentication.SessionAuthentication',
-        'rest_framework.authentication.BasicAuthentication',
+        # Return 401 (not 403) for unauthenticated API requests so clients can
+        # tell "please log in" apart from "you lack permission".
+        'nano.api_auth.SessionAuthentication401',
+        'nano.api_auth.BasicAuthentication401',
     ],
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.IsAuthenticated',

@@ -34,11 +34,12 @@ logger = logging.getLogger(__name__)
 # Create your views here.
 
 
+@login_required
 def get_notifications(request):
     workspace = getattr(request.user.userprofile, 'workspace', None) if hasattr(getattr(request, 'user', None), 'userprofile') else None
     """Get notifications for the current user"""
     notifications = Notification.objects.filter(
-        target_user=request.user
+        Q(target_user=request.user) | Q(target_role=getattr(getattr(request.user, 'userprofile', None), 'role', None))
     ).order_by('-created_at')
 
     notification_data = []
@@ -185,6 +186,7 @@ def test_notifications_complete(request):
 # FCM (Firebase Cloud Messaging) Views
 
 
+@login_required
 def register_fcm_token(request):
     workspace = getattr(request.user.userprofile, 'workspace', None) if hasattr(getattr(request, 'user', None), 'userprofile') else None
     """Register FCM token for push notifications"""
@@ -198,12 +200,8 @@ def register_fcm_token(request):
             if not token:
                 return JsonResponse({'success': False, 'error': 'FCM token is required'})
 
-            # Get or create user (for demo purposes, you might want to require authentication)
-            user = getattr(request, 'user', None)
-            if not user or not user.is_authenticated:
-                # For demo, create a demo user or use a default user
-                # In production, you should require proper authentication
-                return JsonResponse({'success': False, 'error': 'Authentication required'})
+            # The user is guaranteed authenticated by @login_required.
+            user = request.user
 
             # Create or update FCM token
             fcm_token, created = FCMToken.objects.update_or_create(
@@ -212,7 +210,8 @@ def register_fcm_token(request):
                 defaults={
                     'device_id': device_id,
                     'device_type': device_type,
-                    'is_active': True
+                    'is_active': True,
+                    'workspace': workspace,
                 }
             )
 
