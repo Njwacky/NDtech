@@ -1,1 +1,18 @@
-postgresql-x64-17
+#!/usr/bin/env bash
+# Stop the NDtech POS development environment.
+# (This file previously contained only a stray "postgresql-x64-17" string.)
+set -euo pipefail
+
+echo "==> NDtech POS shutdown"
+
+# Stop the Django development server.
+if pkill -f "manage.py runserver"; then
+  echo "Stopped Django dev server."
+else
+  echo "Django dev server was not running."
+fi
+
+# Stop PostgreSQL if you started it above (adjust for your OS):
+#      Linux : sudo service postgresql stop
+#      macOS : brew services stop postgresql
+#      Windows: net stop postgresql-x64-17
