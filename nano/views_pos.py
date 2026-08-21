@@ -25,12 +25,54 @@ import csv
 import io
 import logging
 from decimal import Decimal, InvalidOperation
-from .models import Product, Sale, UserProfile, PendingOrder, CompletedOrder, Notification, WarehousePrice, PriceComparison, FCMToken, DeviceConnection, ErrorLog, UserActivity, AirtimeProduct, AirtimeSale, AirtimeRequest
+from .models import Product, Sale, UserProfile, PendingOrder, CompletedOrder, Notification, WarehousePrice, PriceComparison, FCMToken, DeviceConnection, ErrorLog, UserActivity, AirtimeProduct, AirtimeSale, AirtimeRequest, Workspace
 from .fcm_service import fcm_service, send_fcm_notification_to_user
 from .serializers import PendingOrderCreateSerializer
 
 # Set up logger
 logger = logging.getLogger(__name__)
+
+
+def _create_completed_order(*, customer_name, customer_phone, items, total,
+                            cash_received, change_given, payment_method,
+                            processed_by, workspace, customer_email=None):
+    """Create a CompletedOrder, encrypting customer PII through the model setters.
+
+    Always use this helper instead of ``CompletedOrder.objects.create`` with
+    plain ``customer_name``/``customer_phone``/``customer_email`` keyword
+    arguments so that the encrypted columns are populated and the plaintext
+    columns are not left holding sensitive data.
+    """
+    order = CompletedOrder(
+        items=items,
+        total=total,
+        cash_received=cash_received,
+        change_given=change_given,
+        payment_method=payment_method,
+        processed_by=processed_by,
+        workspace=workspace,
+    )
+    order.set_customer_name(customer_name or '')
+    order.set_customer_phone(customer_phone or '')
+    if customer_email is not None:
+        order.set_customer_email(customer_email)
+    order.save()
+    return order
+
+
+def _scope_by_workspace(queryset, user):
+    """Scope a workspace-aware queryset to the current user's workspace.
+
+    Superusers see everything. Regular users see rows in their own workspace
+    plus legacy rows without a workspace (``workspace IS NULL``).
+    """
+    if user.is_superuser:
+        return queryset
+    workspace = getattr(getattr(user, 'userprofile', None), 'workspace', None)
+    if workspace is None:
+        return queryset.filter(workspace__isnull=True)
+    return queryset.filter(Q(workspace=workspace) | Q(workspace__isnull=True))
+
 
 # Create your views here.
 
@@ -59,7 +101,7 @@ def add_stock(request):
                 return redirect('add_stock')
 
             try:
-                product = Product.objects.get(id=product_id)
+                product = _scope_by_workspace(Product.objects, request.user).get(id=product_id)
                 product_name = product.name
                 product.delete()
                 messages.success(request, f'Product "{product_name}" deleted successfully!')
@@ -155,8 +197,8 @@ def add_stock(request):
                                 skipped_rows.append((row_number, f'Invalid expiry date format: "{expiry_date_str}"'))
                                 continue
 
-                        # Check if product already exists (case-insensitive)
-                        if Product.objects.filter(name__iexact=product_name).exists():
+                        # Check if product already exists within this workspace (case-insensitive)
+                        if _scope_by_workspace(Product.objects, request.user).filter(name__iexact=product_name).exists():
                             skipped_rows.append((row_number, 'Duplicate product (already exists)'))
                             continue
 
@@ -217,7 +259,7 @@ def add_stock(request):
                 errors['name'] = 'Product name is required'
             elif len(name) < 2:
                 errors['name'] = 'Product name must be at least 2 characters'
-            elif Product.objects.filter(name__iexact=name).exists():
+            elif _scope_by_workspace(Product.objects, request.user).filter(name__iexact=name).exists():
                 errors['name'] = f'Product "{name}" already exists (case-insensitive check)'
 
             if not price_str:
@@ -328,7 +370,7 @@ def add_stock(request):
                 return redirect('add_stock')
 
             try:
-                product = Product.objects.get(id=product_id)
+                product = _scope_by_workspace(Product.objects, request.user).get(id=product_id)
                 product.stock += quantity
                 product.save()
                 messages.success(request, f'Added {quantity} units to {product.name}')
@@ -337,7 +379,7 @@ def add_stock(request):
 
             return redirect('add_stock')
 
-    products = Product.objects.all()
+    products = _scope_by_workspace(Product.objects, request.user).all()
 
     # Create category examples list with examples for each category
     category_examples_list = [
@@ -384,7 +426,7 @@ def manage_sales(request):
             return redirect('manage_sales')
 
         try:
-            product = Product.objects.get(id=product_id)
+            product = _scope_by_workspace(Product.objects, request.user).get(id=product_id)
         except Product.DoesNotExist:
             messages.error(request, 'Product not found')
             return redirect('manage_sales')
@@ -462,7 +504,7 @@ def manage_sales(request):
 
         return redirect('manage_sales')
 
-    products = Product.objects.all().order_by('name')
+    products = _scope_by_workspace(Product.objects, request.user).order_by('name')
 
     # Pagination
     paginator = Paginator(products, 20)
@@ -479,7 +521,7 @@ def spaza_pos(request):
     if not (request.user.is_superuser or (hasattr(request.user, 'userprofile') and request.user.userprofile.role in ['admin', 'manager', 'cashier'])):
         return HttpResponseForbidden("You do not have permission to access this page.")
 
-    products = Product.objects.filter(stock__gt=0).order_by('category', 'name')
+    products = _scope_by_workspace(Product.objects, request.user).filter(stock__gt=0).order_by('category', 'name')
     product_payload = []
     for product in products:
         current_price = product.get_current_price()
@@ -518,6 +560,8 @@ def spaza_pos_complete_sale(request):
 
     if request.method != 'POST':
         return JsonResponse({'success': False, 'error': 'Invalid request method'}, status=405)
+
+    workspace = getattr(getattr(request.user, 'userprofile', None), 'workspace', None)
 
     try:
         from django.db import transaction
@@ -586,7 +630,7 @@ def spaza_pos_complete_sale(request):
 
             change_given = max(Decimal('0.00'), cash_received - calculated_total).quantize(Decimal('0.01'))
 
-            completed_order = CompletedOrder.objects.create(
+            completed_order = _create_completed_order(
                 customer_name=customer_name,
                 customer_phone=customer_phone,
                 items=normalized_items,
@@ -595,6 +639,7 @@ def spaza_pos_complete_sale(request):
                 change_given=change_given,
                 payment_method=payment_method,
                 processed_by=request.user,
+                workspace=workspace,
             )
 
             for item in normalized_items:
@@ -604,7 +649,8 @@ def spaza_pos_complete_sale(request):
                 Sale.objects.create(
                     product=product,
                     quantity=item['quantity'],
-                    total_price=Decimal(str(item['total']))
+                    total_price=Decimal(str(item['total'])),
+                    workspace=workspace,
                 )
 
         return JsonResponse({
@@ -633,7 +679,7 @@ def pending_orders(request):
     if not (request.user.is_superuser or (hasattr(request.user, 'userprofile') and request.user.userprofile.role in ['admin', 'manager', 'cashier'])):
         return HttpResponseForbidden("You do not have permission to access this page.")
 
-    orders = PendingOrder.objects.filter(status='pending').order_by('-created_at')
+    orders = _scope_by_workspace(PendingOrder.objects, request.user).filter(status='pending').order_by('-created_at')
 
     # Pagination
     paginator = Paginator(orders, 20)
@@ -752,6 +798,10 @@ def complete_order(request, order_id):
     if not (request.user.is_superuser or (hasattr(request.user, 'userprofile') and request.user.userprofile.role in ['admin', 'manager', 'cashier'])):
         return HttpResponseForbidden("You do not have permission to access this page.")
 
+    # Fetch the order without locking here; it is re-locked inside the
+    # transaction on POST so select_for_update() runs within an atomic block
+    # (select_for_update outside a transaction is a no-op on SQLite and an
+    # error on PostgreSQL).
     order = get_object_or_404(PendingOrder, id=order_id)
 
     if request.method == 'POST':
@@ -768,11 +818,11 @@ def complete_order(request, order_id):
 
             # Validate cash received
             try:
-                cash_received = float(cash_received_str)
+                cash_received = Decimal(cash_received_str)
                 if cash_received < 0:
                     messages.error(request, 'Cash received cannot be negative')
                     return redirect('order_details', order_id=order_id)
-            except ValueError:
+            except (ValueError, InvalidOperation):
                 messages.error(request, 'Invalid cash received amount')
                 return redirect('order_details', order_id=order_id)
 
@@ -781,83 +831,97 @@ def complete_order(request, order_id):
                 messages.warning(request, 'This order has already been completed')
                 return redirect('completed_orders')
 
-            # Update product stock with better error handling
             cart_items = order.items
+            order_total = Decimal(str(order.total))
+
+            # Reject insufficient cash up front for cash payments.
+            if payment_method == 'cash' and cash_received < order_total:
+                messages.error(request, 'Cash received is less than the order total')
+                return redirect('order_details', order_id=order_id)
+
             stock_issues = []
             products_updated = []
 
-            for item in cart_items:
-                # Handle both product_id (for backward compatibility) and product name
-                product_id = item.get('product_id')
-                product_name = item.get('product')
-                quantity = item.get('quantity', 0)
+            with transaction.atomic():
+                # Re-lock the order and each product row inside the
+                # transaction so concurrent checkouts cannot oversell or
+                # double-complete the same pending order.
+                order = PendingOrder.objects.select_for_update().get(pk=order_id)
+                if order.status != 'pending':
+                    messages.warning(request, 'This order has already been completed')
+                    return redirect('completed_orders')
 
-                if quantity <= 0:
-                    stock_issues.append(f'Invalid item data: quantity={quantity}')
-                    continue
+                for item in cart_items:
+                    product_id = item.get('product_id')
+                    product_name = item.get('product')
+                    quantity = item.get('quantity', 0)
 
-                try:
-                    # Try to find product by ID first (for backward compatibility)
-                    if product_id:
-                        product = Product.objects.get(id=product_id)
-                    elif product_name:
-                        # Try to find product by name (current format)
-                        product = Product.objects.get(name=product_name)
-                    else:
-                        stock_issues.append(f'No product identifier found in item: {item}')
+                    if quantity <= 0:
+                        stock_issues.append(f'Invalid item data: quantity={quantity}')
                         continue
-                    if product.stock >= quantity:
+
+                    try:
+                        if product_id:
+                            product = Product.objects.select_for_update().get(id=product_id)
+                        elif product_name:
+                            product = Product.objects.select_for_update().get(name=product_name)
+                        else:
+                            stock_issues.append(f'No product identifier found in item: {item}')
+                            continue
+
+                        if product.stock < quantity:
+                            stock_issues.append(
+                                f'Insufficient stock for {product.name}. '
+                                f'Available: {product.stock}, Required: {quantity}'
+                            )
+                            continue
+
                         product.stock -= quantity
-                        product.save()
+                        product.save(update_fields=['stock'])
                         products_updated.append(product.name)
 
-                        # Create sale record for inventory tracking
+                        unit_price = Decimal(str(item.get('price', 0) or 0))
                         Sale.objects.create(
                             product=product,
                             quantity=quantity,
-                            total_price=item.get('price', 0) * quantity
-                        , workspace=workspace)
-                    else:
-                        stock_issues.append(f'Insufficient stock for {product.name}. Available: {product.stock}, Required: {quantity}')
-                except Product.DoesNotExist:
-                    if product_id:
-                        stock_issues.append(f'Product not found for ID: {product_id}')
-                    elif product_name:
-                        stock_issues.append(f'Product not found: {product_name}')
-                    else:
-                        stock_issues.append(f'Product not found in item: {item}')
-                except Exception as e:
-                    stock_issues.append(f'Error updating {item.get("product", "unknown product")}: {str(e)}')
+                            total_price=unit_price * quantity,
+                            processed_by=request.user,
+                            workspace=workspace,
+                        )
+                    except Product.DoesNotExist:
+                        if product_id:
+                            stock_issues.append(f'Product not found for ID: {product_id}')
+                        elif product_name:
+                            stock_issues.append(f'Product not found: {product_name}')
+                        else:
+                            stock_issues.append(f'Product not found in item: {item}')
 
-            # If there are stock issues, show error and don't complete order
-            if stock_issues:
-                for issue in stock_issues:
-                    messages.error(request, issue)
-                return redirect('order_details', order_id=order_id)
+                if stock_issues:
+                    # Raising rolls back all stock changes made above.
+                    raise ValueError('; '.join(stock_issues))
 
-            # Calculate change
-            order_total = float(order.total)
-            change_given = max(0, cash_received - order_total)
+                change_given = (cash_received - order_total).quantize(Decimal('0.01'))
+                if payment_method != 'cash':
+                    cash_received = order_total
+                    change_given = Decimal('0.00')
 
-            # Create completed order
-            completed_order = CompletedOrder.objects.create(
-                customer_name=order.customer_name,
-                customer_phone=order.customer_phone,
-                items=order.items,
-                total=order.total,
-                cash_received=cash_received,
-                change_given=change_given,
-                payment_method=payment_method,
-                processed_by=request.user
-            , workspace=workspace)
+                _create_completed_order(
+                    customer_name=order.customer_name,
+                    customer_phone=order.customer_phone,
+                    items=order.items,
+                    total=order.total,
+                    cash_received=cash_received,
+                    change_given=change_given,
+                    payment_method=payment_method,
+                    processed_by=request.user,
+                    workspace=workspace,
+                )
 
-            # Update pending order status
-            order.status = 'completed'
-            order.save()
+                order.status = 'completed'
+                order.save(update_fields=['status'])
 
-            # Success message with details
             success_msg = f'Order #{order.id} completed successfully!'
-            if cash_received >= order_total:
+            if payment_method == 'cash':
                 success_msg += f' Change: R{change_given:.2f}'
             if products_updated:
                 success_msg += f' Updated stock for: {", ".join(products_updated)}'
@@ -895,11 +959,12 @@ def completed_orders(request):
     if not (request.user.is_superuser or (hasattr(request.user, 'userprofile') and request.user.userprofile.role in ['admin', 'manager', 'cashier'])):
         return HttpResponseForbidden("You do not have permission to access this page.")
 
-    orders = CompletedOrder.objects.all().order_by('-completed_at')
+    orders = _scope_by_workspace(CompletedOrder.objects, request.user).order_by('-completed_at')
 
     # Calculate statistics
     total_orders = orders.count()
-    total_revenue = round(orders.aggregate(total=Sum('total'))['total'] or 0, 2) if orders else 0.00    # Round to 2 decimal places  orders.aggregate(total=Sum('total'))['total'] or 0
+    revenue_total = orders.aggregate(total=Sum('total'))['total']
+    total_revenue = round(revenue_total or 0, 2)
     total_cash_received = orders.aggregate(total=Sum('cash_received'))['total'] or 0
     total_change_given = orders.aggregate(total=Sum('change_given'))['total'] or 0
 
@@ -953,53 +1018,44 @@ def checkout(request):
         try:
             data = json.loads(request.body)
             cart_items = data.get('items', [])
-            total_amount = data.get('total_amount', 0)
 
             if not cart_items:
                 return JsonResponse({'success': False, 'error': 'No items in cart'})
 
-            # Check stock availability
-            for item in cart_items:
-                product_id = item.get('product_id')
-                quantity = item.get('quantity', 0)
+            with transaction.atomic():
+                # Resolve and lock every product up front, recalculating prices
+                # from the database instead of trusting the client.
+                resolved = []
+                for item in cart_items:
+                    product_id = item.get('product_id')
+                    quantity = int(item.get('quantity', 0) or 0)
+                    if quantity <= 0 or not product_id:
+                        return JsonResponse({'success': False, 'error': 'Invalid cart item'})
 
-                try:
-                    product = Product.objects.get(id=product_id)
+                    try:
+                        product = Product.objects.select_for_update().get(id=product_id)
+                    except Product.DoesNotExist:
+                        return JsonResponse({'success': False, 'error': 'Product not found'})
+
                     if product.stock < quantity:
                         return JsonResponse({
                             'success': False,
                             'error': f'Insufficient stock for {product.name}. Available: {product.stock}'
                         })
-                except Product.DoesNotExist:
-                    return JsonResponse({'success': False, 'error': f'Product not found'})
 
-            # Create individual sale records for each product for inventory tracking
-            for item in cart_items:
-                product_id = item.get('product_id')
-                quantity = item.get('quantity', 0)
-                price = item.get('price', 0)
+                    unit_price = Decimal(str(product.get_current_price())).quantize(Decimal('0.01'))
+                    resolved.append((product, quantity, unit_price))
 
-                try:
-                    product = Product.objects.get(id=product_id)
+                for product, quantity, unit_price in resolved:
+                    product.stock -= quantity
+                    product.save(update_fields=['stock'])
                     Sale.objects.create(
                         product=product,
                         quantity=quantity,
-                        total_price=price * quantity
-                    , workspace=workspace)
-                except Product.DoesNotExist:
-                    continue
-
-            # Update product stock
-            for item in cart_items:
-                product_id = item.get('product_id')
-                quantity = item.get('quantity', 0)
-
-                try:
-                    product = Product.objects.get(id=product_id)
-                    product.stock -= quantity
-                    product.save()
-                except Product.DoesNotExist:
-                    continue
+                        total_price=unit_price * quantity,
+                        processed_by=request.user,
+                        workspace=workspace,
+                    )
 
             return JsonResponse({'success': True, 'message': 'Sale completed successfully'})
 
@@ -1081,17 +1137,29 @@ def checkout_order(request, order_id=None):
                     except Product.DoesNotExist:
                         return JsonResponse({'success': False, 'error': f'Product not found'})
 
-                # Create completed order
-                completed_order = CompletedOrder.objects.create(
+                # Recalculate change from the order total.
+                try:
+                    cash_received = Decimal(str(request.POST.get('cash_received', total_amount)))
+                except (ValueError, InvalidOperation):
+                    cash_received = Decimal(str(total_amount))
+                change_given = (cash_received - Decimal(str(total_amount))).quantize(Decimal('0.01'))
+                payment_method = request.POST.get('payment_method', 'cash')
+                if payment_method != 'cash':
+                    cash_received = Decimal(str(total_amount))
+                    change_given = Decimal('0.00')
+
+                # Create completed order (PII is encrypted via model setters).
+                completed_order = _create_completed_order(
                     customer_name=order.customer_name,
                     customer_phone=order.customer_phone,
                     items=cart_items,
                     total=total_amount,
-                    cash_received=float(request.POST.get('cash_received', total_amount)),
-                    change_given=float(request.POST.get('cash_received', total_amount)) - float(total_amount),
-                    payment_method=request.POST.get('payment_method', 'cash'),
-                    processed_by=request.user
-                , workspace=workspace)
+                    cash_received=cash_received,
+                    change_given=change_given,
+                    payment_method=payment_method,
+                    processed_by=request.user,
+                    workspace=workspace,
+                )
 
                 # Create individual sale records for each product for inventory tracking
                 for item in cart_items:
@@ -1134,9 +1202,9 @@ def checkout_order(request, order_id=None):
                             'order_id': completed_order.id,
                             'items': cart_items,
                             'total': total_amount,
-                            'cash_received': float(request.POST.get('cash_received', total_amount)),
-                            'change_given': float(request.POST.get('cash_received', total_amount)) - float(total_amount),
-                            'payment_method': request.POST.get('payment_method', 'cash'),
+                            'cash_received': float(cash_received),
+                            'change_given': float(change_given),
+                            'payment_method': payment_method,
                             'customer_phone': order.customer_phone,
                             'processed_by': request.user.username,
                             'order_date': completed_order.completed_at
@@ -1201,25 +1269,25 @@ def checkout_order(request, order_id=None):
                 if not re.match(phone_regex, customer_phone):
                     return JsonResponse({'status': 'error', 'message': 'Please enter a valid phone number (10-15 digits)'})
 
-                # Check stock availability
+                # Resolve products, recompute the total from server-side prices
+                # (never trust browser-supplied totals) and lock product rows.
+                resolved = []
+                server_total = Decimal('0.00')
                 for item in cart_items:
-                    product_name = item.get('product')
-                    quantity = item.get('quantity', 0)
+                    product_name = (item.get('product') or '').strip()
+                    quantity = int(item.get('quantity', 0) or 0)
+                    if quantity <= 0 or not product_name:
+                        return JsonResponse({'status': 'error', 'message': 'Invalid cart item'})
 
                     try:
-                        # Try exact match first (for performance)
-                        product = Product.objects.get(name=product_name)
+                        product = Product.objects.select_for_update().get(name=product_name)
                     except Product.DoesNotExist:
-                        # Try case-insensitive match
                         try:
-                            product = Product.objects.get(name__iexact=product_name.strip())
+                            product = Product.objects.select_for_update().get(name__iexact=product_name)
                         except Product.DoesNotExist:
-                            # Try to find closest match
-                            possible_products = Product.objects.filter(name__icontains=product_name.strip())
-                            if possible_products.exists():
-                                product = possible_products.first()
-                            else:
-                                return JsonResponse({'status': 'error', 'message': f'Product not found: {product_name}'})
+                            return JsonResponse(
+                                {'status': 'error', 'message': f'Product not found: {product_name}'}
+                            )
 
                     if product.stock < quantity:
                         return JsonResponse({
@@ -1227,67 +1295,41 @@ def checkout_order(request, order_id=None):
                             'message': f'Insufficient stock for {product.name}. Available: {product.stock}'
                         })
 
-                # Create completed order
-                completed_order = CompletedOrder.objects.create(
-                    customer_name=customer_name,
-                    customer_phone=customer_phone,
-                    items=cart_items,
-                    total=total_amount,
-                    cash_received=cash_received,
-                    change_given=change_given,
-                    payment_method='cash',
-                    processed_by=request.user
-                , workspace=workspace)
+                    unit_price = Decimal(str(product.get_current_price())).quantize(Decimal('0.01'))
+                    server_total += (unit_price * quantity).quantize(Decimal('0.01'))
+                    resolved.append((product, quantity, unit_price))
 
-                # Create individual sale records for each product for inventory tracking
-                for item in cart_items:
-                    product_name = item.get('product')
-                    quantity = item.get('quantity', 0)
-                    price = item.get('price', 0)
+                try:
+                    cash_received = Decimal(str(cash_received))
+                except (ValueError, InvalidOperation, TypeError):
+                    cash_received = server_total
+                change_given = (cash_received - server_total).quantize(Decimal('0.01'))
+                if cash_received < server_total:
+                    return JsonResponse({'status': 'error', 'message': 'Cash received is less than the total'})
 
-                    try:
-                        # Try exact match first (for performance)
-                        product = Product.objects.get(name=product_name)
-                    except Product.DoesNotExist:
-                        # Try case-insensitive match
-                        try:
-                            product = Product.objects.get(name__iexact=product_name.strip())
-                        except Product.DoesNotExist:
-                            # Try to find closest match
-                            possible_products = Product.objects.filter(name__icontains=product_name.strip())
-                            if possible_products.exists():
-                                product = possible_products.first()
-                            else:
-                                continue  # Skip this item if product not found
+                with transaction.atomic():
+                    for product, quantity, unit_price in resolved:
+                        product.stock -= quantity
+                        product.save(update_fields=['stock'])
+                        Sale.objects.create(
+                            product=product,
+                            quantity=quantity,
+                            total_price=unit_price * quantity,
+                            processed_by=request.user,
+                            workspace=workspace,
+                        )
 
-                    Sale.objects.create(
-                        product=product,
-                        quantity=quantity,
-                        total_price=price * quantity
-                    , workspace=workspace)
-
-                # Update product stock
-                for item in cart_items:
-                    product_name = item.get('product')
-                    quantity = item.get('quantity', 0)
-
-                    try:
-                        # Try exact match first (for performance)
-                        product = Product.objects.get(name=product_name)
-                    except Product.DoesNotExist:
-                        # Try case-insensitive match
-                        try:
-                            product = Product.objects.get(name__iexact=product_name.strip())
-                        except Product.DoesNotExist:
-                            # Try to find closest match
-                            possible_products = Product.objects.filter(name__icontains=product_name.strip())
-                            if possible_products.exists():
-                                product = possible_products.first()
-                            else:
-                                continue  # Skip this item if product not found
-
-                    product.stock -= quantity
-                    product.save()
+                    _create_completed_order(
+                        customer_name=customer_name,
+                        customer_phone=customer_phone,
+                        items=cart_items,
+                        total=server_total,
+                        cash_received=cash_received,
+                        change_given=change_given,
+                        payment_method='cash',
+                        processed_by=request.user,
+                        workspace=workspace,
+                    )
 
                 # Send receipt email login removed
                 return JsonResponse({'status': 'success', 'message': 'Order completed successfully!'})
@@ -1306,7 +1348,7 @@ def check_low_stock_api(request):
     workspace = getattr(request.user.userprofile, 'workspace', None) if hasattr(getattr(request, 'user', None), 'userprofile') else None
     """API endpoint to check for low stock products"""
     if request.method == 'GET':
-        low_stock_products = Product.objects.filter(stock__lt=10)
+        low_stock_products = _scope_by_workspace(Product.objects, request.user).filter(stock__lt=10)
 
         product_data = []
         for product in low_stock_products:
@@ -1334,7 +1376,7 @@ def get_product_by_barcode(request):
             return JsonResponse({'success': False, 'error': 'Barcode is required'})
 
         try:
-            product = Product.objects.get(barcode=barcode)
+            product = _scope_by_workspace(Product.objects, request.user).get(barcode=barcode)
             product_data = {
                 'id': product.id,
                 'name': product.name,
@@ -1351,39 +1393,54 @@ def get_product_by_barcode(request):
 
 
 
-def run_price_comparison():
-    """Run automated price comparison on all warehouse prices"""
+def run_price_comparison(workspace=None):
+    """Run automated price comparison on warehouse prices.
+
+    When a ``workspace`` is provided only that workspace's data is compared;
+    otherwise every workspace is processed independently so prices from
+    different tenants are never mixed together.
+    """
     from django.db.models import Min
 
-    # Get all unique products
-    products = WarehousePrice.objects.values('product_name', 'barcode').distinct()
+    workspaces = [workspace] if workspace else list(
+        Workspace.objects.all()
+    ) + [None]  # include legacy rows without a workspace
 
-    for product in products:
-        # Get all prices for this product
-        prices = WarehousePrice.objects.filter(
-            product_name=product['product_name']
-        ).order_by('price')
+    for ws in workspaces:
+        qs = WarehousePrice.objects.all()
+        if ws is None:
+            qs = qs.filter(workspace__isnull=True)
+        else:
+            qs = qs.filter(workspace=ws)
 
-        if prices.count() > 1:
-            lowest_price = prices.first()
-            all_prices = {p.warehouse_name: float(p.price) for p in prices}
+        # Get all unique products in this workspace.
+        products = qs.values('product_name', 'barcode').distinct()
 
-            # Calculate price difference from highest to lowest
-            highest_price = prices.last().price
-            price_difference = highest_price - lowest_price.price
+        for product in products:
+            prices = qs.filter(
+                product_name=product['product_name']
+            ).order_by('price')
 
-            # Create or update price comparison
-            PriceComparison.objects.update_or_create(
-                product_name=product['product_name'],
-                barcode=product['barcode'],
-                defaults={
-                    'lowest_price': lowest_price.price,
-                    'lowest_warehouse': lowest_price.warehouse_name,
-                    'price_difference': price_difference,
-                    'compared_warehouses': list(all_prices.keys()),
-                    'all_prices': all_prices
-                }
-            )
+            if prices.count() > 1:
+                lowest_price = prices.first()
+                all_prices = {p.warehouse_name: float(p.price) for p in prices}
+
+                # Calculate price difference from highest to lowest.
+                highest_price = prices.last().price
+                price_difference = highest_price - lowest_price.price
+
+                PriceComparison.objects.update_or_create(
+                    product_name=product['product_name'],
+                    barcode=product['barcode'],
+                    workspace=ws,
+                    defaults={
+                        'lowest_price': lowest_price.price,
+                        'lowest_warehouse': lowest_price.warehouse_name,
+                        'price_difference': price_difference,
+                        'compared_warehouses': list(all_prices.keys()),
+                        'all_prices': all_prices,
+                    }
+                )
 
 # Warehouse views - complete implementations
 @login_required
@@ -1453,10 +1510,7 @@ def warehouse_import(request):
                     'category': 'Category',
                     'stock': 'Stock',
                     'barcode': 'Barcode',
-                    'sku': 'SKU',
-                    'supplier': 'Supplier',
-                    'status': 'Status',
-                    'description': 'Description'
+                    'unit_size': 'Unit Size',
                 }
             
             # Apply column mapping if needed
@@ -1475,27 +1529,23 @@ def warehouse_import(request):
                     barcode = str(row.get('Barcode', '')).strip() if 'Barcode' in row and pd.notna(row['Barcode']) else None
                     category = str(row.get('Category', '')).strip() if 'Category' in row and pd.notna(row['Category']) else None
                     stock_quantity = int(row['Stock']) if 'Stock' in row and pd.notna(row['Stock']) else None
-                    sku = str(row.get('SKU', '')).strip() if 'SKU' in row and pd.notna(row['SKU']) else None
-                    supplier = str(row.get('Supplier', '')).strip() if 'Supplier' in row and pd.notna(row['Supplier']) else None
-                    status = str(row.get('Status', '')).strip() if 'Status' in row and pd.notna(row['Status']) else None
-                    description = str(row.get('Description', '')).strip() if 'Description' in row and pd.notna(row['Description']) else None
+                    unit_size = str(row.get('Unit Size', '')).strip() if 'Unit Size' in row and pd.notna(row['Unit Size']) else None
 
                     if product_name and price > 0:
-                        # Create or update warehouse price
+                        # Create or update warehouse price. Only fields that exist
+                        # on the WarehousePrice model are used here.
                         warehouse_price, created = WarehousePrice.objects.update_or_create(
                             product_name=product_name,
                             warehouse_name=warehouse_name,
-                            barcode=barcode,
+                            barcode=barcode or None,
                             defaults={
                                 'price': price,
-                                'category': category,
+                                'category': category or None,
                                 'stock_quantity': stock_quantity,
-                                'sku': sku,
-                                'supplier': supplier,
-                                'status': status,
-                                'description': description,
+                                'unit_size': unit_size or None,
                                 'imported_by': request.user,
-                                'file_name': file.name
+                                'workspace': workspace,
+                                'file_name': file.name,
                             }
                         )
                         imported_count += 1
@@ -1506,9 +1556,9 @@ def warehouse_import(request):
                     skipped_count += 1
                     continue
 
-            # Run price comparison after import
+            # Run price comparison after import (this workspace only)
             try:
-                run_price_comparison()
+                run_price_comparison(workspace=workspace)
             except Exception as e:
                 # Continue even if price comparison fails
                 pass
@@ -1537,7 +1587,7 @@ def warehouse_prices(request):
     warehouse_filter = request.GET.get('warehouse', '').strip()
 
     # Build query
-    warehouse_prices = WarehousePrice.objects.all()
+    warehouse_prices = _scope_by_workspace(WarehousePrice.objects, request.user)
 
     if search_query:
         warehouse_prices = warehouse_prices.filter(
@@ -1549,8 +1599,11 @@ def warehouse_prices(request):
     if warehouse_filter:
         warehouse_prices = warehouse_prices.filter(warehouse_name__icontains=warehouse_filter)
 
-    # Get unique warehouse names for filter dropdown
-    warehouse_names = sorted(set(WarehousePrice.objects.values_list('warehouse_name', flat=True)))
+    # Get unique warehouse names for filter dropdown (this workspace only)
+    warehouse_names = sorted(set(
+        _scope_by_workspace(WarehousePrice.objects, request.user)
+        .values_list('warehouse_name', flat=True)
+    ))
 
     # Order by most recent
     warehouse_prices = warehouse_prices.order_by('-date_imported')
@@ -1583,7 +1636,7 @@ def price_comparisons(request):
     sort_by = request.GET.get('sort', 'price_difference_desc')
 
     # Build query
-    comparisons = PriceComparison.objects.all()
+    comparisons = _scope_by_workspace(PriceComparison.objects, request.user)
 
     if search_query:
         comparisons = comparisons.filter(
@@ -1720,7 +1773,7 @@ def price_comparison_details(request, comparison_id):
         return JsonResponse({'success': False, 'error': 'Permission denied'})
 
     try:
-        comparison = PriceComparison.objects.get(id=comparison_id)
+        comparison = _scope_by_workspace(PriceComparison.objects, request.user).get(id=comparison_id)
 
         # Calculate highest price for display
         highest_price = comparison.lowest_price
@@ -1768,7 +1821,7 @@ def price_comparisons_marketing(request):
     sort_by = request.GET.get('sort', 'price_difference_desc')
 
     # Build query
-    comparisons = PriceComparison.objects.all()
+    comparisons = _scope_by_workspace(PriceComparison.objects, request.user)
 
     if search_query:
         comparisons = comparisons.filter(
@@ -1873,7 +1926,7 @@ def marketing_analytics_data(request):
 
     try:
         # Get all price comparisons
-        comparisons = PriceComparison.objects.all()
+        comparisons = _scope_by_workspace(PriceComparison.objects, request.user)
 
         # Calculate savings distribution for charts
         savings_distribution = [
@@ -1988,7 +2041,7 @@ def export_marketing_report(request):
     if request.method == 'POST':
         try:
             # Get filtered comparisons
-            comparisons = PriceComparison.objects.all()
+            comparisons = _scope_by_workspace(PriceComparison.objects, request.user)
 
             # Apply same filters as marketing view
             search_query = request.POST.get('search', '').strip()

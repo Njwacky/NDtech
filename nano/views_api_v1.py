@@ -68,6 +68,28 @@ class IsOwnerOrAdmin(permissions.BasePermission):
         return False
 
 
+def _current_workspace(user):
+    """Return the user's workspace, or None if unavailable."""
+    return getattr(getattr(user, 'userprofile', None), 'workspace', None)
+
+
+def _workspace_filtered(queryset, user, workspace_path='workspace'):
+    """Scope a queryset to the current user's workspace.
+
+    Superusers see all rows. Regular users see rows in their own workspace
+    plus legacy rows that have no workspace assigned (workspace IS NULL).
+    """
+    if user.is_superuser:
+        return queryset
+    workspace = _current_workspace(user)
+    if workspace is None:
+        # No workspace assigned: only show legacy/orphaned rows.
+        return queryset.filter(**{f'{workspace_path}__isnull': True})
+    return queryset.filter(
+        Q(**{workspace_path: workspace}) | Q(**{f'{workspace_path}__isnull': True})
+    )
+
+
 class UserViewSet(viewsets.ReadOnlyModelViewSet):
     """ViewSet for User model - read only for API"""
     queryset = User.objects.all()
@@ -85,7 +107,11 @@ class UserViewSet(viewsets.ReadOnlyModelViewSet):
             return User.objects.all()
         try:
             if user.userprofile.role in ['admin', 'manager']:
-                return User.objects.all()
+                # Managers/admins see users within their own workspace.
+                workspace = _current_workspace(user)
+                if workspace is not None:
+                    return User.objects.filter(userprofile__workspace=workspace)
+                return User.objects.filter(userprofile__workspace__isnull=True)
         except UserProfile.DoesNotExist:
             pass
         return User.objects.filter(pk=user.pk)
@@ -136,6 +162,12 @@ class ProductViewSet(viewsets.ModelViewSet):
     ordering_fields = ['name', 'price', 'stock', 'date_added']
     ordering = ['name']
 
+    def get_queryset(self):
+        return _workspace_filtered(Product.objects.all(), self.request.user)
+
+    def perform_create(self, serializer):
+        serializer.save(workspace=_current_workspace(self.request.user))
+
     def get_permissions(self):
         """Custom permissions based on action"""
         if self.action in ['create', 'update', 'partial_update', 'destroy']:
@@ -147,7 +179,7 @@ class ProductViewSet(viewsets.ModelViewSet):
     def low_stock(self, request):
         """Get products with low stock (less than 10)"""
         threshold = request.query_params.get('threshold', 10)
-        products = self.queryset.filter(stock__lt=threshold)
+        products = self.get_queryset().filter(stock__lt=threshold)
         serializer = self.get_serializer(products, many=True)
         return Response(serializer.data)
 
@@ -155,7 +187,7 @@ class ProductViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=['get'])
     def on_sale(self, request):
         """Get products currently on sale"""
-        products = [p for p in self.queryset.all() if p.is_currently_on_sale()]
+        products = [p for p in self.get_queryset() if p.is_currently_on_sale()]
         serializer = self.get_serializer(products, many=True)
         return Response(serializer.data)
 
@@ -163,7 +195,7 @@ class ProductViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=['get'])
     def expired(self, request):
         """Get expired products"""
-        products = [p for p in self.queryset.all() if p.is_expired()]
+        products = [p for p in self.get_queryset() if p.is_expired()]
         serializer = self.get_serializer(products, many=True)
         return Response(serializer.data)
 
@@ -213,21 +245,23 @@ class NotificationViewSet(viewsets.ModelViewSet):
         queryset = Notification.objects.select_related(
             'created_by', 'target_user', 'product'
         ).all()
-        
+
         # Non-admin users only see their own notifications or role-targeted notifications
         if not user.is_superuser:
             try:
                 user_profile = user.userprofile
                 user_role = user_profile.role
-                
+
                 # Filter by user's role or specifically targeted
                 queryset = queryset.filter(
-                    Q(target_user=user) | 
+                    Q(target_user=user) |
                     Q(target_role=user_role)
                 )
             except (UserProfile.DoesNotExist, AttributeError):
                 queryset = queryset.filter(target_user=user)
-        
+
+        # Tenant isolation: never leak another workspace's notifications.
+        queryset = _workspace_filtered(queryset, user)
         return queryset
 
     @extend_schema(summary="Mark notification as read")
@@ -242,7 +276,11 @@ class NotificationViewSet(viewsets.ModelViewSet):
     @extend_schema(summary="Mark all notifications as read")
     @action(detail=False, methods=['post'])
     def mark_all_as_read(self, request):
-        """Mark all user notifications as read"""
+        """Mark all notifications visible to the current user as read.
+
+        This covers both notifications targeted directly at the user and
+        notifications broadcast to the user's role.
+        """
         user_notifications = self.get_queryset().filter(is_read=False)
         count = user_notifications.update(is_read=True)
         return Response({'status': f'marked {count} notifications as read'})
@@ -269,26 +307,26 @@ class ErrorLogViewSet(viewsets.ModelViewSet):
         """Filter error logs based on user role"""
         user = self.request.user
         queryset = ErrorLog.objects.select_related('user', 'resolved_by').all()
-        
+
         # Non-admin users only see their own errors
         if not user.is_superuser:
             queryset = queryset.filter(user=user)
-        
-        return queryset
+
+        return _workspace_filtered(queryset, user)
 
     def get_permissions(self):
         """Custom permissions based on action"""
-        if self.action in ['update', 'partial_update', 'destroy']:
+        if self.action in ['update', 'partial_update', 'destroy', 'resolve']:
             self.permission_classes = [IsAuthenticated, IsAdminOrManager]
         return super().get_permissions()
 
     @extend_schema(summary="Resolve error")
     @action(detail=True, methods=['post'])
     def resolve(self, request, pk=None):
-        """Mark error as resolved"""
+        """Mark error as resolved (managers/admins only)"""
         error = self.get_object()
         resolution_notes = request.data.get('resolution_notes', '')
-        
+
         error.mark_resolved(request.user, resolution_notes)
         return Response({'status': 'error resolved'})
 
@@ -322,6 +360,9 @@ class SecurityAuditLogViewSet(viewsets.ReadOnlyModelViewSet):
     ordering = ['-created_at']
 
     queryset = SecurityAuditLog.objects.select_related('user', 'resolved_by').all()
+
+    def get_queryset(self):
+        return _workspace_filtered(super().get_queryset(), self.request.user)
 
     @extend_schema(summary="Get security statistics")
     @action(detail=False, methods=['get'])
@@ -361,6 +402,14 @@ class FCMTokenViewSet(viewsets.ModelViewSet):
         else:
             return FCMToken.objects.none()
 
+    def perform_create(self, serializer):
+        # Always bind the token to the authenticated user; ignore any
+        # user-supplied value to prevent assigning tokens to other accounts.
+        serializer.save(
+            user=self.request.user,
+            workspace=_current_workspace(self.request.user),
+        )
+
     @extend_schema(summary="Deactivate token")
     @action(detail=True, methods=['post'])
     def deactivate(self, request, pk=None):
@@ -382,6 +431,12 @@ class AirtimeProductViewSet(viewsets.ModelViewSet):
     ordering_fields = ['name', 'value', 'price', 'date_added']
     ordering = ['network', 'value']
 
+    def get_queryset(self):
+        return _workspace_filtered(AirtimeProduct.objects.all(), self.request.user)
+
+    def perform_create(self, serializer):
+        serializer.save(workspace=_current_workspace(self.request.user))
+
     def get_permissions(self):
         """Custom permissions based on action"""
         if self.action in ['create', 'update', 'partial_update', 'destroy']:
@@ -393,7 +448,7 @@ class AirtimeProductViewSet(viewsets.ModelViewSet):
     def low_stock(self, request):
         """Get airtime products with low stock"""
         threshold = request.query_params.get('threshold', 5)
-        products = self.queryset.filter(stock__lt=threshold, is_active=True)
+        products = self.get_queryset().filter(stock__lt=threshold, is_active=True)
         serializer = self.get_serializer(products, many=True)
         return Response(serializer.data)
 
@@ -414,7 +469,7 @@ class AirtimeSaleViewSet(viewsets.ModelViewSet):
         queryset = AirtimeSale.objects.select_related(
             'airtime_product', 'requested_by', 'approved_by'
         ).all()
-        
+
         # Cashiers only see their own sales
         if not user.is_superuser:
             try:
@@ -423,47 +478,61 @@ class AirtimeSaleViewSet(viewsets.ModelViewSet):
                     queryset = queryset.filter(requested_by=user)
             except (UserProfile.DoesNotExist, AttributeError):
                 queryset = queryset.filter(requested_by=user)
-        
-        return queryset
+
+        return _workspace_filtered(queryset, user)
+
+    def perform_create(self, serializer):
+        # The requester is always the authenticated user; new sales start pending.
+        serializer.save(
+            requested_by=self.request.user,
+            status='pending',
+            workspace=_current_workspace(self.request.user),
+        )
+
+    def get_permissions(self):
+        """Approval/rejection is restricted to managers and admins."""
+        if self.action in ('approve', 'reject'):
+            return [IsAuthenticated(), IsAdminOrManager()]
+        return super().get_permissions()
 
     @extend_schema(summary="Approve sale")
     @action(detail=True, methods=['post'])
     def approve(self, request, pk=None):
-        """Approve airtime sale"""
+        """Approve airtime sale (managers/admins only)"""
         sale = self.get_object()
         if sale.status != 'pending':
             return Response(
-                {'error': 'Sale cannot be approved'}, 
+                {'error': 'Sale cannot be approved'},
                 status=status.HTTP_400_BAD_REQUEST
             )
-        
+
         approval_notes = request.data.get('approval_notes', '')
         sale.status = 'approved'
         sale.approved_by = request.user
         sale.approved_at = timezone.now()
         sale.approval_notes = approval_notes
         sale.save()
-        
+
         return Response({'status': 'sale approved'})
 
     @extend_schema(summary="Reject sale")
     @action(detail=True, methods=['post'])
     def reject(self, request, pk=None):
-        """Reject airtime sale"""
+        """Reject airtime sale (managers/admins only)"""
         sale = self.get_object()
         if sale.status != 'pending':
             return Response(
-                {'error': 'Sale cannot be rejected'}, 
+                {'error': 'Sale cannot be rejected'},
                 status=status.HTTP_400_BAD_REQUEST
             )
-        
+
         approval_notes = request.data.get('approval_notes', '')
         sale.status = 'cancelled'
         sale.approved_by = request.user
         sale.approved_at = timezone.now()
         sale.approval_notes = approval_notes
         sale.save()
-        
+
         return Response({'status': 'sale rejected'})
 
 
@@ -478,6 +547,9 @@ class WarehousePriceViewSet(viewsets.ReadOnlyModelViewSet):
     ordering_fields = ['date_imported', 'price', 'product_name']
     ordering = ['-date_imported']
 
+    def get_queryset(self):
+        return _workspace_filtered(super().get_queryset(), self.request.user)
+
 
 class PriceComparisonViewSet(viewsets.ReadOnlyModelViewSet):
     """ViewSet for PriceComparison model - read only"""
@@ -489,12 +561,15 @@ class PriceComparisonViewSet(viewsets.ReadOnlyModelViewSet):
     ordering_fields = ['comparison_date', 'lowest_price', 'price_difference']
     ordering = ['-comparison_date']
 
+    def get_queryset(self):
+        return _workspace_filtered(super().get_queryset(), self.request.user)
+
     @extend_schema(summary="Get top savings")
     @action(detail=False, methods=['get'])
     def top_savings(self, request):
         """Get products with highest savings"""
         limit = int(request.query_params.get('limit', 10))
-        comparisons = self.queryset.order_by('-price_difference')[:limit]
+        comparisons = self.get_queryset().order_by('-price_difference')[:limit]
         serializer = self.get_serializer(comparisons, many=True)
         return Response(serializer.data)
 
@@ -511,6 +586,9 @@ class DataModificationLogViewSet(viewsets.ReadOnlyModelViewSet):
 
     queryset = DataModificationLog.objects.select_related('user').all()
 
+    def get_queryset(self):
+        return _workspace_filtered(super().get_queryset(), self.request.user)
+
 
 class AdminActionLogViewSet(viewsets.ReadOnlyModelViewSet):
     """ViewSet for AdminActionLog model - read only"""
@@ -523,6 +601,9 @@ class AdminActionLogViewSet(viewsets.ReadOnlyModelViewSet):
     ordering = ['-created_at']
 
     queryset = AdminActionLog.objects.select_related('user').all()
+
+    def get_queryset(self):
+        return _workspace_filtered(super().get_queryset(), self.request.user)
 
 
 class APICallLogViewSet(viewsets.ReadOnlyModelViewSet):
@@ -537,12 +618,15 @@ class APICallLogViewSet(viewsets.ReadOnlyModelViewSet):
 
     queryset = APICallLog.objects.select_related('user').all()
 
+    def get_queryset(self):
+        return _workspace_filtered(super().get_queryset(), self.request.user)
+
     @extend_schema(summary="Get slow requests")
     @action(detail=False, methods=['get'])
     def slow_requests(self, request):
         """Get API requests that were slow (> 2 seconds)"""
         threshold = int(request.query_params.get('threshold_ms', 2000))
-        logs = self.queryset.filter(duration_ms__gt=threshold)
+        logs = self.get_queryset().filter(duration_ms__gt=threshold)
         serializer = self.get_serializer(logs, many=True)
         return Response(serializer.data)
 
@@ -550,7 +634,7 @@ class APICallLogViewSet(viewsets.ReadOnlyModelViewSet):
     @action(detail=False, methods=['get'])
     def suspicious(self, request):
         """Get suspicious API requests"""
-        logs = self.queryset.filter(is_suspicious=True)
+        logs = self.get_queryset().filter(is_suspicious=True)
         serializer = self.get_serializer(logs, many=True)
         return Response(serializer.data)
 
@@ -567,10 +651,13 @@ class SensitiveDataAccessLogViewSet(viewsets.ReadOnlyModelViewSet):
 
     queryset = SensitiveDataAccessLog.objects.select_related('user').all()
 
+    def get_queryset(self):
+        return _workspace_filtered(super().get_queryset(), self.request.user)
+
     @extend_schema(summary="Get bulk accesses")
     @action(detail=False, methods=['get'])
     def bulk_accesses(self, request):
         """Get bulk sensitive data accesses"""
-        logs = self.queryset.filter(is_bulk_access=True)
+        logs = self.get_queryset().filter(is_bulk_access=True)
         serializer = self.get_serializer(logs, many=True)
         return Response(serializer.data)

@@ -146,7 +146,9 @@ class FCMTokenSerializer(serializers.ModelSerializer):
         model = FCMToken
         fields = ['id', 'user', 'username', 'token', 'device_id', 'device_type',
                  'is_active', 'created_at', 'last_used']
-        read_only_fields = ['id', 'created_at', 'last_used']
+        # `user` is read-only: the view binds it to the authenticated user to
+        # prevent one user registering tokens for another account.
+        read_only_fields = ['id', 'user', 'created_at', 'last_used']
 
 
 class AirtimeProductSerializer(serializers.ModelSerializer):
@@ -174,7 +176,8 @@ class AirtimeSaleSerializer(serializers.ModelSerializer):
                  'approved_at', 'approval_notes', 'completed_at', 'voucher_code',
                  'created_at']
         read_only_fields = ['id', 'created_at', 'approved_at', 'completed_at',
-                          'approved_by', 'approved_by_username', 'voucher_code']
+                          'approved_by', 'approved_by_username', 'voucher_code',
+                          'requested_by', 'status']
 
 
 class WarehousePriceSerializer(serializers.ModelSerializer):

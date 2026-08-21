@@ -45,14 +45,14 @@ class ProductAPITestCase(APITestCase):
         
         # Create test products
         self.product1 = Product.objects.create(
-            name='Test Product 1',
+            name='Alpha Widget',
             price=Decimal('10.99'),
             category='basic_groceries',
             stock=50,
             barcode='1234567890123'
         , workspace=None)
         self.product2 = Product.objects.create(
-            name='Test Product 2',
+            name='Beta Widget',
             price=Decimal('5.99'),
             category='cold_drinks',
             stock=5,
@@ -71,7 +71,7 @@ class ProductAPITestCase(APITestCase):
         self.client.force_authenticate(user=self.cashier_user)
         response = self.client.get(f'/api/v1/products/{self.product1.id}/')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data['name'], 'Test Product 1')
+        self.assertEqual(response.data['name'], 'Alpha Widget')
 
     def test_create_product_as_manager(self):
         """Test creating a product as manager"""
@@ -130,7 +130,7 @@ class ProductAPITestCase(APITestCase):
     def test_search_products_by_name(self):
         """Test searching products by name"""
         self.client.force_authenticate(user=self.cashier_user)
-        response = self.client.get('/api/v1/products/?search=Product 1')
+        response = self.client.get('/api/v1/products/?search=Alpha Widget')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data['results']), 1)
 
@@ -146,7 +146,7 @@ class ProductAPITestCase(APITestCase):
         self.client.force_authenticate(user=self.cashier_user)
         response = self.client.get('/api/v1/products/barcode_lookup/?barcode=1234567890123')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data['name'], 'Test Product 1')
+        self.assertEqual(response.data['name'], 'Alpha Widget')
 
     def test_barcode_lookup_not_found(self):
         """Test barcode lookup for non-existent product"""
@@ -700,7 +700,7 @@ class WarehousePriceAPITestCase(APITestCase):
         
         # Create test warehouse prices
         self.price1 = WarehousePrice.objects.create(
-            product_name='Test Product 1',
+            product_name='Alpha Widget',
             warehouse_name='Shop A',
             price=Decimal('15.99'),
             barcode='1234567890123',
@@ -708,7 +708,7 @@ class WarehousePriceAPITestCase(APITestCase):
             imported_by=self.user
         )
         self.price2 = WarehousePrice.objects.create(
-            product_name='Test Product 2',
+            product_name='Beta Widget',
             warehouse_name='Shop B',
             price=Decimal('12.99'),
             barcode='1234567890124',
@@ -733,7 +733,7 @@ class WarehousePriceAPITestCase(APITestCase):
     def test_search_by_product_name(self):
         """Test searching by product name"""
         self.client.force_authenticate(user=self.user)
-        response = self.client.get('/api/v1/warehouse-prices/?search=Product 1')
+        response = self.client.get('/api/v1/warehouse-prices/?search=Alpha Widget')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data['results']), 1)
 
@@ -754,7 +754,7 @@ class PriceComparisonAPITestCase(APITestCase):
         
         # Create test price comparisons
         self.comparison1 = PriceComparison.objects.create(
-            product_name='Test Product 1',
+            product_name='Alpha Widget',
             barcode='1234567890123',
             lowest_price=Decimal('12.99'),
             lowest_warehouse='Shop A',
@@ -763,7 +763,7 @@ class PriceComparisonAPITestCase(APITestCase):
             all_prices={'Shop A': '12.99', 'Shop B': '15.99'}
         )
         self.comparison2 = PriceComparison.objects.create(
-            product_name='Test Product 2',
+            product_name='Beta Widget',
             barcode='1234567890124',
             lowest_price=Decimal('8.99'),
             lowest_warehouse='Shop B',
@@ -786,12 +786,12 @@ class PriceComparisonAPITestCase(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data), 2)
         # Should be ordered by price_difference descending
-        self.assertEqual(response.data[0]['product_name'], 'Test Product 1')
+        self.assertEqual(response.data[0]['product_name'], 'Alpha Widget')
 
     def test_search_by_product_name(self):
         """Test searching by product name"""
         self.client.force_authenticate(user=self.user)
-        response = self.client.get('/api/v1/price-comparisons/?search=Product 1')
+        response = self.client.get('/api/v1/price-comparisons/?search=Alpha Widget')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data['results']), 1)
 
@@ -817,18 +817,22 @@ class UserAPITestCase(APITestCase):
         UserProfile.objects.create(user=self.cashier_user, role='cashier')
 
     def test_get_users(self):
-        """Test getting list of users"""
+        """Test getting list of users.
+
+        Cashiers are restricted to their own user record by UserViewSet.
+        """
         self.client.force_authenticate(user=self.cashier_user)
         response = self.client.get('/api/v1/users/')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(response.data['results']), 2)
+        self.assertEqual(len(response.data['results']), 1)
+        self.assertEqual(response.data['results'][0]['username'], 'cashier')
 
     def test_get_current_user_info(self):
         """Test getting current user info"""
         self.client.force_authenticate(user=self.cashier_user)
         response = self.client.get('/api/v1/users/me/')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data['username'], 'cashier_user')
+        self.assertEqual(response.data['username'], 'cashier')
         self.assertEqual(response.data['role'], 'cashier')
 
     def test_search_users_by_username(self):
