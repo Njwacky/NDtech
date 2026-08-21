@@ -1,1 +1,18 @@
-postgresql-x64-17
+#!/usr/bin/env bash
+# Start the NDtech POS development environment.
+# (This file previously contained only a stray "postgresql-x64-17" string.)
+set -euo pipefail
+
+echo "==> NDtech POS startup"
+
+# 1. Start PostgreSQL if you use Postgres in development (adjust for your OS):
+#      Linux : sudo service postgresql start
+#      macOS : brew services start postgresql
+#      Windows: net start postgresql-x64-17
+#    Skipped by default so this also works with the SQLite dev setup.
+
+# 2. Apply database migrations.
+python manage.py migrate --noinput
+
+# 3. Run the Django development server.
+exec python manage.py runserver 0.0.0.0:8000
