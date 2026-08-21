@@ -117,6 +117,7 @@ def upc_lookup_detail(request, barcode):
 
 @login_required
 def upc_lookup(request):
+    workspace = getattr(request.user.userprofile, 'workspace', None) if hasattr(getattr(request, 'user', None), 'userprofile') else None
     """UPC lookup interface for adding products to stock"""
     # Allow only superusers or users with admin/manager/cashier roles
     if not (request.user.is_superuser or (hasattr(request.user, 'userprofile') and request.user.userprofile.role in ['admin', 'manager', 'cashier'])):

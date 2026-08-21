@@ -1,25 +1,55 @@
+import json
+import re
+import logging
+from decimal import Decimal, InvalidOperation
+
+from django.contrib.auth.decorators import login_required
+from django.http import JsonResponse, HttpResponseForbidden
+from django.db.models import Q
+from django.contrib.auth.models import User
+from django.utils import timezone
+
+from .models import AirtimeProduct, AirtimeSale, UserActivity, Notification
+from .fcm_service import send_fcm_notification_to_user
+
+logger = logging.getLogger(__name__)
+
+
+def _get_workspace(request):
+    try:
+        return getattr(request.user.userprofile, 'workspace', None) if hasattr(getattr(request, 'user', None), 'userprofile') else None
+    except Exception:
+        return None
+
+
 @login_required
 def cashier_airtime_quick_sell(request):
     """Cashier airtime quick sell page"""
-    user_profile = request.user.userprofile
+    try:
+        user_profile = request.user.userprofile
+    except Exception:
+        return HttpResponseForbidden("User profile not found")
     
     # Check if user is cashier
     if user_profile.role != 'cashier':
         return HttpResponseForbidden("Only cashiers can access this page")
     
     # Get available credit (this would come from manager-provided credit)
-    # For now, we'll use a default value or get from a credit model
-    available_credit = 0.00  # This should be replaced with actual credit logic
+    available_credit = 0.00
     
     context = {
         'available_credit': available_credit
     }
     
+    from django.shortcuts import render
     return render(request, 'nano/cashier_airtime_quick_sell.html', context)
+
 
 @login_required
 def process_cashier_airtime_sale(request):
     """Process cashier airtime sale"""
+    workspace = _get_workspace(request)
+
     if request.method != 'POST':
         return JsonResponse({'success': False, 'error': 'Only POST requests are supported'})
     
@@ -27,11 +57,9 @@ def process_cashier_airtime_sale(request):
         data = json.loads(request.body)
         user_profile = request.user.userprofile
         
-        # Check if user is cashier
         if user_profile.role != 'cashier':
             return JsonResponse({'success': False, 'error': 'Only cashiers can process sales'})
         
-        # Extract sale data
         network = data.get('network')
         amount = Decimal(str(data.get('amount', 0)))
         sale_type = data.get('type', 'airtime')
@@ -40,64 +68,63 @@ def process_cashier_airtime_sale(request):
         product_name = data.get('product_name')
         use_credit = data.get('use_credit', False)
         
-        # Validation
         if not all([network, amount, sale_type, price, customer_phone, product_name]):
             return JsonResponse({'success': False, 'error': 'Missing required fields'})
         
         if amount <= 0 or price <= 0:
             return JsonResponse({'success': False, 'error': 'Invalid amount or price'})
         
-        # Validate phone number
         if not re.match(r'^[0-9]{10,15}$', customer_phone):
             return JsonResponse({'success': False, 'error': 'Invalid phone number format'})
         
-        # Check credit availability if using credit
         if use_credit:
-            # This should check against actual credit balance
-            available_credit = Decimal('0.00')  # Replace with actual credit logic
+            available_credit = Decimal('0.00')
             if price > available_credit:
                 return JsonResponse({'success': False, 'error': 'Insufficient credit balance'})
         
-        # Create or get airtime product
+        # Create or get airtime product - map to correct model fields
         airtime_product, created = AirtimeProduct.objects.get_or_create(
             network=network,
-            amount=amount,
-            product_type=sale_type,
+            value=amount,
+            airtime_type=sale_type,
             defaults={
+                'name': product_name,
                 'price': price,
-                'stock': 999999,  # Unlimited stock for quick sell
-                'is_active': True
+                'stock': 999999,
+                'is_active': True,
+                'workspace': workspace
             }
-        , workspace=workspace)
+        )
         
         if not created and airtime_product.price != price:
-            # Update price if different
             airtime_product.price = price
             airtime_product.save()
         
-        # Create airtime sale
+        # Create airtime sale with correct fields
         airtime_sale = AirtimeSale.objects.create(
-            product=airtime_product,
-            seller=request.user,
-            customer_phone=customer_phone,
+            airtime_product=airtime_product,
             quantity=1,
             total_price=price,
-            status='completed',  # Immediate completion for cashier sales
-            sale_type='cashier_quick',
-            network=network,
-            amount=amount,
-            product_type=sale_type
-        , workspace=workspace)
+            customer_phone=customer_phone,
+            status='completed',
+            requested_by=request.user,
+            approved_by=request.user,
+            approved_at=timezone.now(),
+            approval_notes=f'Quick cashier sale: {product_name}',
+            workspace=workspace
+        )
         
-        # Log user activity
         UserActivity.objects.create(
             user=request.user,
-            action='airtime_sale',
-            details=f'Quick airtime sale: {product_name} to {customer_phone}',
-            ip_address=request.META.get('REMOTE_ADDR', '')
-        , workspace=workspace)
+            activity_type='payment',
+            description=f'Quick airtime sale: {product_name} to {customer_phone}',
+            page_url='/airtime/cashier-quick-sell/',
+            ip_address=request.META.get('REMOTE_ADDR'),
+            user_agent=request.META.get('HTTP_USER_AGENT', ''),
+            metadata={'product_name': product_name, 'customer_phone': customer_phone, 'price': str(price)},
+            workspace=workspace
+        )
         
-        # Create notification for managers
         manager_users = User.objects.filter(
             Q(userprofile__role='manager') | Q(is_superuser=True)
         ).distinct()
@@ -106,10 +133,15 @@ def process_cashier_airtime_sale(request):
             notification = Notification.objects.create(
                 title=f'Quick Airtime Sale: {product_name}',
                 message=f'Cashier {request.user.username} completed quick sale: {product_name} to {customer_phone} for R{price}',
-                notification_type='airtime_sale',
-                target_user=manager
-            , workspace=workspace)
-            send_fcm_notification_to_user(manager, notification.title, notification.message)
+                notification_type='system_alert',
+                target_role='manager',
+                target_user=manager,
+                workspace=workspace
+            )
+            try:
+                send_fcm_notification_to_user(manager, notification.title, notification.message)
+            except Exception:
+                pass
         
         return JsonResponse({
             'success': True,
@@ -125,9 +157,12 @@ def process_cashier_airtime_sale(request):
         logger.error(f"Error processing cashier airtime sale: {str(e)}")
         return JsonResponse({'success': False, 'error': 'An error occurred while processing sale'})
 
+
 @login_required
 def process_quick_airtime_sale(request):
     """Process quick airtime sale from airtime management page"""
+    workspace = _get_workspace(request)
+
     if request.method != 'POST':
         return JsonResponse({'success': False, 'error': 'Only POST requests are supported'})
     
@@ -135,11 +170,9 @@ def process_quick_airtime_sale(request):
         data = json.loads(request.body)
         user_profile = request.user.userprofile
         
-        # Check if user has permission (manager, admin, or superuser)
         if user_profile.role not in ['manager', 'admin'] and not request.user.is_superuser:
             return JsonResponse({'success': False, 'error': 'Permission denied'})
         
-        # Extract sale data
         network = data.get('network')
         amount = Decimal(str(data.get('amount', 0)))
         sale_type = data.get('type', 'airtime')
@@ -147,55 +180,55 @@ def process_quick_airtime_sale(request):
         customer_phone = data.get('customer_phone')
         product_name = data.get('product_name')
         
-        # Validation
         if not all([network, amount, sale_type, price, customer_phone, product_name]):
             return JsonResponse({'success': False, 'error': 'Missing required fields'})
         
         if amount <= 0 or price <= 0:
             return JsonResponse({'success': False, 'error': 'Invalid amount or price'})
         
-        # Validate phone number
         if not re.match(r'^[0-9]{10,15}$', customer_phone):
             return JsonResponse({'success': False, 'error': 'Invalid phone number format'})
         
-        # Create or get airtime product
         airtime_product, created = AirtimeProduct.objects.get_or_create(
             network=network,
-            amount=amount,
-            product_type=sale_type,
+            value=amount,
+            airtime_type=sale_type,
             defaults={
+                'name': product_name,
                 'price': price,
-                'stock': 999999,  # Unlimited stock for quick sell
-                'is_active': True
+                'stock': 999999,
+                'is_active': True,
+                'workspace': workspace
             }
-        , workspace=workspace)
+        )
         
         if not created and airtime_product.price != price:
-            # Update price if different
             airtime_product.price = price
             airtime_product.save()
         
-        # Create airtime sale
         airtime_sale = AirtimeSale.objects.create(
-            product=airtime_product,
-            seller=request.user,
-            customer_phone=customer_phone,
+            airtime_product=airtime_product,
             quantity=1,
             total_price=price,
-            status='completed',  # Immediate completion for quick sales
-            sale_type='manager_quick',
-            network=network,
-            amount=amount,
-            product_type=sale_type
-        , workspace=workspace)
+            customer_phone=customer_phone,
+            status='completed',
+            requested_by=request.user,
+            approved_by=request.user,
+            approved_at=timezone.now(),
+            approval_notes=f'Quick manager sale: {product_name}',
+            workspace=workspace
+        )
         
-        # Log user activity
         UserActivity.objects.create(
             user=request.user,
-            action='airtime_sale',
-            details=f'Quick airtime sale: {product_name} to {customer_phone}',
-            ip_address=request.META.get('REMOTE_ADDR', '')
-        , workspace=workspace)
+            activity_type='payment',
+            description=f'Quick airtime sale: {product_name} to {customer_phone}',
+            page_url='/airtime/management/',
+            ip_address=request.META.get('REMOTE_ADDR'),
+            user_agent=request.META.get('HTTP_USER_AGENT', ''),
+            metadata={'product_name': product_name, 'customer_phone': customer_phone, 'price': str(price)},
+            workspace=workspace
+        )
         
         return JsonResponse({
             'success': True,

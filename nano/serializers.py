@@ -372,6 +372,7 @@ class CompletedOrderSerializer(serializers.ModelSerializer):
                 return
             
             # Log the access
+            ws = getattr(getattr(user, 'userprofile', None), 'workspace', None)
             SensitiveDataAccessLog.objects.create(
                 user=user,
                 data_type='personal_info',
@@ -384,8 +385,9 @@ class CompletedOrderSerializer(serializers.ModelSerializer):
                 user_agent=request.META.get('HTTP_USER_AGENT', ''),
                 request_url=request.build_absolute_uri(),
                 access_reason=f'Order {action_type} operation',
-                legal_basis='legitimate_interest'
-            , workspace=workspace)
+                legal_basis='legitimate_interest',
+                workspace=ws
+            )
         except Exception as e:
             # Don't let logging errors break the main functionality
             import logging
@@ -425,6 +427,7 @@ class CustomerDataExportSerializer(serializers.Serializer):
             # Log the export
             request = self.context.get('request')
             if request and hasattr(request, 'user') and not request.user.is_anonymous:
+                ws = getattr(getattr(request.user, 'userprofile', None), 'workspace', None)
                 SensitiveDataAccessLog.objects.create(
                     user=request.user,
                     data_type='personal_info',
@@ -437,8 +440,9 @@ class CustomerDataExportSerializer(serializers.Serializer):
                     user_agent=request.META.get('HTTP_USER_AGENT', ''),
                     request_url=request.build_absolute_uri(),
                     access_reason='Customer data export',
-                    legal_basis='legitimate_interest'
-                , workspace=workspace)
+                    legal_basis='legitimate_interest',
+                    workspace=ws
+                )
             
             # Return encrypted data
             return {

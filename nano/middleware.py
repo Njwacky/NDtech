@@ -50,9 +50,13 @@ def _get_workspace_from_request(request):
         return None
 
 
-# Ensure `workspace` is always defined for legacy code paths.
-# Most workspace-scoped logging can treat None as "no workspace".
-workspace = None
+def _get_request_from_thread():
+    """Get current request from thread local if available"""
+    try:
+        from threading import current_thread
+        return getattr(current_thread(), 'request', None)
+    except Exception:
+        return None
 
 
 class SecurityAuditMiddleware(MiddlewareMixin):
@@ -132,7 +136,8 @@ class SecurityAuditMiddleware(MiddlewareMixin):
                     user_agent=context['user_agent'],
                     request_data=self._sanitize_request_data(request),
                     detection_method='middleware_exception',
-                 workspace=workspace)
+                    workspace=_get_workspace_from_request(request)
+                )
         except Exception as e:
             logger.error(f"Error logging exception: {str(e)}")
         
@@ -173,14 +178,29 @@ class SecurityAuditMiddleware(MiddlewareMixin):
         }
 
     def _sanitize_request_data(self, request):
-        """Remove sensitive data from request data"""
+        """Remove sensitive data from request data - safe for DRF which may have consumed body"""
         data = {}
-        
-        if hasattr(request, 'POST') and request.POST:
-            data.update(dict(request.POST))
-        
-        if hasattr(request, 'GET') and request.GET:
-            data.update(dict(request.GET))
+        try:
+            # GET is always safe
+            if hasattr(request, 'GET') and request.GET:
+                data.update(dict(request.GET))
+        except Exception:
+            pass
+
+        try:
+            # POST may fail if body already read by DRF; wrap safely
+            if hasattr(request, 'POST'):
+                post_data = getattr(request, 'POST', None)
+                if post_data:
+                    # Convert QueryDict to dict safely
+                    try:
+                        data.update(dict(post_data))
+                    except Exception:
+                        # If POST is not accessible, skip
+                        pass
+        except Exception:
+            # Body already consumed (e.g., DRF JSON), skip POST
+            pass
         
         # Remove sensitive fields
         sensitive_keys = ['password', 'token', 'secret', 'key', 'csrfmiddlewaretoken']
@@ -259,7 +279,8 @@ class SecurityAuditMiddleware(MiddlewareMixin):
                 authentication_method=self._get_auth_method(request) or 'unknown',
                 is_suspicious=is_suspicious,
                 security_flags=security_flags,
-             workspace=workspace)
+                workspace=_get_workspace_from_request(request)
+            )
 
         except Exception as e:
             logger.error(f"Error logging API call: {str(e)}")
@@ -269,6 +290,18 @@ class SecurityAuditMiddleware(MiddlewareMixin):
         try:
             # Check for failed authentication
             if (response.status_code == 401 or response.status_code == 403) and not request.user.is_authenticated:
+                # Safely get username attempted without triggering body-read errors
+                username_attempted = ''
+                try:
+                    username_attempted = request.GET.get('username', '')
+                except Exception:
+                    pass
+                try:
+                    if not username_attempted and hasattr(request, 'POST'):
+                        username_attempted = request.POST.get('username', '')
+                except Exception:
+                    pass
+
                 SecurityAuditLog.objects.create(
                     user=None,
                     event_type='login_failed',
@@ -276,10 +309,11 @@ class SecurityAuditMiddleware(MiddlewareMixin):
                     description=f"Failed authentication attempt to {request.path}",
                     ip_address=context['ip_address'],
                     user_agent=context['user_agent'],
-                    username_attempted=request.POST.get('username', request.GET.get('username', '')),
+                    username_attempted=username_attempted,
                     request_data=self._sanitize_request_data(request),
                     detection_method='middleware_response',
-                 workspace=workspace)
+                    workspace=_get_workspace_from_request(request)
+                )
 
             # Check for suspicious patterns
             if self._is_suspicious_request(request, response):
@@ -292,7 +326,8 @@ class SecurityAuditMiddleware(MiddlewareMixin):
                     user_agent=context['user_agent'],
                     request_data=self._sanitize_request_data(request),
                     detection_method='pattern_detection',
-                 workspace=workspace)
+                    workspace=_get_workspace_from_request(request)
+                )
 
         except Exception as e:
             logger.error(f"Error logging security event: {str(e)}")
@@ -321,28 +356,41 @@ class SecurityAuditMiddleware(MiddlewareMixin):
                                 user_agent=context['user_agent'],
                                 request_url=request.get_full_path(),
                                 session_key=(getattr(request.session, 'session_key', '') or '') if hasattr(request, 'session') else '',
-                             workspace=workspace)
+                                workspace=_get_workspace_from_request(request)
+                            )
                             break
 
         except Exception as e:
             logger.error(f"Error logging sensitive data access: {str(e)}")
 
     def _is_suspicious_request(self, request, response):
-        """Check if request has suspicious patterns"""
-        suspicious_patterns = [
+        """Check if request has suspicious patterns - safe for DRF"""
+        try:
             # SQL injection patterns
-            lambda r: any(pattern in r.path.lower() for pattern in ['union select', 'drop table', 'insert into']),
+            if any(pattern in request.path.lower() for pattern in ['union select', 'drop table', 'insert into']):
+                return True
             # XSS patterns
-            lambda r: any(pattern in r.path.lower() for pattern in ['<script', 'javascript:', 'onload=']),
+            if any(pattern in request.path.lower() for pattern in ['<script', 'javascript:', 'onload=']):
+                return True
             # Path traversal
-            lambda r: '../' in r.path,
+            if '../' in request.path:
+                return True
             # Unusual user agents
-            lambda r: any(pattern in r.META.get('HTTP_USER_AGENT', '').lower() for pattern in ['sqlmap', 'nmap', 'nikto']),
-            # Large request bodies
-            lambda r: hasattr(r, 'body') and len(r.body) > 10000000,  # 10MB
-        ]
-        
-        return any(pattern(request) for pattern in suspicious_patterns)
+            ua = request.META.get('HTTP_USER_AGENT', '').lower()
+            if any(pattern in ua for pattern in ['sqlmap', 'nmap', 'nikto']):
+                return True
+            # Large request bodies - safely check without triggering body-read error
+            try:
+                if hasattr(request, 'body'):
+                    body_len = len(request.body)
+                    if body_len > 10000000:
+                        return True
+            except Exception:
+                # Body already consumed by DRF, skip this check
+                pass
+            return False
+        except Exception:
+            return False
 
     def _get_headers(self, request):
         """Extract relevant headers"""
@@ -419,7 +467,8 @@ def log_user_login(sender, request, user, **kwargs):
             user_agent=request.META.get('HTTP_USER_AGENT', ''),
             session_key=(getattr(request.session, 'session_key', '') or '') if hasattr(request, 'session') else '',
             detection_method='django_signal',
-         workspace=workspace)
+            workspace=_get_workspace_from_request(request)
+        )
     except Exception as e:
         logger.error(f"Error logging user login: {str(e)}")
 
@@ -439,7 +488,8 @@ def log_user_logout(sender, request, user, **kwargs):
             user_agent=request.META.get('HTTP_USER_AGENT', ''),
             session_key=(getattr(request.session, 'session_key', '') or '') if hasattr(request, 'session') else '',
             detection_method='django_signal',
-         workspace=workspace)
+            workspace=_get_workspace_from_request(request)
+        )
     except Exception as e:
         logger.error(f"Error logging user logout: {str(e)}")
 
@@ -463,7 +513,8 @@ def log_failed_login(sender, credentials, request, **kwargs):
             username_attempted=credentials.get('username', ''),
             request_data={'username': credentials.get('username', '')},
             detection_method='django_signal',
-         workspace=workspace)
+            workspace=_get_workspace_from_request(request)
+        )
     except Exception as e:
         logger.error(f"Error logging failed login: {str(e)}")
 
@@ -509,14 +560,7 @@ def log_data_modification(sender, instance, **kwargs):
                 }
 
         if changed_fields:
-            # Get current request
-            from django.http import HttpRequest
-            # Try to get current request from thread local
-            try:
-                from threading import current_thread
-                request = getattr(current_thread(), 'request', None)
-            except:
-                request = None
+            request = _get_request_from_thread()
             
             # Determine sensitivity level
             sensitivity = 'medium'
@@ -545,8 +589,6 @@ def log_data_modification(sender, instance, **kwargs):
                 try:
                     object_id = int(instance.pk)
                 except (ValueError, TypeError):
-                    # For non-integer primary keys (like session IDs), store as None
-                    # and include the actual ID in object_repr
                     object_id = None
 
             DataModificationLog.objects.create(
@@ -563,7 +605,8 @@ def log_data_modification(sender, instance, **kwargs):
                 request_url=request_url or '',
                 old_values={field: data['old'] for field, data in changed_fields.items()},
                 new_values={field: data['new'] for field, data in changed_fields.items()},
-             workspace=workspace)
+                workspace=_get_workspace_from_request(request)
+            )
 
     except Exception as e:
         logger.error(f"Error logging data modification: {str(e)}")
@@ -583,7 +626,6 @@ def log_data_creation(sender, instance, created, **kwargs):
             return
 
         # Skip during migrations or maintenance
-        from django.core.management import execute_from_command_line
         import sys
         import os
         if 'migrate' in sys.argv or 'makemigrations' in sys.argv or 'deploy_fix.py' in sys.argv[0]:
@@ -591,12 +633,7 @@ def log_data_creation(sender, instance, created, **kwargs):
         if os.environ.get('DJANGO_MAINTENANCE_MODE') == 'True':
             return
 
-        # Get current request
-        try:
-            from threading import current_thread
-            request = getattr(current_thread(), 'request', None)
-        except:
-            request = None
+        request = _get_request_from_thread()
 
         # Determine sensitivity level
         sensitivity = 'medium'
@@ -623,8 +660,6 @@ def log_data_creation(sender, instance, created, **kwargs):
             try:
                 object_id = int(instance.pk)
             except (ValueError, TypeError):
-                # For non-integer primary keys (like session IDs), store as None
-                # and include the actual ID in object_repr
                 object_id = None
 
         DataModificationLog.objects.create(
@@ -642,7 +677,8 @@ def log_data_creation(sender, instance, created, **kwargs):
                 field.name: str(getattr(instance, field.name))
                 for field in instance._meta.fields
             },
-         workspace=workspace)
+            workspace=_get_workspace_from_request(request)
+        )
 
     except Exception as e:
         logger.error(f"Error logging data creation: {str(e)}")
@@ -654,8 +690,6 @@ def log_data_deletion(sender, instance, **kwargs):
     if not _audit_table_ready():
         return
     try:
-        # Skip logging for audit models themselves
-        # Skip logging for audit models themselves
         if sender.__name__ in ['SecurityAuditLog', 'DataModificationLog', 'AdminActionLog', 'APICallLog', 'SensitiveDataAccessLog']:
             return
 
@@ -667,12 +701,7 @@ def log_data_deletion(sender, instance, **kwargs):
         if os.environ.get('DJANGO_MAINTENANCE_MODE') == 'True':
             return
 
-        # Get current request
-        try:
-            from threading import current_thread
-            request = getattr(current_thread(), 'request', None)
-        except:
-            request = None
+        request = _get_request_from_thread()
 
         # Determine sensitivity level
         sensitivity = 'medium'
@@ -699,8 +728,6 @@ def log_data_deletion(sender, instance, **kwargs):
             try:
                 object_id = int(instance.pk)
             except (ValueError, TypeError):
-                # For non-integer primary keys (like session IDs), store as None
-                # and include the actual ID in object_repr
                 object_id = None
 
         DataModificationLog.objects.create(
@@ -718,7 +745,8 @@ def log_data_deletion(sender, instance, **kwargs):
                 field.name: str(getattr(instance, field.name))
                 for field in instance._meta.fields
             },
-         workspace=workspace)
+            workspace=_get_workspace_from_request(request)
+        )
 
     except Exception as e:
         logger.error(f"Error logging data deletion: {str(e)}")
