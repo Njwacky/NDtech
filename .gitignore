@@ -214,3 +214,13 @@ google-credentials.json
 *users*.csv
 *customers*.csv
 *sales*.csv
+
+# Next.js build output (frontend)
+frontend/.next/
+
+# TypeScript incremental build info
+*.tsbuildinfo
+
+# Stray root npm files (removed from tracking)
+/package.json
+/package-lock.json
