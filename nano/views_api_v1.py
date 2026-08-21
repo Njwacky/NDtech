@@ -282,10 +282,25 @@ class ErrorLogViewSet(viewsets.ModelViewSet):
             self.permission_classes = [IsAuthenticated, IsAdminOrManager]
         return super().get_permissions()
 
+    # 5-Whys (server-side user stamping):
+    # 1. Why perform_create? POSTs returned 400 because the serializer demanded a 'user' the client can no longer send.
+    # 2. Why not let clients send it? Self-reported identity makes error attribution forgeable.
+    # 3. Why request.user? The session/auth layer already verified it - single source of truth.
+    # 4. Why here and not the serializer? DRF convention: request context belongs to the view layer.
+    def perform_create(self, serializer):
+        """Attribute new error logs to the authenticated requester."""
+        serializer.save(user=self.request.user)
+
+    # 5-Whys (resolve restricted to admin/manager):
+    # 1. Why restrict? Any cashier could mark errors resolved, hiding incidents from review.
+    # 2. Why is that a risk? Error resolution is a QA/ops sign-off, not a self-service action.
+    # 3. Why at the action? get_permissions() only covered update/delete, not custom actions.
+    # 4. Why explicit permission_classes? DRF actions silently inherit the weakest viewset default.
     @extend_schema(summary="Resolve error")
-    @action(detail=True, methods=['post'])
+    @action(detail=True, methods=['post'],
+            permission_classes=[IsAuthenticated, IsAdminOrManager])
     def resolve(self, request, pk=None):
-        """Mark error as resolved"""
+        """Mark error as resolved (admin/manager only)"""
         error = self.get_object()
         resolution_notes = request.data.get('resolution_notes', '')
         
@@ -361,6 +376,15 @@ class FCMTokenViewSet(viewsets.ModelViewSet):
         else:
             return FCMToken.objects.none()
 
+    # 5-Whys (server-side token ownership):
+    # 1. Why perform_create? Token registration 400'd - the client cannot (and must not) supply 'user'.
+    # 2. Why must ownership be server-set? Push tokens route notifications; a spoofed owner leaks another user's alerts to a foreign device.
+    # 3. Why does get_queryset alone not protect? It scopes reads/updates, but create had no ownership rule at all.
+    # 4. Why request.user? It is the only identity the auth stack has actually verified.
+    def perform_create(self, serializer):
+        """Bind new FCM tokens to the authenticated requester."""
+        serializer.save(user=self.request.user)
+
     @extend_schema(summary="Deactivate token")
     @action(detail=True, methods=['post'])
     def deactivate(self, request, pk=None):
@@ -426,10 +450,25 @@ class AirtimeSaleViewSet(viewsets.ModelViewSet):
         
         return queryset
 
+    # 5-Whys (server-side requester stamping):
+    # 1. Why perform_create? Sale creation 400'd because 'requested_by' was a required client field.
+    # 2. Why not client-supplied? A cashier could book sales under a colleague's name, corrupting the approval trail.
+    # 3. Why force status='pending'? Every sale must enter the workflow at the start; the approve/reject actions are the only exits.
+    # 4. Why both here? Creation is the single choke point where workflow invariants can be guaranteed.
+    def perform_create(self, serializer):
+        """Create sales as the authenticated requester, always entering the workflow as 'pending'."""
+        serializer.save(requested_by=self.request.user, status='pending')
+
+    # 5-Whys (privilege escalation fix):
+    # 1. Why restrict? Cashiers could approve their own airtime sales (fraud path).
+    # 2. Why possible? @action inherited the viewset's IsAuthenticated-only permissions.
+    # 3. Why inherited? DRF actions reuse permission_classes unless explicitly overridden.
+    # 4. Why override here? Approval is a supervisory decision - only admin/manager may grant it.
     @extend_schema(summary="Approve sale")
-    @action(detail=True, methods=['post'])
+    @action(detail=True, methods=['post'],
+            permission_classes=[IsAuthenticated, IsAdminOrManager])
     def approve(self, request, pk=None):
-        """Approve airtime sale"""
+        """Approve airtime sale (admin/manager only - cashiers must not self-approve)"""
         sale = self.get_object()
         if sale.status != 'pending':
             return Response(
@@ -446,10 +485,16 @@ class AirtimeSaleViewSet(viewsets.ModelViewSet):
         
         return Response({'status': 'sale approved'})
 
+    # 5-Whys (privilege escalation fix):
+    # 1. Why restrict? Rejection alters another user's sale record - a supervisory act.
+    # 2. Why enforce in code? Queryset scoping alone still let cashiers reject their own rows.
+    # 3. Why not trust the client? API consumers can call any endpoint regardless of UI.
+    # 4. Why same rule as approve? Approve/reject are one decision surface; split rules invite gaps.
     @extend_schema(summary="Reject sale")
-    @action(detail=True, methods=['post'])
+    @action(detail=True, methods=['post'],
+            permission_classes=[IsAuthenticated, IsAdminOrManager])
     def reject(self, request, pk=None):
-        """Reject airtime sale"""
+        """Reject airtime sale (admin/manager only)"""
         sale = self.get_object()
         if sale.status != 'pending':
             return Response(

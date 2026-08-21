@@ -214,3 +214,21 @@ google-credentials.json
 *users*.csv
 *customers*.csv
 *sales*.csv
+
+# --- Re-include intentional project files caught by broad rules above ---
+# 5-Whys (negation block):
+# 1. Why negate? Broad patterns (lib/, .dockerignore, *import*.csv) also matched
+#    files the project deliberately ships, leaving them "tracked but ignored".
+# 2. Why is that state harmful? git add stops picking up changes silently and
+#    cleanup tooling (git rm --cached on ignored files) would delete real source.
+# 3. Why not narrow the originals? They guard real risks (Python build dirs,
+#    sensitive CSV exports); negating specific safe paths is the smaller change.
+# 4. Why these four? frontend/src/lib is app source, .dockerignore drives the
+#    Render Docker build, sample_*_import_test.csv are synthetic fixtures with
+#    no customer data, .mcp.json holds only env-var placeholders.
+!frontend/src/lib/
+!.dockerignore
+!sample_airtime_import_test.csv
+!sample_general_import_test.csv
+!sample_warehouse_import_test.csv
+!.mcp.json

@@ -109,6 +109,12 @@ class ErrorLogSerializer(serializers.ModelSerializer):
     username = serializers.CharField(source='user.username', read_only=True)
     resolved_by_username = serializers.CharField(source='resolved_by.username', read_only=True)
     occurrence_count = serializers.IntegerField(read_only=True)
+    # 5-Whys (accept relative URLs):
+    # 1. Why override? Model URLField rejects '/pos/checkout/' style paths with 400.
+    # 2. Why do clients send paths? Browser error reporters send window.location.pathname.
+    # 3. Why not change the model? A serializer override avoids a schema migration for a validation rule.
+    # 4. Why CharField(max_length=200)? Matches URLField's DB column, so no truncation risk.
+    url = serializers.CharField(max_length=200)
     
     class Meta:
         model = ErrorLog
@@ -119,7 +125,12 @@ class ErrorLogSerializer(serializers.ModelSerializer):
                  'form_data', 'is_resolved', 'resolution_notes', 'resolved_by',
                  'resolved_by_username', 'resolved_at', 'created_at', 'updated_at',
                  'occurrence_count']
-        read_only_fields = ['id', 'created_at', 'updated_at', 'resolved_at',
+        # 5-Whys ('user' made read-only):
+        # 1. Why read-only? A writable 'user' let any client attribute errors to any account.
+        # 2. Why does that matter? Audit/error trails must be tamper-proof to be trustworthy.
+        # 3. Why was it required before? ModelSerializer auto-exposed the FK, breaking POSTs with a 400.
+        # 4. Why is the server authoritative? perform_create() stamps request.user - identity comes from the session, never the payload.
+        read_only_fields = ['id', 'user', 'created_at', 'updated_at', 'resolved_at',
                           'resolved_by', 'occurrence_count']
 
 
@@ -146,7 +157,12 @@ class FCMTokenSerializer(serializers.ModelSerializer):
         model = FCMToken
         fields = ['id', 'user', 'username', 'token', 'device_id', 'device_type',
                  'is_active', 'created_at', 'last_used']
-        read_only_fields = ['id', 'created_at', 'last_used']
+        # 5-Whys ('user' made read-only):
+        # 1. Why read-only? A writable 'user' let a client register a push token under another account.
+        # 2. Why is that dangerous? The attacker's device would then receive that user's notifications.
+        # 3. Why was registration also broken? The auto-generated required 'user' field 400'd every normal POST.
+        # 4. Why fix in the serializer? Token ownership is derived from the session (perform_create), never client input.
+        read_only_fields = ['id', 'user', 'created_at', 'last_used']
 
 
 class AirtimeProductSerializer(serializers.ModelSerializer):
@@ -173,8 +189,17 @@ class AirtimeSaleSerializer(serializers.ModelSerializer):
                  'requested_by_username', 'approved_by', 'approved_by_username',
                  'approved_at', 'approval_notes', 'completed_at', 'voucher_code',
                  'created_at']
-        read_only_fields = ['id', 'created_at', 'approved_at', 'completed_at',
-                          'approved_by', 'approved_by_username', 'voucher_code']
+        # 5-Whys ('requested_by' and 'status' made read-only):
+        # 1. Why 'requested_by' read-only? Writable, it both 400'd honest clients (required field)
+        #    and let dishonest ones book sales against other cashiers.
+        # 2. Why 'status' read-only? A cashier could PATCH {'status': 'approved'} on their own
+        #    sale, silently bypassing the approve/reject workflow (verified exploitable).
+        # 3. Why route transitions through actions? approve()/reject() enforce role checks and
+        #    stamp approved_by/approved_at - a bare field write records no accountability.
+        # 4. Why keep both in 'fields'? Clients still need to READ who requested and the current
+        #    state; read-only removes the write path without breaking API consumers.
+        read_only_fields = ['id', 'status', 'requested_by', 'created_at', 'approved_at',
+                          'completed_at', 'approved_by', 'approved_by_username', 'voucher_code']
 
 
 class WarehousePriceSerializer(serializers.ModelSerializer):
