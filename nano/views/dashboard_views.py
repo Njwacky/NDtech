@@ -21,14 +21,18 @@ def check_low_stock():
         ).distinct()
 
         for admin_user in admin_users:
+            prod_workspace = getattr(product, 'workspace', None)
+            if prod_workspace is None:
+                prod_workspace = getattr(getattr(admin_user, 'userprofile', None), 'workspace', None)
             notification = Notification.objects.create(
                 title=f"Low Stock Alert: {product.name}",
                 message=f"Low stock alert: {product.name} has only {product.stock} units remaining",
                 notification_type='low_stock',
                 target_role='admin',  # Default to admin role
                 target_user=admin_user,
-                product=product
-            , workspace=workspace)
+                product=product,
+                workspace=prod_workspace
+            )
 
             # Send FCM notification
             send_fcm_notification_to_user(notification.target_user, notification.title, notification.message)

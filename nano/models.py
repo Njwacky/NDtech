@@ -469,8 +469,8 @@ class ErrorLog(models.Model):
     user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='errors')
     device_connection = models.ForeignKey(DeviceConnection, on_delete=models.SET_NULL, null=True, blank=True)
     
-    # Request information
-    url = models.URLField()
+    # Request information - CharField to allow relative URLs like /test/url/
+    url = models.CharField(max_length=500)
     request_method = models.CharField(max_length=10)
     request_data = models.JSONField(null=True, blank=True)
     user_agent = models.TextField(blank=True)
@@ -550,7 +550,7 @@ class UserActivity(models.Model):
     
     # Activity details
     description = models.TextField(blank=True)
-    page_url = models.URLField(blank=True)
+    page_url = models.CharField(max_length=500, blank=True)
     object_type = models.CharField(max_length=50, blank=True, help_text="Type of object acted upon")
     object_id = models.PositiveIntegerField(null=True, blank=True, help_text="ID of object acted upon")
     
@@ -798,7 +798,7 @@ class DataModificationLog(models.Model):
     ip_address = models.GenericIPAddressField(null=True, blank=True)
     user_agent = models.TextField(blank=True, default='')
     request_method = models.CharField(max_length=10, blank=True, default='')
-    request_url = models.URLField(blank=True, default='')
+    request_url = models.CharField(max_length=500, blank=True, default='')
     
     # Data before and after
     old_values = models.JSONField(default=dict, help_text="Object state before modification")
@@ -900,7 +900,7 @@ class APICallLog(models.Model):
     user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='api_logs')
     endpoint_type = models.CharField(max_length=15, choices=ENDPOINT_TYPES)
     method = models.CharField(max_length=10)  # GET, POST, PUT, DELETE, etc.
-    endpoint = models.URLField()
+    endpoint = models.CharField(max_length=500)
     view_name = models.CharField(max_length=100, blank=True)
     
     # Request details
@@ -986,7 +986,7 @@ class SensitiveDataAccessLog(models.Model):
     # Access context
     ip_address = models.GenericIPAddressField(null=True, blank=True)
     user_agent = models.TextField(blank=True)
-    request_url = models.URLField(blank=True)
+    request_url = models.CharField(max_length=500, blank=True)
     session_key = models.CharField(max_length=40, blank=True)
     
     # Justification

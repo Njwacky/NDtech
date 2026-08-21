@@ -3,16 +3,28 @@ Integration between POS system and Food Ordering API
 Allows barcode scanning to work with both POS products and food ordering menu items
 """
 
-import requests
 import json
 from django.shortcuts import render
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse, HttpResponseForbidden
-from django.views.decorators.csrf import csrf_exempt
-from django.utils import timezone
 from django.db.models import Q
-from .models import Product, ErrorLog, UserActivity, DeviceConnection
+from .models import Product, ErrorLog, UserActivity
 from food_ordering.models import MenuItem, Restaurant
+
+
+def _get_workspace(request):
+    try:
+        return getattr(request.user.userprofile, 'workspace', None) if hasattr(getattr(request, 'user', None), 'userprofile') else None
+    except Exception:
+        return None
+
+
+def _get_client_ip(request):
+    x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+    if x_forwarded_for:
+        return x_forwarded_for.split(',')[0].strip()
+    return request.META.get('REMOTE_ADDR')
+
 
 class FoodOrderingIntegration:
     """Handles integration between POS and Food Ordering systems"""
@@ -24,34 +36,27 @@ class FoodOrderingIntegration:
         This uses a combination of barcode patterns and name matching
         """
         try:
-            # First, try to find menu items with barcode field (if it exists)
-            # Note: MenuItem model doesn't have barcode field by default, so we'll use name matching
-            
-            # Common South African food product barcode patterns
             food_patterns = {
-                '6001007': 'Coca-Cola',  # Coca-Cola products
-                '6001063': 'Bread',      # Bread/bakery
-                '6001085': 'Chips',      # Chips/snacks
-                '600106': 'Dairy',       # Dairy products
-                '600101': 'Sweets',      # Sweets/candy
-                '600102': 'Beverages',   # Beverages
-                '600103': 'Snacks',      # Snacks
-                '600104': 'Frozen',      # Frozen foods
-                '600105': 'Canned',      # Canned goods
+                '6001007': 'Coca-Cola',
+                '6001063': 'Bread',
+                '6001085': 'Chips',
+                '600106': 'Dairy',
+                '600101': 'Sweets',
+                '600102': 'Beverages',
+                '600103': 'Snacks',
+                '600104': 'Frozen',
+                '600105': 'Canned',
             }
             
-            # Check if barcode matches any known patterns
             matched_category = None
             for pattern, category in food_patterns.items():
                 if barcode.startswith(pattern):
                     matched_category = category
                     break
             
-            # Search for menu items by name patterns
             search_results = []
             
             if matched_category:
-                # Search for items with category-related names
                 search_terms = [matched_category.lower()]
                 if matched_category == 'Coca-Cola':
                     search_terms.extend(['coke', 'cola', 'soft drink'])
@@ -72,7 +77,6 @@ class FoodOrderingIntegration:
                 elif matched_category == 'Canned':
                     search_terms.extend(['canned', 'tin', 'jar'])
                 
-                # Build query
                 query = Q()
                 for term in search_terms:
                     query |= Q(name__icontains=term) | Q(description__icontains=term)
@@ -100,14 +104,12 @@ class FoodOrderingIntegration:
                         'matched_barcode': barcode
                     })
             
-            # Also try exact barcode matching in description (some restaurants might put barcodes in descriptions)
             exact_matches = MenuItem.objects.filter(
                 Q(description__icontains=barcode) | Q(name__icontains=barcode),
                 is_available=True
             ).select_related('restaurant', 'category').distinct()
             
             for item in exact_matches:
-                # Avoid duplicates
                 if not any(result['id'] == item.id for result in search_results):
                     search_results.append({
                         'id': item.id,
@@ -133,13 +135,12 @@ class FoodOrderingIntegration:
             return []
     
     @staticmethod
-    def create_pos_product_from_menu_item(menu_item, barcode=None):
+    def create_pos_product_from_menu_item(menu_item, barcode=None, workspace=None):
         """
         Create a POS product from a food ordering menu item
         This allows the menu item to be added to POS cart
         """
         try:
-            # Check if product already exists
             existing_product = Product.objects.filter(
                 name=menu_item.name,
                 price=menu_item.price
@@ -148,7 +149,6 @@ class FoodOrderingIntegration:
             if existing_product:
                 return existing_product
             
-            # Map food category to POS category
             category_mapping = {
                 'beverages': 'cold_drinks',
                 'snacks': 'snacks_chips',
@@ -159,8 +159,7 @@ class FoodOrderingIntegration:
                 'dairy': 'dairy_eggs',
             }
             
-            # Determine category
-            pos_category = 'basic_groceries'  # default
+            pos_category = 'basic_groceries'
             if menu_item.category:
                 category_name = menu_item.category.name.lower()
                 for food_cat, pos_cat in category_mapping.items():
@@ -168,16 +167,16 @@ class FoodOrderingIntegration:
                         pos_category = pos_cat
                         break
             
-            # Create POS product
             pos_product = Product.objects.create(
                 name=f"[FOOD] {menu_item.name}",
                 price=menu_item.price,
                 description=f"Food item from {menu_item.restaurant.name}: {menu_item.description}",
                 category=pos_category,
-                barcode=barcode or f"FOOD{menu_item.id:08d}",  # Generate barcode if not provided
-                stock=999,  # Food items typically have unlimited stock
-                expiry_date=None  # Food items have different expiry handling
-            , workspace=workspace)
+                barcode=barcode or f"FOOD{menu_item.id:08d}",
+                stock=999,
+                expiry_date=None,
+                workspace=workspace
+            )
             
             return pos_product
             
@@ -185,33 +184,60 @@ class FoodOrderingIntegration:
             print(f"Error creating POS product from menu item: {str(e)}")
             return None
 
+    @staticmethod
+    def _get_client_ip(request):
+        x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+        if x_forwarded_for:
+            return x_forwarded_for.split(',')[0].strip()
+        return request.META.get('REMOTE_ADDR')
+
+    @staticmethod
+    def log_food_ordering_error(request, error_message, error_type='user_error', severity='low', user_action='', form_data=None):
+        """Log errors in food ordering system"""
+        try:
+            workspace = _get_workspace(request)
+            ErrorLog.objects.create(
+                error_type=error_type,
+                severity=severity,
+                error_message=error_message,
+                url=request.path,
+                request_method=request.method,
+                user_agent=request.META.get('HTTP_USER_AGENT', ''),
+                ip_address=FoodOrderingIntegration._get_client_ip(request),
+                user=request.user if request.user.is_authenticated else None,
+                user_action=user_action,
+                form_data=form_data or {},
+                workspace=workspace
+            )
+        except Exception as e:
+            print(f"Error logging food ordering error: {str(e)}")
+
+
 @login_required
 def food_scanner_integration(request):
-    workspace = getattr(request.user.userprofile, 'workspace', None) if hasattr(getattr(request, 'user', None), 'userprofile') else None
     """
     Enhanced barcode scanner that can scan both POS products and food ordering items
     """
-    # Allow only superusers or users with admin/manager/cashier roles
     if not (request.user.is_superuser or (hasattr(request.user, 'userprofile') and request.user.userprofile.role in ['admin', 'manager', 'cashier'])):
         return HttpResponseForbidden("You do not have permission to access this page.")
     
     return render(request, 'nano/food_scanner.html')
 
+
 @login_required
 def api_food_scanner_lookup(request, barcode):
-    workspace = getattr(request.user.userprofile, 'workspace', None) if hasattr(getattr(request, 'user', None), 'userprofile') else None
     """
     API endpoint that searches both POS products and food ordering menu items
     """
-    # Allow only superusers or users with admin/manager/cashier roles
     if not (request.user.is_superuser or (hasattr(request.user, 'userprofile') and request.user.userprofile.role in ['admin', 'manager', 'cashier'])):
         return JsonResponse({'success': False, 'error': 'Permission denied'})
     
+    workspace = _get_workspace(request)
+
     if request.method == 'GET':
         try:
             results = []
             
-            # First, search POS products
             pos_product = Product.objects.filter(barcode=barcode).first()
             if pos_product:
                 results.append({
@@ -228,24 +254,23 @@ def api_food_scanner_lookup(request, barcode):
                     'discount_percentage': pos_product.get_discount_percentage()
                 })
             
-            # Then, search food ordering menu items
             food_items = FoodOrderingIntegration.search_menu_items_by_barcode(barcode)
             results.extend(food_items)
             
-            # Log user activity for barcode scan
             UserActivity.objects.create(
                 user=request.user,
                 activity_type='api_call',
                 description=f'Scanned barcode: {barcode}',
                 page_url='/food/scanner/',
-                ip_address=FoodOrderingIntegration._get_client_ip(request),
+                ip_address=_get_client_ip(request),
                 user_agent=request.META.get('HTTP_USER_AGENT', ''),
                 metadata={
                     'barcode': barcode,
                     'results_found': len(results),
                     'scan_type': 'food_scanner'
-                }
-            , workspace=workspace)
+                },
+                workspace=workspace
+            )
             
             if results:
                 return JsonResponse({
@@ -255,7 +280,6 @@ def api_food_scanner_lookup(request, barcode):
                     'total_found': len(results)
                 })
             else:
-                # Log error for barcode not found
                 ErrorLog.objects.create(
                     error_type='user_error',
                     severity='low',
@@ -263,11 +287,12 @@ def api_food_scanner_lookup(request, barcode):
                     url='/food/scanner/',
                     request_method='GET',
                     user_agent=request.META.get('HTTP_USER_AGENT', ''),
-                    ip_address=FoodOrderingIntegration._get_client_ip(request),
+                    ip_address=_get_client_ip(request),
                     user=request.user,
                     user_action='Scanning barcode for product lookup',
-                    form_data={'barcode': barcode}
-                , workspace=workspace)
+                    form_data={'barcode': barcode},
+                    workspace=workspace
+                )
                 
                 return JsonResponse({
                     'success': False,
@@ -276,7 +301,6 @@ def api_food_scanner_lookup(request, barcode):
                 })
                 
         except Exception as e:
-            # Log system error
             ErrorLog.objects.create(
                 error_type='system_error',
                 severity='medium',
@@ -284,27 +308,29 @@ def api_food_scanner_lookup(request, barcode):
                 url='/food/scanner/',
                 request_method='GET',
                 user_agent=request.META.get('HTTP_USER_AGENT', ''),
-                ip_address=FoodOrderingIntegration._get_client_ip(request),
+                ip_address=_get_client_ip(request),
                 user=request.user,
                 user_action='Scanning barcode for product lookup',
-                stack_trace=str(e)
-            , workspace=workspace)
+                stack_trace=str(e),
+                workspace=workspace
+            )
             
             return JsonResponse({'success': False, 'error': str(e)})
     
     return JsonResponse({'success': False, 'error': 'Invalid request method'})
 
+
 @login_required
 def api_add_food_item_to_pos(request):
-    workspace = getattr(request.user.userprofile, 'workspace', None) if hasattr(getattr(request, 'user', None), 'userprofile') else None
     """
     API endpoint to add a food ordering menu item to POS cart
     This creates a POS product from the menu item if it doesn't exist
     """
-    # Allow only superusers or users with admin/manager/cashier roles
     if not (request.user.is_superuser or (hasattr(request.user, 'userprofile') and request.user.userprofile.role in ['admin', 'manager', 'cashier'])):
         return JsonResponse({'success': False, 'error': 'Permission denied'})
     
+    workspace = _get_workspace(request)
+
     if request.method == 'POST':
         try:
             data = json.loads(request.body)
@@ -315,17 +341,13 @@ def api_add_food_item_to_pos(request):
             if not menu_item_id:
                 return JsonResponse({'success': False, 'error': 'Menu item ID is required'})
             
-            # Get the menu item
             menu_item = MenuItem.objects.get(id=menu_item_id, is_available=True)
             
-            # Create or get POS product
-            pos_product = FoodOrderingIntegration.create_pos_product_from_menu_item(menu_item, barcode)
+            pos_product = FoodOrderingIntegration.create_pos_product_from_menu_item(menu_item, barcode, workspace=workspace)
             
             if not pos_product:
                 return JsonResponse({'success': False, 'error': 'Failed to create POS product'})
             
-            # Add to cart logic would go here
-            # For now, just return success with product info
             return JsonResponse({
                 'success': True,
                 'product': {
@@ -351,20 +373,17 @@ def api_add_food_item_to_pos(request):
     
     return JsonResponse({'success': False, 'error': 'Invalid request method'})
 
+
 @login_required
 def food_menu_browser(request):
-    workspace = getattr(request.user.userprofile, 'workspace', None) if hasattr(getattr(request, 'user', None), 'userprofile') else None
     """
     Browse food ordering menu items and add them to POS
     """
-    # Allow only superusers or users with admin/manager/cashier roles
     if not (request.user.is_superuser or (hasattr(request.user, 'userprofile') and request.user.userprofile.role in ['admin', 'manager', 'cashier'])):
         return HttpResponseForbidden("You do not have permission to access this page.")
     
-    # Get all active restaurants
     restaurants = Restaurant.objects.filter(is_active=True).order_by('name')
     
-    # Get menu items if restaurant is specified
     selected_restaurant = request.GET.get('restaurant')
     menu_items = []
     
@@ -378,36 +397,6 @@ def food_menu_browser(request):
         except Restaurant.DoesNotExist:
             pass
     
-    @staticmethod
-    def _get_client_ip(request):
-        workspace = getattr(request.user.userprofile, 'workspace', None) if hasattr(getattr(request, 'user', None), 'userprofile') else None
-        """Get client IP address from request"""
-        x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
-        if x_forwarded_for:
-            ip = x_forwarded_for.split(',')[0]
-        else:
-            ip = request.META.get('REMOTE_ADDR')
-        return ip
-
-    @staticmethod
-    def log_food_ordering_error(request, error_message, error_type='user_error', severity='low', user_action='', form_data=None):
-        """Log errors in food ordering system"""
-        try:
-            ErrorLog.objects.create(
-                error_type=error_type,
-                severity=severity,
-                error_message=error_message,
-                url=request.path,
-                request_method=request.method,
-                user_agent=request.META.get('HTTP_USER_AGENT', ''),
-                ip_address=FoodOrderingIntegration._get_client_ip(request),
-                user=request.user if request.user.is_authenticated else None,
-                user_action=user_action,
-                form_data=form_data or {}
-            , workspace=workspace)
-        except Exception as e:
-            print(f"Error logging food ordering error: {str(e)}")
-
     return render(request, 'nano/food_menu_browser.html', {
         'restaurants': restaurants,
         'menu_items': menu_items,

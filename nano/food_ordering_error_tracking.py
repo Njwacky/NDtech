@@ -7,16 +7,24 @@ from django.utils import timezone
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse, HttpResponseForbidden
 from django.views.decorators.csrf import csrf_exempt
+from django.db.models import Q
 from .models import ErrorLog, UserActivity
 from food_ordering.models import MenuItem, Restaurant
 import json
+
+
+def _get_workspace(request):
+    try:
+        return getattr(request.user.userprofile, 'workspace', None) if hasattr(getattr(request, 'user', None), 'userprofile') else None
+    except Exception:
+        return None
+
 
 class FoodOrderingErrorTracking:
     """Handles error tracking for food ordering operations"""
     
     @staticmethod
     def get_client_ip(request):
-        workspace = getattr(request.user.userprofile, 'workspace', None) if hasattr(getattr(request, 'user', None), 'userprofile') else None
         """Get client IP address from request"""
         x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
         if x_forwarded_for:
@@ -27,9 +35,9 @@ class FoodOrderingErrorTracking:
     
     @staticmethod
     def log_food_ordering_error(request, error_message, error_type='user_error', severity='low', user_action='', form_data=None, stack_trace=None):
-        workspace = getattr(request.user.userprofile, 'workspace', None) if hasattr(getattr(request, 'user', None), 'userprofile') else None
         """Log errors in food ordering system"""
         try:
+            workspace = _get_workspace(request)
             ErrorLog.objects.create(
                 error_type=error_type,
                 severity=severity,
@@ -41,8 +49,9 @@ class FoodOrderingErrorTracking:
                 user=request.user if request.user.is_authenticated else None,
                 user_action=user_action,
                 form_data=form_data or {},
-                stack_trace=stack_trace
-            , workspace=workspace)
+                stack_trace=stack_trace,
+                workspace=workspace
+            )
         except Exception as e:
             print(f"Error logging food ordering error: {str(e)}")
     
@@ -50,6 +59,7 @@ class FoodOrderingErrorTracking:
     def log_food_ordering_activity(request, activity_type, description, metadata=None):
         """Log user activities in food ordering system"""
         try:
+            workspace = _get_workspace(request)
             UserActivity.objects.create(
                 user=request.user,
                 activity_type=activity_type,
@@ -57,14 +67,14 @@ class FoodOrderingErrorTracking:
                 page_url=request.path,
                 ip_address=FoodOrderingErrorTracking.get_client_ip(request),
                 user_agent=request.META.get('HTTP_USER_AGENT', ''),
-                metadata=metadata or {}
-            , workspace=workspace)
+                metadata=metadata or {},
+                workspace=workspace
+            )
         except Exception as e:
             print(f"Error logging food ordering activity: {str(e)}")
 
 @login_required
 def enhanced_food_scanner_lookup(request, barcode):
-    workspace = getattr(request.user.userprofile, 'workspace', None) if hasattr(getattr(request, 'user', None), 'userprofile') else None
     """
     Enhanced food scanner lookup with comprehensive error tracking
     """
@@ -216,7 +226,6 @@ def enhanced_food_scanner_lookup(request, barcode):
 
 @login_required
 def enhanced_add_to_cart(request):
-    workspace = getattr(request.user.userprofile, 'workspace', None) if hasattr(getattr(request, 'user', None), 'userprofile') else None
     """
     Enhanced add to cart with error tracking
     """
@@ -304,7 +313,7 @@ def enhanced_add_to_cart(request):
                 'system_error',
                 'high',
                 'Adding food item to cart',
-                data,
+                {},
                 str(e)
             )
             return JsonResponse({'success': False, 'error': str(e)})
@@ -313,7 +322,6 @@ def enhanced_add_to_cart(request):
 
 @login_required
 def food_ordering_error_report(request):
-    workspace = getattr(request.user.userprofile, 'workspace', None) if hasattr(getattr(request, 'user', None), 'userprofile') else None
     """
     API endpoint to report food ordering errors
     """

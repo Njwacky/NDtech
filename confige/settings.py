@@ -261,8 +261,8 @@ else:
 PWA_SERVICE_WORKER_PATH = 'static/nano/sw.js'
 PWA_APP_MANIFEST_PATH = 'static/nano/manifest.json'
 
-# Firebase Cloud Messaging (FCM) Settings
-FCM_API_KEY = config('FCM_API_KEY')
+# Firebase Cloud Messaging (FCM) Settings - defaults allow local dev without env vars
+FCM_API_KEY = config('FCM_API_KEY', default='')
 FCM_SENDER_ID = config('FCM_SENDER_ID', default='')
 FCM_PROJECT_ID = config('FCM_PROJECT_ID', default='')
 
