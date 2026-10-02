@@ -33,6 +33,17 @@
       <span class="dot">•</span>
       <a href="{% url 'forgot_password' %}" class="link">Forgot password?</a>
     </div>
+
+    {% if dev_quick_login %}
+      <div class="dev-login">
+        <a class="btn btn-dev" href="{% url 'dev_quick_login' %}">
+          <i class="fas fa-bolt"></i> Quick sign in as admin
+        </a>
+        <p class="dev-note">
+          Development mode only — this button disappears when <code>DJANGO_DEBUG=False</code>.
+        </p>
+      </div>
+    {% endif %}
   </form>
 {% endblock %}
 

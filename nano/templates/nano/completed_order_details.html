@@ -4,55 +4,60 @@
 {% block title %}Completed Order Details - NDtech{% endblock %}
 
 {% block content %}
-<div style="padding: 20px; max-width: 1100px; margin: 0 auto; color:#111;">
-  <a href="{% url 'completed_orders' %}" style="display:inline-flex; align-items:center; gap:8px; padding:10px 14px; border-radius:10px; background:#f2f2f2; text-decoration:none; margin-bottom: 16px;">
+<div class="page">
+  <a class="back-link" href="{% url 'completed_orders' %}">
     <i class="fas fa-arrow-left"></i> Back
   </a>
 
-  <h1 style="margin: 0 0 8px;">Completed Order #{{ order.id }}</h1>
-  <div style="color:#666; margin-bottom: 18px;">
-    Customer: <strong>{{ order.customer_name }}</strong> • {{ order.customer_phone }}
+  <div class="page-head">
+    <h1>Completed Order #{{ order.id }}</h1>
+    <p class="sub">
+      Customer: <strong>{{ order.customer_name }}</strong> • {{ order.customer_phone }}
+    </p>
   </div>
 
-  <div style="background:#fff; border:1px solid #eee; border-radius:12px; padding:16px; margin-bottom: 18px;">
-    <div style="display:flex; justify-content:space-between; flex-wrap:wrap; gap: 10px;">
-      <div>
-        <div style="font-size:12px; color:#666;">Total</div>
-        <div style="font-size:24px; font-weight:800; color:#588157;">R{{ order.total }}</div>
+  <div class="surface surface-pad" style="margin-bottom: var(--sp-4);">
+    <div class="stat-grid">
+      <div class="stat" style="background: transparent; border: 0; padding: 0;">
+        <div class="stat-label">Total</div>
+        <div class="stat-value lg is-success">R{{ order.total }}</div>
       </div>
-      <div>
-        <div style="font-size:12px; color:#666;">Cash Received</div>
-        <div style="font-size:18px; font-weight:800;">R{{ order.cash_received }}</div>
+      <div class="stat" style="background: transparent; border: 0; padding: 0;">
+        <div class="stat-label">Cash Received</div>
+        <div class="stat-value">R{{ order.cash_received }}</div>
       </div>
-      <div>
-        <div style="font-size:12px; color:#666;">Change Given</div>
-        <div style="font-size:18px; font-weight:800;">R{{ order.change_given }}</div>
+      <div class="stat" style="background: transparent; border: 0; padding: 0;">
+        <div class="stat-label">Change Given</div>
+        <div class="stat-value">R{{ order.change_given }}</div>
       </div>
     </div>
-    <div style="margin-top: 10px; color:#666;">
-      Payment: <strong>{{ order.payment_method }}</strong>
-      • Completed at: <strong>{{ order.completed_at|date:"Y-m-d H:i" }}</strong>
+
+    <div class="row" style="margin-top: var(--sp-5); color: var(--muted); font-size: var(--fs-sm);">
+      <span>Payment: <strong style="color: var(--text);">{{ order.payment_method }}</strong></span>
+      <span>Completed at:
+        <strong style="color: var(--text);">{{ order.completed_at|date:"Y-m-d H:i" }}</strong>
+      </span>
     </div>
   </div>
 
   {% if items_with_totals %}
-    <div style="background:#fff; border:1px solid #eee; border-radius:12px; overflow:hidden;">
-      <table style="width:100%; border-collapse:collapse;">
+    <div class="table-wrap">
+      <table class="data-table">
         <thead>
-          <tr style="background:#f6f6f6; text-align:left;">
-            <th style="padding:12px 14px; border-bottom:1px solid #eee;">Product</th>
-            <th style="padding:12px 14px; border-bottom:1px solid #eee;">Qty</th>
-            <th style="padding:12px 14px; border-bottom:1px solid #eee;">Price</th>
-            <th style="padding:12px 14px; border-bottom:1px solid #eee;">Line Total</th>
+          <tr>
+            <th>Product</th>
+            <th class="num">Qty</th>
+            <th class="num">Price</th>
+            <th class="num">Line Total</th>
           </tr>
         </thead>
         <tbody>
           {% for item in items_with_totals %}
             <tr>
-              <td style="padding:12px 14px; border-bottom:1px solid #f0f0f0;">{{ item.product }}</td>
-              <td style="padding:12px 14px; border-bottom:1px solid #f0f0f0;">{{ item.quantity }}</td>
-              <td style="padding:12px 14px; border-bottom:1px solid #f0f0f0;">R{{ item.price }}</td>
-              <td style="padding:12px 14px; border-bottom:1px solid #f0f0f0;">R{{ item.total }}</td>
+              <td>{{ item.product }}</td>
+              <td class="num">{{ item.quantity }}</td>
+              <td class="num">R{{ item.price }}</td>
+              <td class="num">R{{ item.total }}</td>
             </tr>
           {% endfor %}
         </tbody>
@@ -61,4 +66,3 @@
   {% endif %}
 </div>
 {% endblock %}
-

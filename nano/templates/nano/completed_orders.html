@@ -4,53 +4,52 @@
 {% block title %}Completed Orders - NDtech{% endblock %}
 
 {% block content %}
-<div style="padding: 20px; max-width: 1200px; margin: 0 auto; color: #333;">
-  <h1 style="margin: 0 0 10px;">Completed Orders</h1>
-<p style="color: #666; margin: 0 0 20px;">Sales that have been completed.</p>
-
+<div class="page">
+  <div class="page-head">
+    <h1>Completed Orders</h1>
+    <p class="sub">Sales that have been completed.</p>
+  </div>
 
   {% if total_orders is not None %}
-    <div style="display:flex; gap: 14px; flex-wrap: wrap; margin-bottom: 18px;">
-      <div style="background:#fff; border:1px solid #eee; border-radius:12px; padding: 12px 14px; min-width: 200px;">
-        <div style="font-size:12px; color:#666;">Total Orders</div>
-        <div style="font-size:20px; font-weight:700;">{{ total_orders }}</div>
+    <div class="stat-grid" style="margin-bottom: var(--sp-4);">
+      <div class="stat">
+        <div class="stat-label">Total Orders</div>
+        <div class="stat-value">{{ total_orders }}</div>
       </div>
-      <div style="background:#fff; border:1px solid #eee; border-radius:12px; padding: 12px 14px; min-width: 200px;">
-        <div style="font-size:12px; color:#666;">Total Revenue</div>
-        <div style="font-size:20px; font-weight:700;">R{{ total_revenue }}</div>
+      <div class="stat">
+        <div class="stat-label">Total Revenue</div>
+        <div class="stat-value">R{{ total_revenue }}</div>
       </div>
     </div>
   {% endif %}
 
   {% if not orders %}
-    <div style="padding: 25px; background: #fff; border-radius: 12px; border: 1px solid #eee; color: #666;">
-      No completed orders.
-    </div>
+    <div class="surface empty-state">No completed orders.</div>
   {% else %}
-    <div style="background: #fff; border-radius: 12px; border: 1px solid #eee; overflow: hidden;">
-      <table style="width: 100%; border-collapse: collapse;">
+    <div class="table-wrap">
+      <table class="data-table">
         <thead>
-          <tr style="background: #f6f6f6; text-align: left;">
-            <th style="padding: 12px 14px; border-bottom: 1px solid #eee;">Order #</th>
-            <th style="padding: 12px 14px; border-bottom: 1px solid #eee;">Customer</th>
-            <th style="padding: 12px 14px; border-bottom: 1px solid #eee;">Phone</th>
-            <th style="padding: 12px 14px; border-bottom: 1px solid #eee;">Total</th>
-            <th style="padding: 12px 14px; border-bottom: 1px solid #eee;">Paid</th>
-            <th style="padding: 12px 14px; border-bottom: 1px solid #eee;">Completed</th>
-            <th style="padding: 12px 14px; border-bottom: 1px solid #eee;">Actions</th>
+          <tr>
+            <th>Order #</th>
+            <th>Customer</th>
+            <th>Phone</th>
+            <th class="num">Total</th>
+            <th class="num">Paid</th>
+            <th>Completed</th>
+            <th>Actions</th>
           </tr>
         </thead>
         <tbody>
           {% for order in orders %}
             <tr>
-              <td style="padding: 12px 14px; border-bottom: 1px solid #f0f0f0;">#{{ order.id }}</td>
-              <td style="padding: 12px 14px; border-bottom: 1px solid #f0f0f0;">{{ order.customer_name }}</td>
-              <td style="padding: 12px 14px; border-bottom: 1px solid #f0f0f0;">{{ order.customer_phone }}</td>
-              <td style="padding: 12px 14px; border-bottom: 1px solid #f0f0f0;">R{{ order.total }}</td>
-              <td style="padding: 12px 14px; border-bottom: 1px solid #f0f0f0;">R{{ order.cash_received }}</td>
-              <td style="padding: 12px 14px; border-bottom: 1px solid #f0f0f0;">{{ order.completed_at|date:"Y-m-d H:i" }}</td>
-              <td style="padding: 12px 14px; border-bottom: 1px solid #f0f0f0;">
-                <a class="nav-link" style="display:inline-block; padding: 8px 12px; border-radius: 8px; background:#f2f2f2; text-decoration:none;" href="{% url 'completed_order_details' order_id=order.id %}">
+              <td>#{{ order.id }}</td>
+              <td>{{ order.customer_name }}</td>
+              <td>{{ order.customer_phone }}</td>
+              <td class="num">R{{ order.total }}</td>
+              <td class="num">R{{ order.cash_received }}</td>
+              <td>{{ order.completed_at|date:"Y-m-d H:i" }}</td>
+              <td>
+                <a class="btn btn-subtle btn-sm" href="{% url 'completed_order_details' order_id=order.id %}">
                   Details
                 </a>
               </td>
@@ -61,17 +60,16 @@
     </div>
 
     {% if orders.has_other_pages %}
-      <div style="display:flex; justify-content:center; gap: 10px; margin-top: 16px;">
+      <div class="pager">
         {% if orders.has_previous %}
-          <a href="?page={{ orders.previous_page_number }}" style="padding: 8px 12px; background:#f2f2f2; border-radius: 8px; text-decoration:none;">Previous</a>
+          <a class="btn btn-subtle btn-sm" href="?page={{ orders.previous_page_number }}">Previous</a>
         {% endif %}
-        <span style="align-self:center; color:#666;">Page {{ orders.number }} of {{ orders.paginator.num_pages }}</span>
+        <span class="pager-status">Page {{ orders.number }} of {{ orders.paginator.num_pages }}</span>
         {% if orders.has_next %}
-          <a href="?page={{ orders.next_page_number }}" style="padding: 8px 12px; background:#f2f2f2; border-radius: 8px; text-decoration:none;">Next</a>
+          <a class="btn btn-subtle btn-sm" href="?page={{ orders.next_page_number }}">Next</a>
         {% endif %}
       </div>
     {% endif %}
   {% endif %}
 </div>
 {% endblock %}
-

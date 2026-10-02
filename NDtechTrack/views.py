@@ -162,7 +162,7 @@ def system_performance(request):
     
     server_uptime = SystemPerformance.objects.filter(
         metric_name='server_uptime_percentage'
-    ).aggregate(latest=Avg('metric_value'))['latest_score'] or 99.9
+    ).aggregate(latest=Avg('metric_value'))['latest'] or 99.9
     
     context = {
         'performance_metrics': performance_metrics,

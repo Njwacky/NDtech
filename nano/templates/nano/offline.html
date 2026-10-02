@@ -1,0 +1,124 @@
+{% load static %}<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#0b1220" />
+  <title>Offline · NDtech POS</title>
+  <!-- Self-contained styles: this page must render with no network at all. -->
+  <style>
+    :root{
+      --bg:#0b1220;
+      --card:#0f1b33;
+      --muted:#9fb0d0;
+      --text:#e9efff;
+      --primary:#4f8cff;
+      --primary2:#2f6dff;
+      --border:rgba(255,255,255,.10);
+      --shadow:0 14px 40px rgba(0,0,0,.35);
+      --radius:16px;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;
+      font-family:ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial, "Helvetica Neue", sans-serif;
+      background:radial-gradient(1200px 600px at 20% 10%, rgba(79,140,255,.22), transparent 55%),
+                 radial-gradient(900px 500px at 90% 10%, rgba(47,109,255,.18), transparent 55%),
+                 var(--bg);
+      color:var(--text);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:24px;
+    }
+    .card{
+      width:100%;
+      max-width:460px;
+      background:var(--card);
+      border:1px solid var(--border);
+      border-radius:var(--radius);
+      box-shadow:var(--shadow);
+      padding:34px 28px;
+      text-align:center;
+    }
+    .logo{
+      width:64px;height:64px;
+      margin:0 auto 18px;
+      display:flex;align-items:center;justify-content:center;
+      border-radius:50%;
+      background:linear-gradient(135deg, var(--primary), var(--primary2));
+      box-shadow:0 10px 28px rgba(79,140,255,.35);
+    }
+    .logo svg{width:30px;height:30px;fill:#fff}
+    h1{margin:0 0 8px;font-size:22px;font-weight:700;letter-spacing:.2px}
+    p{margin:0 0 18px;color:var(--muted);font-size:14px;line-height:1.6}
+    .status{
+      display:inline-flex;align-items:center;gap:8px;
+      padding:8px 14px;margin-bottom:22px;
+      border:1px solid var(--border);border-radius:999px;
+      font-size:13px;color:var(--muted);
+    }
+    .dot{width:9px;height:9px;border-radius:50%;background:#ff4f6d;transition:background .3s}
+    .dot.online{background:#31d07f}
+    .actions{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+    button,a.btn{
+      font:inherit;font-size:14px;font-weight:600;
+      padding:11px 20px;border-radius:10px;cursor:pointer;
+      border:1px solid transparent;text-decoration:none;
+      transition:transform .15s ease, opacity .15s ease;
+    }
+    button:active,a.btn:active{transform:scale(.98)}
+    .primary{background:linear-gradient(135deg, var(--primary), var(--primary2));color:#fff}
+    .ghost{background:transparent;border-color:var(--border);color:var(--text)}
+    .hint{margin-top:22px;font-size:12px;color:var(--muted)}
+  </style>
+</head>
+<body>
+  <main class="card">
+    <div class="logo" aria-hidden="true">
+      <!-- inline so it renders with no network -->
+      <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+        <path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
+      </svg>
+    </div>
+
+    <h1>You're offline</h1>
+    <p>
+      NDtech POS can't reach the server right now. Sales you make are queued on this
+      device and will sync automatically once the connection is back.
+    </p>
+
+    <div class="status">
+      <span class="dot" id="dot"></span>
+      <span id="status-text">No connection</span>
+    </div>
+
+    <div class="actions">
+      <button class="primary" type="button" onclick="location.reload()">Try again</button>
+      <a class="btn ghost" href="/">Go to POS</a>
+    </div>
+
+    <p class="hint">This page is served from your device's cache.</p>
+  </main>
+
+  <script>
+    (function () {
+      var dot = document.getElementById('dot');
+      var text = document.getElementById('status-text');
+
+      function render(online) {
+        dot.classList.toggle('online', online);
+        text.textContent = online ? 'Back online — reloading…' : 'No connection';
+      }
+
+      render(navigator.onLine);
+      window.addEventListener('online', function () {
+        render(true);
+        setTimeout(function () { location.reload(); }, 800);
+      });
+      window.addEventListener('offline', function () { render(false); });
+    })();
+  </script>
+</body>
+</html>

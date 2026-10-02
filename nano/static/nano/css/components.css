@@ -1,0 +1,346 @@
+/* ==========================================================================
+   NDtech POS — Design tokens & shared components
+   --------------------------------------------------------------------------
+   Single source of truth for type, spacing, colour and the common UI pieces.
+   New pages should compose these classes instead of adding inline styles.
+
+   Theme: dark (matches nano/css/app.css :root tokens).
+   To re-theme the app, change the tokens in this block only.
+   ========================================================================== */
+
+:root {
+  /* ---- Colour ---- */
+  --bg:        #0b1220;
+  --surface:   rgba(15, 27, 51, 0.72);  /* elevated card / panel          */
+  --surface-2: rgba(255, 255, 255, 0.04); /* table head, subtle fills     */
+  --surface-3: #0f1b33;                 /* opaque panel                   */
+  --text:      #e9efff;
+  --muted:     #9fb0d0;
+  --primary:   #4f8cff;
+  --primary-2: #2f6dff;
+  --success:   #31d07f;
+  --danger:    #ff4f6d;
+  --border:    rgba(255, 255, 255, 0.10);
+  --border-2:  rgba(255, 255, 255, 0.06);
+
+  /* ---- Type scale (6 steps, nothing below 13px) ---- */
+  --fs-xs:   0.8125rem;  /* 13px — labels only, never body copy */
+  --fs-sm:   0.875rem;   /* 14px */
+  --fs-base: 1rem;       /* 16px — minimum for inputs (stops iOS zoom) */
+  --fs-lg:   1.25rem;    /* 20px */
+  --fs-xl:   1.75rem;    /* 28px */
+  --fs-2xl:  2.5rem;     /* 40px — hero numbers / totals */
+
+  /* ---- Spacing scale ---- */
+  --sp-1: 0.25rem;
+  --sp-2: 0.5rem;
+  --sp-3: 0.75rem;
+  --sp-4: 1rem;
+  --sp-5: 1.5rem;
+  --sp-6: 2rem;
+
+  /* ---- Shape ---- */
+  --radius:    16px;
+  --radius-sm: 10px;
+  --shadow:    0 14px 40px rgba(0, 0, 0, 0.35);
+
+  /* ---- Touch ---- */
+  --tap-min: 48px;
+}
+
+/* ==========================================================================
+   Layout
+   ========================================================================== */
+
+.page {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: var(--sp-5) var(--sp-4) var(--sp-6);
+}
+
+.page-head {
+  margin-bottom: var(--sp-4);
+}
+
+.page-head h1 {
+  margin: 0 0 var(--sp-2);
+  font-size: var(--fs-xl);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.page-head .sub {
+  margin: 0;
+  color: var(--muted);
+  font-size: var(--fs-sm);
+}
+
+.stack   { display: flex; flex-direction: column; gap: var(--sp-4); }
+.row     { display: flex; gap: var(--sp-3); flex-wrap: wrap; align-items: center; }
+.row-end { display: flex; gap: var(--sp-3); flex-wrap: wrap; justify-content: flex-end; }
+
+/* ==========================================================================
+   Surfaces
+   ========================================================================== */
+
+.surface {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+
+.surface-pad { padding: var(--sp-4); }
+
+.empty-state {
+  padding: var(--sp-6) var(--sp-4);
+  text-align: center;
+  color: var(--muted);
+  font-size: var(--fs-sm);
+}
+
+/* Stat tiles */
+.stat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--sp-4);
+}
+
+.stat {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: var(--sp-4);
+}
+
+.stat .stat-label {
+  font-size: var(--fs-xs);
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: var(--sp-1);
+}
+
+.stat .stat-value {
+  font-size: var(--fs-lg);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.stat .stat-value.lg { font-size: var(--fs-2xl); }
+.stat .stat-value.is-success { color: var(--success); }
+
+/* ==========================================================================
+   Tables
+   ========================================================================== */
+
+.table-wrap {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow-x: auto;           /* keeps tables usable on narrow screens */
+  -webkit-overflow-scrolling: touch;
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--fs-sm);
+}
+
+.data-table thead th {
+  background: var(--surface-2);
+  color: var(--muted);
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  text-align: left;
+  padding: var(--sp-3) var(--sp-4);
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+
+.data-table tbody td {
+  padding: var(--sp-3) var(--sp-4);
+  border-bottom: 1px solid var(--border-2);
+  vertical-align: middle;
+}
+
+.data-table tbody tr:last-child td { border-bottom: 0; }
+.data-table tbody tr:hover { background: rgba(255, 255, 255, 0.02); }
+
+.data-table .num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;  /* digits don't jitter */
+}
+
+/* ==========================================================================
+   Buttons — min 48px touch target
+   ========================================================================== */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-2);
+  min-height: var(--tap-min);
+  padding: 0 var(--sp-4);
+  font: inherit;
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  line-height: 1;
+  text-decoration: none;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: transform 0.12s ease, opacity 0.12s ease, background 0.12s ease;
+}
+
+.btn:active { transform: scale(0.985); }
+.btn:disabled,
+.btn[disabled] { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+.btn-primary {
+  background: linear-gradient(135deg, var(--primary), var(--primary-2));
+  color: #fff;
+}
+
+.btn-success { background: var(--success); color: #04231a; }
+
+.btn-ghost {
+  background: transparent;
+  border-color: var(--border);
+  color: var(--text);
+}
+
+.btn-subtle {
+  background: var(--surface-2);
+  border-color: var(--border);
+  color: var(--text);
+}
+
+.btn-danger { background: var(--danger); color: #2a0710; }
+
+.btn-sm {
+  min-height: 38px;
+  padding: 0 var(--sp-3);
+  font-size: var(--fs-xs);
+}
+
+/* Back link */
+.back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  min-height: 40px;
+  margin-bottom: var(--sp-4);
+  padding: 0 var(--sp-3);
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-size: var(--fs-sm);
+  text-decoration: none;
+}
+
+.back-link:hover { background: rgba(255, 255, 255, 0.07); }
+
+/* Pagination */
+.pager {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: var(--sp-3);
+  margin-top: var(--sp-4);
+}
+
+.pager .pager-status {
+  color: var(--muted);
+  font-size: var(--fs-sm);
+}
+
+/* ==========================================================================
+   Forms — 16px inputs so mobile browsers don't zoom on focus
+   ========================================================================== */
+
+.field { display: flex; flex-direction: column; gap: var(--sp-2); }
+
+.field label,
+.label {
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.field input,
+.field select,
+.field textarea {
+  width: 100%;
+  min-height: var(--tap-min);
+  padding: var(--sp-2) var(--sp-3);
+  font: inherit;
+  font-size: var(--fs-base);
+  color: var(--text);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  outline: none;
+}
+
+.field input::placeholder,
+.field textarea::placeholder { color: rgba(159, 176, 208, 0.6); }
+
+.field input:focus,
+.field select:focus,
+.field textarea:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(79, 140, 255, 0.22);
+}
+
+.field select option { background: var(--surface-3); color: var(--text); }
+
+.field-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: var(--sp-4);
+}
+
+/* ==========================================================================
+   Badges
+   ========================================================================== */
+
+.pill-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px var(--sp-3);
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.pill-badge.is-pending  { border-color: rgba(255, 193, 66, 0.4); color: #ffc142; }
+.pill-badge.is-approved { border-color: rgba(49, 208, 127, 0.4); color: var(--success); }
+.pill-badge.is-rejected { border-color: rgba(255, 79, 109, 0.4); color: var(--danger); }
+
+/* ==========================================================================
+   Responsive — mobile-first breakpoints
+   ========================================================================== */
+
+@media (max-width: 768px) {
+  .page { padding: var(--sp-4) var(--sp-3) var(--sp-6); }
+  .page-head h1 { font-size: var(--fs-lg); }
+  .stat .stat-value.lg { font-size: var(--fs-xl); }
+}
+
+@media (max-width: 480px) {
+  .data-table { font-size: var(--fs-xs); }
+  .data-table thead th,
+  .data-table tbody td { padding: var(--sp-2) var(--sp-3); }
+  .btn { width: 100%; }
+  .row, .row-end { flex-direction: column; align-items: stretch; }
+}

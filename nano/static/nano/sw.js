@@ -1,31 +1,34 @@
-const CACHE_NAME = 'ndtech-pos-v2';
+const CACHE_NAME = 'ndtech-pos-v3';
+const OFFLINE_URL = '/offline/';
+
+// Only assets that actually exist may be precached. A single 404 used to make
+// cache.addAll() reject and abort the whole service worker install, which
+// disabled offline mode entirely. Keep this list in sync with nano/static/nano/.
 const urlsToCache = [
-    '/',
-    '/accounts/login/',
-    '/register/',
-    '/static/nano/styles.css',
-    '/static/nano/airtime.css',
-    '/static/nano/notifications.css',
-    '/static/nano/hamburger.css',
+    OFFLINE_URL, // Explicitly cache the offline page
+    '/static/nano/css/app.css',
+    '/static/nano/css/navbar.css',
     '/static/nano/notifications.js',
     '/static/nano/hamburger.js',
     '/static/nano/toast.js',
     '/static/nano/airtime.js',
     '/static/nano/manifest.json',
+    '/static/nano/icon-96.png',
     '/static/nano/icon-192.png',
-    '/static/nano/icon-512.png',
-    '/offline/', // Explicitly cache the offline page
-    'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css'
+    '/static/nano/icon-512.png'
 ];
 
-// Install event - cache critical resources
+// Install event - cache critical resources (best effort, never all-or-nothing)
 self.addEventListener('install', event => {
     event.waitUntil(
         caches.open(CACHE_NAME)
-            .then(cache => {
-                console.log('Opened cache');
-                return cache.addAll(urlsToCache);
-            })
+            .then(cache => Promise.all(
+                urlsToCache.map(url =>
+                    cache.add(url).catch(error => {
+                        console.warn('Skipping precache for', url, error);
+                    })
+                )
+            ))
     );
     self.skipWaiting();
 });
@@ -49,7 +52,8 @@ self.addEventListener('activate', event => {
 
 // Helper function to determine if request is API call
 const isApiCall = (request) => {
-    return request.url.includes('/api/') || request.headers.get('Accept').includes('application/json');
+    const accept = request.headers.get('Accept') || '';
+    return request.url.includes('/api/') || accept.includes('application/json');
 };
 
 // Fetch event - Robust Offline Strategy
@@ -61,7 +65,7 @@ self.addEventListener('fetch', event => {
              // and replay it when back online via Background Sync.
              // For now, we allow the fetch to fail so the UI can handle the error gracefully,
              // OR we could return a synthetic response saying "Saved Offline".
-             return; 
+             return;
         }
         return; // Let browser handle online POST normally
     }
@@ -72,7 +76,7 @@ self.addEventListener('fetch', event => {
             .then(cachedResponse => {
                 // Strategy: Stale-While-Revalidate for non-mutating data
                 // Access cache first, but trigger network update in background
-                
+
                 const fetchPromise = fetch(event.request).then(networkResponse => {
                     // Check if valid response
                     if (!networkResponse || networkResponse.status !== 200 || networkResponse.type !== 'basic') {
@@ -88,16 +92,27 @@ self.addEventListener('fetch', event => {
                     return networkResponse;
                 }).catch(error => {
                     console.log('Fetch failed, returning offline page if navigation', error);
+                    return null;
                 });
 
                 // Return cached response immediately if available, otherwise wait for network
                 return cachedResponse || fetchPromise;
             })
-            .catch(() => {
-                // Fallback for navigation requests
-                if (event.request.mode === 'navigate') {
-                    return caches.match('/offline/');
+            .then(response => {
+                if (response) {
+                    return response;
                 }
+                // Offline fallback. respondWith() must always receive a Response,
+                // so never resolve with undefined here.
+                if (event.request.mode === 'navigate') {
+                    return caches.match(OFFLINE_URL).then(
+                        cached => cached || new Response(
+                            '<!doctype html><title>Offline</title><h1>You are offline</h1>',
+                            { status: 503, headers: { 'Content-Type': 'text/html; charset=utf-8' } }
+                        )
+                    );
+                }
+                return new Response('', { status: 504, statusText: 'Offline' });
             })
     );
 });
