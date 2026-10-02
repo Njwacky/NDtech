@@ -697,25 +697,16 @@ Dashboard - NDtech POS{% endblock %} {% block extra_css %}
           class="product-card-stock {% if product.stock == 0 %}stock-out{% elif product.stock < 5 %}stock-low{% endif %}"
         >
           <i class="fas fa-layer-group"></i>
-          {% if product.stock == 0 %}Out of stock {% elif product.stock < 5
-          %}Low: {{ product.stock }} left {% else %}Stock: {{ product.stock }}{%
-          endif %}
+          {% if product.stock == 0 %}Out of stock {% elif product.stock < 5 %}Low: {{ product.stock }} left {% else %}Stock: {{ product.stock }}{% endif %}
         </div>
         <div class="product-card-footer">
           <button
             class="btn-sell {% if product.network == 'vodacom' %}btn-sell-vodacom {% elif product.network == 'mtn' %}btn-sell-mtn {% elif product.network == 'telkom' %}btn-sell-telkom {% elif product.network == 'cell_c' %}btn-sell-cellc {% else %}btn-sell-other{% endif %}"
-            {%
-            if
-            product.stock=""
-            ="0"
-            %}disabled{%
-            endif
-            %}
+            {% if product.stock == 0 %}disabled{% endif %}
             onclick="openSellModal({{ product.id }}, '{{ product.name|escapejs }}', '{{ product.network|title|escapejs }}', 'R{{ product.value }}', 'R{{ product.price }}')"
           >
             <i class="fas fa-bolt"></i>
-            {% if product.stock == 0 %}Out of Stock{% else %}Quick Sell{% endif
-            %}
+            {% if product.stock == 0 %}Out of Stock{% else %}Quick Sell{% endif %}
           </button>
         </div>
       </div>
@@ -849,9 +840,7 @@ Dashboard - NDtech POS{% endblock %} {% block extra_css %}
               <td style="color: rgba(255, 255, 255, 0.45)">#{{ req.id }}</td>
               <td>{{ req.product.name }}</td>
               <td>
-                {{
-                req.requested_by.get_full_name|default:req.requested_by.username
-                }}
+                {{ req.requested_by.get_full_name|default:req.requested_by.username }}
               </td>
               <td>{{ req.quantity }}</td>
               <td>

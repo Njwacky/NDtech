@@ -65,10 +65,11 @@ def database_status(request):
         recorder = MigrationRecorder(connection)
         applied_migrations = recorder.applied_migrations()
         
-        # Check key tables
+        # Check key tables exist in the database schema (not whether they hold rows)
+        existing_tables = set(connection.introspection.table_names())
         tables_exist = {
-            'auth_user': User.objects.exists(),
-            'security_audit_log': SecurityAuditLog.objects.exists(),
+            'auth_user': User._meta.db_table in existing_tables,
+            'security_audit_log': SecurityAuditLog._meta.db_table in existing_tables,
         }
         
         return JsonResponse({

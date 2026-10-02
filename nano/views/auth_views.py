@@ -3,6 +3,7 @@ Authentication Views for NDtech POS System
 Handles user login, logout, registration, and password reset requests.
 """
 from django.shortcuts import render, redirect
+from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.models import User
@@ -30,6 +31,9 @@ def sign_up(request):
     # Check if any users already exist to determine if this is first user
     existing_users = User.objects.exists()
     is_first_user = not existing_users
+    # In development we can keep registration open to make every page reachable.
+    open_registration = getattr(settings, 'ALLOW_OPEN_REGISTRATION', False)
+    grant_admin = is_first_user or open_registration
 
     if request.method == 'POST':
         username = request.POST.get('username', '').strip()
@@ -77,13 +81,17 @@ def sign_up(request):
                 user = User.objects.create_user(username=username, email=email, password=password)
 
                 # Determine role based on whether this is the first user
-                if is_first_user:
-                    # First user gets admin privileges
+                if grant_admin:
+                    # First user, or open registration in development.
                     user.is_staff = True
                     user.is_superuser = True
                     role = 'admin'
                     created_by = None
-                    success_message = 'Admin account created successfully! You can now manage other users.'
+                    success_message = (
+                        'Admin account created successfully! You can now manage other users.'
+                        if is_first_user else
+                        'Account created with full admin access (development mode).'
+                    )
                 else:
                     # New users get manager role so they can create their own team
                     user.is_staff = False
@@ -142,7 +150,40 @@ def sign_in(request):
             messages.error(request, 'Invalid username or password')
             return redirect('sign_in')
 
-    return render(request, 'nano/sign_in.html')
+    return render(request, 'nano/sign_in.html', {
+        'dev_quick_login': getattr(settings, 'DEV_QUICK_LOGIN', False),
+    })
+
+
+def dev_quick_login(request):
+    """Development-only one-click admin sign-in (disabled unless DEV_QUICK_LOGIN).
+
+    This exists so hosted previews are explorable without credentials. It is
+    hard-gated on DEBUG in settings.py, so it can never be reachable in a
+    production deployment.
+    """
+    if not getattr(settings, 'DEV_QUICK_LOGIN', False):
+        return redirect('sign_in')
+
+    user = (
+        User.objects.filter(is_superuser=True).order_by('id').first()
+        or User.objects.order_by('id').first()
+    )
+    if user is None:
+        messages.error(request, 'No account exists yet — register first.')
+        return redirect('sign_up')
+
+    # Don't log the user in twice via a stale session.
+    if request.user.is_authenticated:
+        logout(request)
+
+    # Must be a backend listed in settings.AUTHENTICATION_BACKENDS, otherwise
+    # django.contrib.auth.get_user() refuses to load the user on the next
+    # request and the session silently resolves to AnonymousUser.
+    user.backend = settings.AUTHENTICATION_BACKENDS[0]
+    login(request, user)
+    messages.success(request, f'Signed in as {user.username} (development quick login).')
+    return redirect('home')
 
 
 def logout_view(request):

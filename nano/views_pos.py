@@ -1572,6 +1572,24 @@ def warehouse_import(request):
 
     return render(request, 'nano/warehouse_import.html')
 
+
+@login_required
+def download_sample_csv(request):
+    """Serve the sample CSV template used by the warehouse import page."""
+    # Allow only superusers or users with admin/manager roles (same as import)
+    if not (request.user.is_superuser or (hasattr(request.user, 'userprofile') and request.user.userprofile.role in ['admin', 'manager'])):
+        return HttpResponseForbidden("You do not have permission to access this page.")
+
+    sample_path = settings.BASE_DIR / 'sample_warehouse_import_test.csv'
+    if not sample_path.exists():
+        messages.error(request, 'Sample CSV file is not available.')
+        return redirect('warehouse_import')
+
+    response = HttpResponse(sample_path.read_bytes(), content_type='text/csv')
+    response['Content-Disposition'] = 'attachment; filename="sample_warehouse_import.csv"'
+    return response
+
+
 @login_required
 
 

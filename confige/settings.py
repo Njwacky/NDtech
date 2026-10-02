@@ -37,6 +37,20 @@ TESTING = 'test' in sys.argv
 DEVELOPER_MODE = config('DEVELOPER_MODE', default=DEBUG, cast=bool)
 AUDIT_DASHBOARD_DEV_ONLY = config('AUDIT_DASHBOARD_DEV_ONLY', default=True, cast=bool)
 
+# --- Development conveniences -------------------------------------------------
+# Both flags are hard-gated on DEBUG: they are force-disabled whenever DEBUG is
+# False, so a production deployment cannot be opened up by environment variables
+# alone. Set them in .env to explore the app locally or in a preview sandbox.
+#
+# ALLOW_OPEN_REGISTRATION: normally only the first-ever user may self-register
+#   (that account becomes the admin). With this on, anyone can register at any
+#   time — useful for previewing. New accounts are given admin rights so every
+#   page and function is reachable.
+# DEV_QUICK_LOGIN: adds a one-click "sign in as admin" button to the sign-in page
+#   and a /dev-login/ endpoint. Never enable this anywhere public.
+ALLOW_OPEN_REGISTRATION = DEBUG and config('ALLOW_OPEN_REGISTRATION', default=False, cast=bool)
+DEV_QUICK_LOGIN = DEBUG and config('DEV_QUICK_LOGIN', default=False, cast=bool)
+
 # ALLOWED_HOSTS configuration
 if DEBUG:
     # Also add for mobile using ipconfig
@@ -226,8 +240,11 @@ LOGIN_URL = '/sign_in/'
 LOGIN_REDIRECT_URL = '/'
 LOGOUT_REDIRECT_URL = '/register/'
 
-# Trust proxy headers from nginx
-#SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+# Trust proxy headers from nginx / Render / preview proxies.
+# Without this Django believes the request arrived over plain HTTP, so it builds
+# an "http://host" origin while the browser sends "https://host" — the mismatch
+# makes every POST (sign in, register, checkout) fail CSRF verification with 403.
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
 # Production Security Settings
 if not DEBUG:
@@ -248,7 +265,16 @@ CORS_ALLOWED_ORIGINS = config('CORS_ALLOWED_ORIGINS', default='http://localhost:
 
 # CSRF Trusted Origins - Handle both local and production environments
 if DEBUG:
-    CSRF_TRUSTED_ORIGINS = config('CSRF_TRUSTED_ORIGINS', default='http://localhost:8080,http://127.0.0.1:8080,http://localhost:8000,http://127.0.0.1:8000').split(',')
+    # Includes wildcard host patterns for hosted preview/development sandboxes.
+    # Django supports a leading wildcard (e.g. "https://*.example.com").
+    CSRF_TRUSTED_ORIGINS = config(
+        'CSRF_TRUSTED_ORIGINS',
+        default=(
+            'http://localhost:8080,http://127.0.0.1:8080,'
+            'http://localhost:8000,http://127.0.0.1:8000,'
+            'https://*.e2b.app,https://*.arena.site'
+        )
+    ).split(',')
 else:
     # Production - Add your Render.com URL here
     render_url = config('RENDER_URL', default='https://ndtechpos.onrender.com').strip()

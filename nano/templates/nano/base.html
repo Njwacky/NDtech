@@ -17,6 +17,9 @@
   <!-- Core & Navbar Styles -->
   <link rel="stylesheet" href="{% static 'nano/css/app.css' %}" />
   <link rel="stylesheet" href="{% static 'nano/css/navbar.css' %}" />
+
+  <!-- Design tokens & shared components (load last so it wins over app.css) -->
+  <link rel="stylesheet" href="{% static 'nano/css/components.css' %}" />
   
   {% block extra_css %}{% endblock %}
 </head>

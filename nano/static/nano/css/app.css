@@ -137,3 +137,24 @@ select option{
 .toast{padding:12px 14px; border-radius:14px; border:1px solid var(--border); background: rgba(15,27,51,.92)}
 .toast-success{border-color: rgba(79,140,255,.35)}
 
+
+/* --- Development-only quick login (see DEV_QUICK_LOGIN in settings.py) --- */
+.dev-login{
+  margin-top:18px; padding-top:16px;
+  border-top:1px dashed var(--border);
+  display:grid; gap:10px; justify-items:center;
+}
+.btn-dev{
+  width:100%;
+  background: rgba(49,208,127,.12);
+  border-color: rgba(49,208,127,.45);
+  color:#8ff0bf;
+  font-weight:600;
+}
+.btn-dev:hover{background: rgba(49,208,127,.2); color:#b6f7d6}
+.dev-note{
+  margin:0; font-size:12px; color:var(--muted); text-align:center; line-height:1.5;
+}
+.dev-note code{
+  background: rgba(255,255,255,.06); padding:1px 5px; border-radius:5px; font-size:11px;
+}

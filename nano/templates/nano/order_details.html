@@ -4,47 +4,49 @@
 {% block title %}Order Details - NDtech{% endblock %}
 
 {% block content %}
-<div style="padding: 20px; max-width: 1100px; margin: 0 auto;">
-  <a href="{% url 'pending_orders' %}" style="display:inline-flex; align-items:center; gap:8px; padding:10px 14px; border-radius:10px; background:#f2f2f2; text-decoration:none; margin-bottom: 16px;">
+<div class="page">
+  <a class="back-link" href="{% url 'pending_orders' %}">
     <i class="fas fa-arrow-left"></i> Back
   </a>
 
-  <h1 style="margin: 0 0 8px;">Order #{{ order.id }}</h1>
-  <div style="color:#666; margin-bottom: 18px;">
-    Customer: <strong>{{ order.customer_name }}</strong> • {{ order.customer_phone }}
+  <div class="page-head">
+    <h1>Order #{{ order.id }}</h1>
+    <p class="sub">
+      Customer: <strong>{{ order.customer_name }}</strong> • {{ order.customer_phone }}
+    </p>
   </div>
 
-  <div style="background:#fff; border:1px solid #eee; border-radius:12px; padding:16px; margin-bottom: 18px;">
-    <div style="display:flex; justify-content:space-between; flex-wrap:wrap; gap: 10px;">
+  <div class="surface surface-pad" style="margin-bottom: var(--sp-4);">
+    <div class="row" style="justify-content: space-between; gap: var(--sp-5);">
       <div>
-        <div style="font-size:12px; color:#666;">Total</div>
-        <div style="font-size:24px; font-weight:800; color:#588157;">R{{ order.total }}</div>
+        <div class="label">Total</div>
+        <div class="stat-value lg is-success">R{{ order.total }}</div>
       </div>
       <div>
-        <div style="font-size:12px; color:#666;">Status</div>
-        <div style="font-weight:700;">{{ order.status }}</div>
+        <div class="label">Status</div>
+        <div><span class="pill-badge is-pending">{{ order.status }}</span></div>
       </div>
     </div>
   </div>
 
   {% if items_with_totals %}
-    <div style="background:#fff; border:1px solid #eee; border-radius:12px; overflow:hidden;">
-      <table style="width:100%; border-collapse:collapse;">
+    <div class="table-wrap" style="margin-bottom: var(--sp-4);">
+      <table class="data-table">
         <thead>
-          <tr style="background:#f6f6f6; text-align:left;">
-            <th style="padding:12px 14px; border-bottom:1px solid #eee;">Product</th>
-            <th style="padding:12px 14px; border-bottom:1px solid #eee;">Qty</th>
-            <th style="padding:12px 14px; border-bottom:1px solid #eee;">Price</th>
-            <th style="padding:12px 14px; border-bottom:1px solid #eee;">Line Total</th>
+          <tr>
+            <th>Product</th>
+            <th class="num">Qty</th>
+            <th class="num">Price</th>
+            <th class="num">Line Total</th>
           </tr>
         </thead>
         <tbody>
           {% for item in items_with_totals %}
             <tr>
-              <td style="padding:12px 14px; border-bottom:1px solid #f0f0f0;">{{ item.product }}</td>
-              <td style="padding:12px 14px; border-bottom:1px solid #f0f0f0;">{{ item.quantity }}</td>
-              <td style="padding:12px 14px; border-bottom:1px solid #f0f0f0;">R{{ item.price }}</td>
-              <td style="padding:12px 14px; border-bottom:1px solid #f0f0f0;">R{{ item.total }}</td>
+              <td>{{ item.product }}</td>
+              <td class="num">{{ item.quantity }}</td>
+              <td class="num">R{{ item.price }}</td>
+              <td class="num">R{{ item.total }}</td>
             </tr>
           {% endfor %}
         </tbody>
@@ -52,19 +54,20 @@
     </div>
   {% endif %}
 
-  <div style="background:#fff; border:1px solid #eee; border-radius:12px; padding:16px; margin-top:18px;">
-    <h2 style="margin:0 0 12px; font-size:18px;">Complete Order</h2>
+  <div class="surface surface-pad">
+    <h2 style="margin: 0 0 var(--sp-4); font-size: var(--fs-lg);">Complete Order</h2>
 
     <form method="POST" action="{% url 'complete_order' order_id=order.id %}">
       {% csrf_token %}
-      <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 12px;">
-        <div>
-          <label style="display:block; font-size:13px; color:#666; margin-bottom:6px;">Cash Received</label>
-          <input type="number" name="cash_received" step="0.01" min="0" value="{{ order.total }}" required style="width:100%; padding:10px 12px; border:1px solid #ddd; border-radius:10px;" />
+      <div class="field-grid">
+        <div class="field">
+          <label for="cash_received">Cash Received</label>
+          <input type="number" id="cash_received" name="cash_received" inputmode="decimal"
+                 step="0.01" min="0" value="{{ order.total }}" required />
         </div>
-        <div>
-          <label style="display:block; font-size:13px; color:#666; margin-bottom:6px;">Payment Method</label>
-          <select name="payment_method" style="width:100%; padding:10px 12px; border:1px solid #ddd; border-radius:10px;">
+        <div class="field">
+          <label for="payment_method">Payment Method</label>
+          <select id="payment_method" name="payment_method">
             <option value="cash">Cash</option>
             <option value="card">Card</option>
             <option value="mobile">Mobile Payment</option>
@@ -72,16 +75,13 @@
         </div>
       </div>
 
-      <div style="margin-top: 14px; display:flex; gap:10px; flex-wrap:wrap;">
-        <button type="submit" style="padding:12px 18px; border:none; border-radius:10px; background:#588157; color:#fff; font-weight:700; cursor:pointer;">
+      <div class="row" style="margin-top: var(--sp-5);">
+        <button type="submit" class="btn btn-success">
           <i class="fas fa-check"></i> Complete
         </button>
-        <a href="{% url 'pending_orders' %}" style="padding:12px 18px; border-radius:10px; background:#f2f2f2; text-decoration:none; font-weight:700; color:#333;">
-          Cancel
-        </a>
+        <a class="btn btn-subtle" href="{% url 'pending_orders' %}">Cancel</a>
       </div>
     </form>
   </div>
 </div>
 {% endblock %}
-

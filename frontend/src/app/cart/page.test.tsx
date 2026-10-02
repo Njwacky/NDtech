@@ -30,8 +30,8 @@ describe('Cart Page', () => {
     const addButtons = screen.getAllByText(/add to cart/i)
     fireEvent.click(addButtons[0])
     
-    // Check if cart section updates
-    const cartTitle = screen.getByText(/cart/i)
+    // Check if cart section updates - the "Cart" heading is now rendered
+    const cartTitle = screen.getByRole('heading', { name: /^cart$/i })
     expect(cartTitle).toBeInTheDocument()
   })
 

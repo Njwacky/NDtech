@@ -10,6 +10,9 @@ urlpatterns = [
     path('register/', views.register, name='register'),
     path('sign_in/', views.sign_in, name='sign_in'),
     path('sign_up/', views.sign_up, name='sign_up'),
+    # Development-only one-click admin sign-in. The view itself is a no-op
+    # (redirects to sign_in) unless DEV_QUICK_LOGIN is enabled in settings.
+    path('dev-login/', views.dev_quick_login, name='dev_quick_login'),
     path('logout/', views.logout_view, name='logout'),
     path('forgot_password/', views.forgot_password, name='forgot_password'),
     path('verify-admin-password/', views.verify_admin_password, name='verify_admin_password'),
@@ -51,6 +54,7 @@ urlpatterns = [
     
     # Warehouse URLs
     path('warehouse/import/', views.warehouse_import, name='warehouse_import'),
+    path('warehouse/import/sample-csv/', views.download_sample_csv, name='download_sample_csv'),
     path('warehouse/prices/', views.warehouse_prices, name='warehouse_prices'),
     path('warehouse/comparisons/', views.price_comparisons, name='price_comparisons'),
     path('warehouse/comparisons/marketing/', views.price_comparisons_marketing, name='price_comparisons_marketing'),
